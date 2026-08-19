@@ -47,9 +47,13 @@ Each benefit package MUST have one stable non-empty identifier, one non-empty us
 Package identifiers MUST be unique in configuration.
 Guarantee entitlement kinds MUST be unique within one package, and each guarantee value MUST be an integer.
 
-Benefit configuration MUST NOT contain a revision number and MUST be append-only until benefits become persisted backend entities.
-Once a benefit identifier may have been stored, its package MUST NOT be removed and its title, description, and guarantees MUST NOT change.
-A changed package MUST use a new benefit identifier.
+Benefit configuration MUST NOT contain a revision number.
+A configured package is the current desired entitlement definition for every subscription that references its benefit identifier.
+The title, description, and guarantees of an existing package MAY change without introducing a new benefit identifier.
+Such a configuration change MUST NOT mutate benefit transactions, subscriptions, or entitlements by itself.
+It becomes effective for an existing subscription only when a newly identified benefit transaction actualizes that subscription; until then, the previously persisted entitlement state remains authoritative.
+Benefit transactions MUST record the stable benefit identifier and MUST NOT snapshot the package title, description, or complete guarantee set.
+A benefit identifier MUST NOT be reused for an unrelated product and MUST remain configured while a current subscription can reference it.
 
 Looking up an unknown benefit identifier MUST fail without changing benefit-transaction, subscription, or entitlement state.
 
@@ -94,20 +98,26 @@ Retrying after the winner commits MUST return the stored transaction normally.
 
 Benefit transactions MUST be append-only and MUST NOT be updated or deleted by normal workflows.
 
-### Grants
+### Grants and subscription actualization
 
 A grant command MUST NOT contain a separate grant marker or entitlement interval.
 Its command type MUST identify the operation as a grant.
 The supplied subscription snapshot MUST contain timezone-aware `period_starts_at` and `period_ends_at` values with the start earlier than the end.
 The accepted grant transaction MUST persist those values unchanged under the same field names.
 
-The workflow MUST resolve the package recorded by the grant transaction and create one source entitlement for every package guarantee.
+Every newly accepted grant command MUST both apply the supplied subscription snapshot and actualize the complete set of entitlements owned by that subscription.
+The benefits module MUST NOT provide a subscription-only command that can persist a subscription snapshot without considering its entitlements.
+Actualization MUST run even when the subscriptions module reports that the supplied snapshot did not change the persisted subscription business state.
+Repeating an already accepted transaction source identity MUST remain an idempotent no-op and MUST NOT actualize the subscription again; a maintenance or mass actualization MUST use a new source transaction identity.
+
+The workflow MUST resolve the current configured package recorded by the grant transaction and create one source entitlement for every package guarantee as the subscription's resulting desired entitlement state.
 Every resulting source entitlement MUST use `benefits` as its semantic entitlement source and the internal benefit transaction UUID as its grant transaction identifier.
 The originating PSP, administrator, support tool, or system component MUST remain identifiable through the corresponding benefit transaction's source identity and source-owned operation record.
 
 All non-lifetime guarantees MUST use the accepted grant transaction's persisted subscription period.
 Lifetime guarantees MUST use `period_starts_at` and the project's stable lifetime interval-end marker.
-Guarantees created by different internal transactions MUST coexist as immutable grants, including consecutive subscription periods.
+Actualization MUST replace prior entitlement state owned by the same subscription as required to make its current and future entitlement state match the newly accepted transaction.
+The superseded source-entitlement grants MUST remain immutable except for their revocation state and audit history.
 
 ### Revocations
 
@@ -145,8 +155,11 @@ This exception applies only to this benefits subscription-application workflow.
 The workflow MUST call both modules through their public domain boundaries and MUST NOT import their operation modules or access their tables directly.
 
 Business events from participating modules MUST be emitted only after the shared transaction commits.
-The workflow MUST collect the callbacks returned by transaction-participating subscription and entitlement operations and invoke them after that commit.
-Any failure MUST leave the previous transaction ledger, subscription, source entitlements, effective entitlements, and audit history unchanged and MUST emit no events.
+The workflow MUST collect the callbacks returned by transaction-participating subscription and entitlement operations and begin invoking them only after that commit.
+Any failure before commit MUST leave the previous transaction ledger, subscription, source entitlements, effective entitlements, and audit history unchanged and MUST emit no events.
+Callback invocation is best-effort post-commit delivery: a callback failure MUST NOT roll back or otherwise invalidate the already committed state.
+One callback failure MAY prevent the workflow from invoking callbacks that remain in the collection.
+The workflow does not guarantee durable callback replay, and retrying an already accepted transaction source identity MUST NOT replay callbacks from the original application.
 
 ## Public interface
 
@@ -171,4 +184,5 @@ The immutable benefit transaction records the source-owned operation reference, 
 ## Business events
 
 The module does not define an additional business event.
-After commit, its subscription application MUST cause subscriptions and entitlements to emit their specified events for every corresponding non-no-op state change.
+After commit, its subscription application MUST attempt to cause subscriptions and entitlements to emit their specified events for every corresponding non-no-op state change.
+That delivery is best-effort: callback failure does not invalidate committed state, and this module does not provide durable replay.

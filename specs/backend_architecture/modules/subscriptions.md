@@ -171,6 +171,7 @@ Each query operation MUST own the transaction boundary around all persistence wo
 
 `save_subscription` MUST be called by the approved `ffun.benefits` subscription-application workflow so the causal benefit transaction, subscription snapshot, and any entitlement effects share one transaction.
 After a successful commit, that caller MUST invoke the returned business-event callback; after rollback, it MUST discard the callback without invoking it.
+Post-commit callback invocation is best-effort: callback failure MUST NOT invalidate or roll back the committed subscription and audit state, and this module does not guarantee durable callback replay.
 
 `ffun.subscriptions.save_subscription` is explicitly approved to participate in the database transaction owned by `ffun.benefits.apply_subscription_transaction`.
 It MAY accept and use that workflow's execute callable for subscription persistence, locking, and audit records.
@@ -201,10 +202,11 @@ A stale snapshot, idempotent retry, freshness-only update, or failed request MUS
 
 ### `subscription_changed`
 
-Every successful creation or business-state replacement MUST emit one `subscription_changed` business event after the state and audit transaction succeeds.
+Every successful creation or business-state replacement MUST produce one `subscription_changed` business event for best-effort emission after the state and audit transaction succeeds.
 
 The event MUST use the affected user as the business-event user and include the previous normalized status or `null` separately from the current subscription attributes.
 The business event attributes MUST include the internal subscription identifier and state transaction identifier and be serialized from the complete current snapshot by excluding only the Feeds Fun user identifier.
 Consequently, they MUST include the benefit identifier, provider update time, resulting normalized status, provider status, subscription start, current-period start, current-period end, expected renewal, and end values, as well as any future subscription snapshot fields not explicitly excluded above.
 
 A stale snapshot, idempotent retry, freshness-only update, failed request, or query MUST NOT emit the event.
+Failure while delivering the event after commit MUST NOT change this durable state and does not make an otherwise idempotent retry emit the event again.

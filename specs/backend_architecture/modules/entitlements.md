@@ -152,6 +152,7 @@ It MUST return a source-change result and corresponding zero-argument business-e
 Both change operations MUST use the supplied transaction for source state, effective state, locking, and audit records and MUST NOT emit business events before commit.
 When a change operation is a no-op, its returned business-event callback MUST also be a no-op.
 After commit, the caller MUST invoke every returned business-event callback; after rollback, it MUST discard the callbacks without invoking them.
+Post-commit callback invocation is best-effort: callback failure MUST NOT invalidate or roll back the committed source, effective, or audit state, and this module does not guarantee durable callback replay.
 
 `ffun.entitlements.grant_source_entitlement` and `ffun.entitlements.revoke_source_entitlement` are explicitly approved to participate in the database transaction owned by `ffun.benefits.apply_subscription_transaction`.
 They MAY accept and use that workflow's execute callable for source-entitlement persistence, effective-state persistence, locking, and audit records.
@@ -187,8 +188,9 @@ A no-op request MUST NOT append a record.
 
 ## Business events
 
-The module MUST emit both events below after every successful non-no-op source change.
+The module MUST produce both events below for best-effort emission after every successful non-no-op source change.
 No-op and rolled-back changes MUST NOT emit either event.
+Failure while delivering an event after commit MUST NOT change durable entitlement state, and retrying an otherwise idempotent source operation MUST NOT replay that event.
 
 ### `source_entitlement_changed`
 
