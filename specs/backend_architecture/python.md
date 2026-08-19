@@ -36,7 +36,10 @@ Enums give project concepts one nominal runtime type with discoverable members, 
 Explicit values keep member identities independent from declaration order or generated naming rules.
 Fixed integers decouple those identities from human-readable names, align with the project's categorical persistence conventions, and allow names to change without changing stable values.
 Project-owned enum members MUST use explicit values and MUST NOT use `enum.auto()`.
-Unless compatibility with an external protocol or an existing serialized contract requires another representation, project-owned enum values MUST be fixed integers.
+Project-owned enum values MUST be fixed integers unless another representation is an intentional stable boundary contract.
+API-boundary enums MAY use explicit string values when human-readable wire values are an intentional part of the API contract.
+Such string values MUST be treated as stable compatibility identifiers and MUST NOT be changed or reused without an explicit compatibility transition.
+Internal domain enum identities SHOULD remain fixed integers and SHOULD be converted explicitly to and from boundary representations so human-readable wire names do not become internal identity.
 Integer enum values that participate in persistence, serialization, configuration, or another compatibility contract MUST NOT be changed or reused.
 
 ## Validation and resolution
