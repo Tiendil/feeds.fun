@@ -56,32 +56,57 @@ describe("assertTokenUsageStatistics", () => {
 });
 
 describe("emptyTokenUsageStatistics", () => {
-  it("creates empty series aligned to the requested interval", () => {
-    const result = emptyTokenUsageStatistics(e.TimeGranularity.Month, new Date("2026-08-20T08:30:00Z"));
-
-    expect(result.interval).toBe("month");
-
-    for (const kind of [
-      e.ResourceKind.DayTokenUsage,
-      e.ResourceKind.MonthTokenUsage,
-      e.ResourceKind.LifetimeTokenUsage
-    ]) {
-      expect(result.statistics[kind]).toEqual({
-        firstDate: new Date("2026-08-01T00:00:00Z"),
-        values: []
-      });
-    }
-
-    const slots = tokenUsageSlots({
-      statistics: result,
+  it.each([
+    {
+      granularity: e.TimeGranularity.Day,
+      interval: "day",
+      expectedFirstDate: "2026-08-20T00:00:00Z",
+      rangeFirstDate: "2026-08-18T00:00:00Z",
+      rangeLastDate: "2026-08-20T23:59:59Z"
+    },
+    {
       granularity: e.TimeGranularity.Month,
-      firstDate: new Date("2026-06-01T00:00:00Z"),
-      lastDate: new Date("2026-08-31T23:59:59Z")
-    });
+      interval: "month",
+      expectedFirstDate: "2026-08-01T00:00:00Z",
+      rangeFirstDate: "2026-06-01T00:00:00Z",
+      rangeLastDate: "2026-08-31T23:59:59Z"
+    },
+    {
+      granularity: e.TimeGranularity.Year,
+      interval: "year",
+      expectedFirstDate: "2026-01-01T00:00:00Z",
+      rangeFirstDate: "2024-01-01T00:00:00Z",
+      rangeLastDate: "2026-12-31T23:59:59Z"
+    }
+  ])(
+    "creates empty $granularity series aligned to the requested interval",
+    ({granularity, interval, expectedFirstDate, rangeFirstDate, rangeLastDate}) => {
+      const result = emptyTokenUsageStatistics(granularity, new Date("2026-08-20T08:30:00Z"));
 
-    expect(slots).toHaveLength(3);
-    expect(slots.every((slot) => Object.values(slot.values).every((value) => value === 0))).toBe(true);
-  });
+      expect(result.interval).toBe(interval);
+
+      for (const kind of [
+        e.ResourceKind.DayTokenUsage,
+        e.ResourceKind.MonthTokenUsage,
+        e.ResourceKind.LifetimeTokenUsage
+      ]) {
+        expect(result.statistics[kind]).toEqual({
+          firstDate: new Date(expectedFirstDate),
+          values: []
+        });
+      }
+
+      const slots = tokenUsageSlots({
+        statistics: result,
+        granularity,
+        firstDate: new Date(rangeFirstDate),
+        lastDate: new Date(rangeLastDate)
+      });
+
+      expect(slots).toHaveLength(3);
+      expect(slots.every((slot) => Object.values(slot.values).every((value) => value === 0))).toBe(true);
+    }
+  );
 });
 
 describe("tokenUsageSlots", () => {
