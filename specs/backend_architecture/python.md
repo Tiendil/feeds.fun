@@ -34,13 +34,16 @@ Project-owned closed sets of named values SHOULD use enums instead of `typing.Li
 Enums give project concepts one nominal runtime type with discoverable members, reducing duplicated literal unions and raw constants across typed interfaces.
 
 Explicit values keep member identities independent from declaration order or generated naming rules.
-Fixed integers decouple those identities from human-readable names, align with the project's categorical persistence conventions, and allow names to change without changing stable values.
 Project-owned enum members MUST use explicit values and MUST NOT use `enum.auto()`.
-Project-owned enum values MUST be fixed integers unless another representation is an intentional stable boundary contract.
+Project-owned enum values persisted in application-owned storage MUST be fixed integers.
+Fixed integers decouple persisted identities from human-readable names, align with the project's categorical persistence conventions, and allow names to change without changing stored values.
+Assigned persisted integer values MUST NOT be changed or reused.
+
+Project-owned enum values that are not persisted MAY use another explicit representation when it makes their runtime semantics clearer or represents an intentional boundary protocol token.
 API-boundary enums MAY use explicit string values when human-readable wire values are an intentional part of the API contract.
 Such string values MUST be treated as stable compatibility identifiers and MUST NOT be changed or reused without an explicit compatibility transition.
-Internal domain enum identities SHOULD remain fixed integers and SHOULD be converted explicitly to and from boundary representations so human-readable wire names do not become internal identity.
-Integer enum values that participate in persistence, serialization, configuration, or another compatibility contract MUST NOT be changed or reused.
+Non-persisted enum values that participate in serialization, configuration, an external-system protocol, or another compatibility contract MUST use an explicit stable representation appropriate to that boundary.
+When internal and boundary representations have independent compatibility lifecycles, code SHOULD convert between them explicitly instead of relying on shared underlying values.
 
 ## Validation and resolution
 
