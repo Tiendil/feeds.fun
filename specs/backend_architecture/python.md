@@ -31,7 +31,10 @@ Functions and methods that receive the constructed typed value MUST assume those
 
 Project-owned closed sets of named values SHOULD use enums instead of `typing.Literal`.
 `Literal` MAY be used when exact literal values are required by an external or framework-defined interface, as discriminators for typed unions, or when the values do not represent independently named project concepts.
+Enums give project concepts one nominal runtime type with discoverable members, reducing duplicated literal unions and raw constants across typed interfaces.
 
+Explicit values keep member identities independent from declaration order or generated naming rules.
+Fixed integers decouple those identities from human-readable names, align with the project's categorical persistence conventions, and allow names to change without changing stable values.
 Project-owned enum members MUST use explicit values and MUST NOT use `enum.auto()`.
 Unless compatibility with an external protocol or an existing serialized contract requires another representation, project-owned enum values MUST be fixed integers.
 Integer enum values that participate in persistence, serialization, configuration, or another compatibility contract MUST NOT be changed or reused.
