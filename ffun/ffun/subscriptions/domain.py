@@ -53,16 +53,16 @@ def _decide_subscription_save(
         raise errors.SubscriptionConflict(subscription_id=str(stored.id))
 
     if incoming.provider_updated_at < stored.provider_updated_at:
-        return _SaveSubscriptionCommand.ignore, SaveSubscriptionOutcome.skipped
+        return _SaveSubscriptionCommand.ignore, SaveSubscriptionOutcome.stale
 
     if incoming.provider_updated_at == stored.provider_updated_at:
         if not stored.has_same_business_state_as(incoming):
             raise errors.SubscriptionConflict(subscription_id=str(stored.id))
 
-        return _SaveSubscriptionCommand.ignore, SaveSubscriptionOutcome.skipped
+        return _SaveSubscriptionCommand.ignore, SaveSubscriptionOutcome.same
 
     if stored.has_same_business_state_as(incoming):
-        return _SaveSubscriptionCommand.upsert, SaveSubscriptionOutcome.skipped
+        return _SaveSubscriptionCommand.upsert, SaveSubscriptionOutcome.refreshed
 
     return _SaveSubscriptionCommand.upsert, SaveSubscriptionOutcome.updated
 

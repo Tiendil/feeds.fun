@@ -624,8 +624,7 @@ function productStateSubscriptionFromJSON(subscription: RawProductStateSubscript
     startedAt: new Date(subscription.startedAt),
     periodStartsAt: new Date(subscription.periodStartsAt),
     periodEndsAt: new Date(subscription.periodEndsAt),
-    expectedRenewalAt:
-      subscription.expectedRenewalAt === null ? null : new Date(subscription.expectedRenewalAt),
+    expectedRenewalAt: subscription.expectedRenewalAt === null ? null : new Date(subscription.expectedRenewalAt),
     endsAt: subscription.endsAt === null ? null : new Date(subscription.endsAt)
   };
 }

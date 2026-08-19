@@ -31,7 +31,9 @@ class TestSaveSubscriptionOutcome:
         assert [(outcome.name, outcome.value) for outcome in SaveSubscriptionOutcome] == [
             ("created", 1),
             ("updated", 2),
-            ("skipped", 3),
+            ("refreshed", 3),
+            ("same", 4),
+            ("stale", 5),
         ]
 
 

@@ -1221,9 +1221,7 @@ class TestRevokeSubscriptionEntitlements:
                 actor_id=_ACTOR_ID,
             )
 
-        assert [
-            (outcome.source_state.kind_id, outcome.source_state.grant_transaction_id) for outcome in outcomes
-        ] == [
+        assert [(outcome.source_state.kind_id, outcome.source_state.grant_transaction_id) for outcome in outcomes] == [
             (_DAY_TOKENS, _GRANT_TRANSACTION_ID),
             (_DAY_TOKENS, future_transaction_id),
             (_MONTH_TOKENS, _GRANT_TRANSACTION_ID),

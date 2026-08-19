@@ -23,7 +23,7 @@ from ffun.domain.entities import BenefitId, BenefitTransactionId, SerializedId, 
 from ffun.entitlements import domain as entitlement_domain
 from ffun.entitlements.entities import EntitlementSourceId
 from ffun.subscriptions import domain as subscription_domain
-from ffun.subscriptions.entities import SubscriptionSnapshot
+from ffun.subscriptions.entities import SaveSubscriptionOutcome, SubscriptionSaveResult, SubscriptionSnapshot
 
 BENEFITS_ENTITLEMENT_SOURCE_ID = EntitlementSourceId("benefits")
 
@@ -158,14 +158,14 @@ async def _accept_subscription_transaction(
     *,
     actor_kind: AuditEntityKind,
     actor_id: SerializedId,
-) -> Callable[[], None]:
+) -> tuple[SubscriptionSaveResult, Callable[[], None]]:
     if not await operations.insert_benefit_transaction(execute, benefit_transaction):
         raise errors.ConcurrentBenefitTransaction(
             source_id=int(benefit_transaction.source_id),
             source_transaction_id=str(benefit_transaction.source_transaction_id),
         )
 
-    _, callback = await subscription_domain.save_subscription(
+    return await subscription_domain.save_subscription(
         execute,
         benefit_transaction.subscription_id,
         benefit_transaction.id,
@@ -173,7 +173,6 @@ async def _accept_subscription_transaction(
         actor_kind=actor_kind,
         actor_id=actor_id,
     )
-    return callback
 
 
 async def _revoke_benefit(  # noqa: CFQ002
@@ -288,13 +287,20 @@ async def _apply_grant_transaction(  # noqa: CFQ002
         period_starts_at=subscription.period_starts_at,
         period_ends_at=subscription.period_ends_at,
     )
-    subscription_callback = await _accept_subscription_transaction(
+    subscription_save, subscription_callback = await _accept_subscription_transaction(
         execute,
         benefit_transaction,
         subscription,
         actor_kind=actor_kind,
         actor_id=actor_id,
     )
+    if subscription_save.outcome == SaveSubscriptionOutcome.stale:
+        raise errors.StaleBenefitGrant(
+            subscription_id=str(benefit_transaction.subscription_id),
+            incoming_provider_updated_at=subscription.provider_updated_at.isoformat(),
+            current_provider_updated_at=subscription_save.current.provider_updated_at.isoformat(),
+        )
+
     callbacks = await _replace_benefit(
         execute,
         benefit_transaction,
@@ -340,7 +346,7 @@ async def _apply_revoke_transaction(  # noqa: CFQ002
         effective_at=command.effective_at,
         revokes_transaction_id=command.revokes_transaction_id,
     )
-    subscription_callback = await _accept_subscription_transaction(
+    _, subscription_callback = await _accept_subscription_transaction(
         execute,
         benefit_transaction,
         subscription,

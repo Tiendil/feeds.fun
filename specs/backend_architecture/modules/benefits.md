@@ -107,7 +107,9 @@ The accepted grant transaction MUST persist those values unchanged under the sam
 
 Every newly accepted grant command MUST both apply the supplied subscription snapshot and actualize the complete set of entitlements owned by that subscription.
 The benefits module MUST NOT provide a subscription-only command that can persist a subscription snapshot without considering its entitlements.
-Actualization MUST run even when the subscriptions module reports that the supplied snapshot did not change the persisted subscription business state.
+A grant whose supplied snapshot produces the `stale` subscription save outcome MUST fail with a stale-benefit-grant error and roll back the benefit transaction and every other change in the workflow.
+The stale source identity MUST NOT be persisted as an accepted benefit transaction.
+Actualization MUST run when the subscriptions module produces the `same` or `refreshed` save outcome even though the supplied snapshot did not change the persisted subscription business state.
 Repeating an already accepted transaction source identity MUST remain an idempotent no-op and MUST NOT actualize the subscription again; a maintenance or mass actualization MUST use a new source transaction identity.
 
 The workflow MUST resolve the current configured package recorded by the grant transaction and create one source entitlement for every package guarantee as the subscription's resulting desired entitlement state.
@@ -146,7 +148,8 @@ The initial implementation MAY reject one of two different operations concurrent
 
 For each newly accepted benefit transaction, the workflow MUST apply the supplied subscription snapshot through the subscriptions domain boundary.
 A new grant MUST resolve the package and entitlement interval from that same snapshot.
-A new grant or revocation transaction MUST apply its commanded entitlement change even when the supplied subscription snapshot is stale, because subscription freshness and the causal entitlement operation are separate decisions.
+A new grant MUST fail and roll back when the subscriptions module reports that its supplied snapshot is stale, because an obsolete snapshot cannot authorize replacement of the subscription's entitlement state.
+A new revocation transaction MUST still apply its targeted entitlement revocation when the supplied subscription snapshot is stale, because subscription freshness and revocation of an explicitly identified historical grant are separate decisions.
 
 The benefit transaction, subscription snapshot, changed source entitlements, derived effective entitlement intervals, and all required audit records MUST commit or roll back as one unit.
 Changes for the same transaction source identity, internal subscription identity, and affected user and entitlement kind MUST retain the serialization guarantees of the participating modules.
@@ -174,6 +177,7 @@ The public interface MUST provide these operations:
 `apply_subscription_transaction` MUST accept one complete provider-neutral subscription snapshot, one grant or revocation command, and the audit actor.
 Both command types MUST contain the `source_id` and `source_transaction_id` transaction identity, subscription selection, and effective time.
 The concrete command type MUST identify the operation without a separate kind or effect marker; a revocation command MUST additionally contain the grant transaction identifier to revoke.
+A stale grant MUST raise a benefits-owned stale-benefit-grant error containing the selected subscription identity and the incoming and current provider update times.
 
 The result MUST contain the internal benefit transaction identifier, the internal subscription identifier, and whether the transaction was newly created.
 An idempotent transaction retry MUST report that the transaction was not created because its original atomic effects already committed.

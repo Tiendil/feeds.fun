@@ -39,7 +39,12 @@ from ffun.entitlements import domain as entitlement_domain
 from ffun.entitlements import operations as entitlement_operations
 from ffun.entitlements.entities import EntitlementGuarantee, EntitlementKindId
 from ffun.subscriptions import domain as subscription_domain
-from ffun.subscriptions.entities import SubscriptionSnapshot, SubscriptionStatusId
+from ffun.subscriptions.entities import (
+    SaveSubscriptionOutcome,
+    SubscriptionSaveResult,
+    SubscriptionSnapshot,
+    SubscriptionStatusId,
+)
 
 _ACTOR_KIND = AuditEntityKind.psp
 _ACTOR_ID = SerializedId("provider-hook")
@@ -323,7 +328,7 @@ class TestAcceptSubscriptionTransaction:
         snapshot = make_subscription_snapshot(user_id=benefit_transaction.user_id)
 
         async with transaction() as transaction_execute:
-            callback = await domain._accept_subscription_transaction(
+            result, callback = await domain._accept_subscription_transaction(
                 transaction_execute,
                 benefit_transaction,
                 snapshot,
@@ -331,6 +336,7 @@ class TestAcceptSubscriptionTransaction:
                 actor_id=_ACTOR_ID,
             )
 
+        assert result.outcome == SaveSubscriptionOutcome.created
         assert callable(callback)
         assert await operations.load_benefit_transaction(execute, benefit_transaction.id) == benefit_transaction
         assert await subscription_domain.get_subscription(
@@ -486,7 +492,16 @@ class TestApplyGrantTransaction:
         mocker.patch.object(
             domain,
             "_accept_subscription_transaction",
-            return_value=subscription_callback,
+            return_value=(
+                SubscriptionSaveResult(
+                    outcome=SaveSubscriptionOutcome.created,
+                    current=snapshot.with_identity(
+                        subscription_id=subscription_id,
+                        state_transaction_id=transaction_id,
+                    ),
+                ),
+                subscription_callback,
+            ),
         )
         entitlement_callbacks: list[Callable[[], None]] = [entitlement_callback]
         mocker.patch.object(domain, "_replace_benefit", return_value=entitlement_callbacks)
@@ -512,6 +527,57 @@ class TestApplyGrantTransaction:
             period_ends_at=snapshot.period_ends_at,
         )
         assert callbacks == [subscription_callback, entitlement_callback]
+
+    @pytest.mark.asyncio
+    async def test_stale_subscription_raises_before_entitlement_replacement(
+        self,
+        package: BenefitPackage,
+        mocker: MockerFixture,
+    ) -> None:
+        snapshot = make_subscription_snapshot(benefit_id=package.id)
+        command = make_grant_command()
+        subscription_id = subscription_domain.new_subscription_id()
+        transaction_id = BenefitTransactionId(uuid.uuid4())
+        current = snapshot.replace(
+            provider_updated_at=snapshot.provider_updated_at + datetime.timedelta(seconds=1)
+        ).with_identity(
+            subscription_id=subscription_id,
+            state_transaction_id=BenefitTransactionId(uuid.uuid4()),
+        )
+        mocker.patch.object(
+            domain,
+            "_resolve_regular_subscription_target",
+            return_value=subscription_id,
+        )
+        mocker.patch.object(operations, "new_benefit_transaction_id", return_value=transaction_id)
+        mocker.patch.object(
+            domain,
+            "_accept_subscription_transaction",
+            return_value=(
+                SubscriptionSaveResult(
+                    outcome=SaveSubscriptionOutcome.stale,
+                    current=current,
+                ),
+                mocker.stub(name="subscription_callback"),
+            ),
+        )
+        replace = mocker.patch.object(domain, "_replace_benefit")
+
+        with pytest.raises(errors.StaleBenefitGrant) as exception_info:
+            await domain._apply_grant_transaction(
+                command,
+                execute,
+                snapshot,
+                evaluation_time=datetime.datetime.now(tz=datetime.UTC),
+                actor_kind=_ACTOR_KIND,
+                actor_id=_ACTOR_ID,
+            )
+
+        message = str(exception_info.value)
+        assert f"subscription_id={subscription_id}" in message
+        assert f"incoming_provider_updated_at={snapshot.provider_updated_at.isoformat()}" in message
+        assert f"current_provider_updated_at={current.provider_updated_at.isoformat()}" in message
+        replace.assert_not_awaited()
 
 
 class TestApplyRevokeTransaction:
@@ -542,7 +608,16 @@ class TestApplyRevokeTransaction:
         mocker.patch.object(
             domain,
             "_accept_subscription_transaction",
-            return_value=subscription_callback,
+            return_value=(
+                SubscriptionSaveResult(
+                    outcome=SaveSubscriptionOutcome.updated,
+                    current=snapshot.with_identity(
+                        subscription_id=grant.subscription_id,
+                        state_transaction_id=transaction_id,
+                    ),
+                ),
+                subscription_callback,
+            ),
         )
         entitlement_callbacks: list[Callable[[], None]] = [entitlement_callback]
         revoke = mocker.patch.object(domain, "_revoke_benefit", return_value=entitlement_callbacks)
@@ -840,6 +915,64 @@ class TestApplySubscriptionTransaction:
         assert_logs_has_no_business_event(logs, "entitlement_changed")
 
     @pytest.mark.asyncio
+    async def test_stale_grant_rolls_back_transaction_and_preserves_current_entitlements(
+        self,
+        package: BenefitPackage,
+    ) -> None:
+        current_snapshot = make_subscription_snapshot(benefit_id=package.id)
+        current_grant = await _apply(current_snapshot, make_grant_command())
+        stale_snapshot = current_snapshot.replace(
+            period_starts_at=current_snapshot.period_starts_at - datetime.timedelta(days=31),
+            period_ends_at=current_snapshot.period_starts_at - datetime.timedelta(days=1),
+            provider_updated_at=current_snapshot.provider_updated_at - datetime.timedelta(seconds=1),
+        )
+        stale_command = make_grant_command(
+            subscription_target=InternalSubscriptionTarget(subscription_id=current_grant.subscription_id)
+        )
+
+        with capture_logs() as logs:
+            async with (
+                TableSizeNotChanged("b_transactions"),
+                TableSizeNotChanged("sb_subscriptions"),
+                TableSizeNotChanged("en_source_entitlements"),
+                TableSizeNotChanged("en_entitlements"),
+                TableSizeNotChanged("a_records"),
+            ):
+                with pytest.raises(errors.StaleBenefitGrant) as exception_info:
+                    await _apply(stale_snapshot, stale_command)
+
+        message = str(exception_info.value)
+        assert f"subscription_id={current_grant.subscription_id}" in message
+        assert f"incoming_provider_updated_at={stale_snapshot.provider_updated_at.isoformat()}" in message
+        assert f"current_provider_updated_at={current_snapshot.provider_updated_at.isoformat()}" in message
+        assert await subscription_domain.get_subscription(
+            current_grant.subscription_id
+        ) == current_snapshot.with_identity(
+            subscription_id=current_grant.subscription_id,
+            state_transaction_id=current_grant.transaction_id,
+        )
+        current_source = await entitlement_operations.load_source_entitlement(
+            execute,
+            current_snapshot.user_id,
+            EntitlementKindId.day_tokens,
+            domain.BENEFITS_ENTITLEMENT_SOURCE_ID,
+            current_grant.transaction_id,
+        )
+        assert current_source is not None
+        assert current_source.revoked_at is None
+        assert (
+            await operations.load_benefit_transaction_by_source(
+                execute,
+                source_id=stale_command.source_id,
+                source_transaction_id=stale_command.source_transaction_id,
+            )
+            is None
+        )
+        assert_logs_has_no_business_event(logs, "subscription_changed")
+        assert_logs_has_no_business_event(logs, "source_entitlement_changed")
+        assert_logs_has_no_business_event(logs, "entitlement_changed")
+
+    @pytest.mark.asyncio
     async def test_new_grant_preserves_and_revokes_previous_source_grant(
         self,
         package: BenefitPackage,
@@ -854,7 +987,7 @@ class TestApplySubscriptionTransaction:
         replacement_snapshot = snapshot.replace(
             period_starts_at=now,
             period_ends_at=now + datetime.timedelta(days=3),
-            provider_updated_at=snapshot.provider_updated_at + datetime.timedelta(seconds=1)
+            provider_updated_at=snapshot.provider_updated_at + datetime.timedelta(seconds=1),
         )
 
         async with TableSizeDelta("en_source_entitlements", delta=1):

@@ -24,7 +24,7 @@ Payment collection, provider APIs and notification protocols, provider object id
 - `business state` - every subscription snapshot field except the provider update time.
 - `audit state` - every subscription snapshot field except the Feeds Fun user identifier represented separately by the audit record.
 - `business event attributes` - the subscription identifier, state transaction identifier, and every subscription snapshot field except the Feeds Fun user identifier represented separately by the business event.
-- `save outcome` - the high-level business result of saving one subscription snapshot.
+- `save outcome` - the high-level result of comparing and saving one subscription snapshot: `created`, `updated`, `refreshed`, `same`, or `stale`.
 
 ## Module responsibility
 
@@ -118,13 +118,13 @@ Invalid ownership, status, or timestamp data MUST fail without changing stored s
 At most one current snapshot MUST exist for one internal subscription identifier.
 Creating a missing identifier MUST durably store the complete snapshot and supplied state transaction identifier and produce the `created` save outcome.
 
-A snapshot whose provider update time is earlier than the stored provider update time MUST be a stale no-op and produce the `skipped` save outcome.
-A snapshot with the same provider update time and identical business state MUST be an idempotent no-op and produce the `skipped` save outcome.
+A snapshot whose provider update time is earlier than the stored provider update time MUST be a no-op and produce the `stale` save outcome.
+A snapshot with the same provider update time and identical business state MUST be an idempotent no-op and produce the `same` save outcome.
 A snapshot with the same provider update time and different business state MUST fail as an ambiguous conflict.
 
 A snapshot whose provider update time is later than the stored provider update time and whose business state differs MUST replace the complete mutable business state, advance the stored provider update time, record the supplied state transaction identifier, and produce the `updated` save outcome.
-When only the provider update time differs, the module MAY advance that time and the state transaction identifier but MUST produce the `skipped` save outcome because the business state did not change.
-A stale or idempotent no-op MUST preserve the stored state transaction identifier.
+When only the provider update time differs, the module MUST advance that time and the state transaction identifier and produce the `refreshed` save outcome because the stored freshness and causality changed while the business state did not.
+A `same` or `stale` no-op MUST preserve the stored state transaction identifier.
 
 Replacement of a subscription's state transaction identifier, benefit identifier, status, provider status, subscription period, lifecycle timestamps, and provider update time MUST be atomic.
 Concurrent replacements for the same internal subscription identifier MUST serialize their freshness decisions so older state cannot overwrite newer state.
@@ -156,8 +156,8 @@ The public interface MUST provide these operations:
 - `get_alive_subscriptions_for_user` returns alive current subscriptions for one requested user.
 
 `save_subscription` MUST accept a caller-owned transaction, the internal subscription identifier, the causal state transaction identifier, the complete semantic snapshot described by this specification, and the audit actor's kind and canonical identifier.
-It MUST return the resulting current subscription, the previous subscription for a business-state replacement, the `created`, `updated`, or `skipped` save outcome described by the snapshot replacement contract, and a zero-argument callback that emits the corresponding business event after commit.
-For a `skipped` outcome, the returned callback MUST be a no-op.
+It MUST return the resulting current subscription, the previous subscription for a business-state replacement, the `created`, `updated`, `refreshed`, `same`, or `stale` save outcome described by the snapshot replacement contract, and a zero-argument callback that emits the corresponding business event after commit.
+For a `refreshed`, `same`, or `stale` outcome, the returned callback MUST be a no-op.
 It MUST use the supplied transaction for the subscription state, lock, and audit record and MUST NOT emit a business event before commit.
 
 `get_subscription` MUST accept the internal subscription identifier.
@@ -196,7 +196,7 @@ The record attributes MUST include:
 Each audit state MUST be serialized from the complete subscription snapshot by excluding only the Feeds Fun user identifier.
 Consequently, each audit state MUST include the benefit identifier, normalized status, provider status, subscription start, current-period start, current-period end, expected renewal, end, and provider update values, as well as any future subscription snapshot fields not explicitly excluded above.
 
-A stale snapshot, idempotent retry, freshness-only update, or failed request MUST NOT append an audit record.
+A `stale`, `same`, or `refreshed` save, or a failed request, MUST NOT append an audit record.
 
 ## Business events
 
@@ -208,5 +208,5 @@ The event MUST use the affected user as the business-event user and include the 
 The business event attributes MUST include the internal subscription identifier and state transaction identifier and be serialized from the complete current snapshot by excluding only the Feeds Fun user identifier.
 Consequently, they MUST include the benefit identifier, provider update time, resulting normalized status, provider status, subscription start, current-period start, current-period end, expected renewal, and end values, as well as any future subscription snapshot fields not explicitly excluded above.
 
-A stale snapshot, idempotent retry, freshness-only update, failed request, or query MUST NOT emit the event.
+A `stale`, `same`, or `refreshed` save, failed request, or query MUST NOT emit the event.
 Failure while delivering the event after commit MUST NOT change this durable state and does not make an otherwise idempotent retry emit the event again.

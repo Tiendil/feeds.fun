@@ -25,8 +25,9 @@ class SubscriptionStatusId(enum.IntEnum):
 class SaveSubscriptionOutcome(enum.IntEnum):
     created = 1
     updated = 2
-    # A skipped save may still advance provider_updated_at when the business state is unchanged.
-    skipped = 3
+    refreshed = 3
+    same = 4
+    stale = 5
 
 
 class SubscriptionSnapshot(BaseEntity):

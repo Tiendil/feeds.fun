@@ -25,6 +25,10 @@ class InvalidBenefitGrant(Error):
     pass
 
 
+class StaleBenefitGrant(Error):
+    pass
+
+
 class InvalidBenefitSubscription(Error):
     pass
 

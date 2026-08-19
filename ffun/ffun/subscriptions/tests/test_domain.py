@@ -78,7 +78,7 @@ class TestDecideSubscriptionSave:
 
         assert domain._decide_subscription_save(stored, incoming) == (
             domain._SaveSubscriptionCommand.ignore,
-            SaveSubscriptionOutcome.skipped,
+            SaveSubscriptionOutcome.stale,
         )
 
     def test_identical_snapshot_is_ignored(self) -> None:
@@ -86,16 +86,16 @@ class TestDecideSubscriptionSave:
 
         assert domain._decide_subscription_save(subscription, subscription) == (
             domain._SaveSubscriptionCommand.ignore,
-            SaveSubscriptionOutcome.skipped,
+            SaveSubscriptionOutcome.same,
         )
 
-    def test_freshness_only_snapshot_is_upserted_and_skipped(self) -> None:
+    def test_freshness_only_snapshot_is_upserted_and_refreshed(self) -> None:
         stored = make_subscription()
         incoming = stored.replace(provider_updated_at=stored.provider_updated_at + datetime.timedelta(seconds=1))
 
         assert domain._decide_subscription_save(stored, incoming) == (
             domain._SaveSubscriptionCommand.upsert,
-            SaveSubscriptionOutcome.skipped,
+            SaveSubscriptionOutcome.refreshed,
         )
 
     def test_newer_business_state_is_updated(self) -> None:
@@ -245,7 +245,7 @@ class TestSaveSubscription:
 
         assert second_load_entered.is_set()
         assert first_result.outcome == SaveSubscriptionOutcome.created
-        assert second_result.outcome == SaveSubscriptionOutcome.skipped
+        assert second_result.outcome == SaveSubscriptionOutcome.same
 
     @pytest.mark.asyncio
     async def test_different_identities_do_not_share_lock(self, mocker: MockerFixture) -> None:
@@ -347,7 +347,7 @@ class TestSaveSubscription:
             callback()
 
         assert result == SubscriptionSaveResult(
-            outcome=SaveSubscriptionOutcome.skipped,
+            outcome=SaveSubscriptionOutcome.stale,
             current=stored,
         )
         assert await domain.get_subscription(stored.id) == stored
@@ -368,7 +368,7 @@ class TestSaveSubscription:
             callback()
 
         assert result == SubscriptionSaveResult(
-            outcome=SaveSubscriptionOutcome.skipped,
+            outcome=SaveSubscriptionOutcome.same,
             current=stored,
         )
         assert await domain.get_subscription(stored.id) == stored
@@ -463,7 +463,7 @@ class TestSaveSubscription:
             callback()
 
         assert result == SubscriptionSaveResult(
-            outcome=SaveSubscriptionOutcome.skipped,
+            outcome=SaveSubscriptionOutcome.refreshed,
             current=advanced,
         )
         assert await operations.load_subscription(execute, subscription.id) == advanced
