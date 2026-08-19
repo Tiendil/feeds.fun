@@ -2,15 +2,14 @@ import datetime
 import uuid
 
 from ffun.benefits.entities import (
+    BenefitEntitlementAction,
     BenefitPackage,
     BenefitSourceId,
     BenefitSourceTransactionId,
     BenefitTransaction,
-    BenefitTransactionKind,
+    BenefitTransactionCommand,
     ExternalSubscriptionTarget,
-    GrantBenefitTransactionCommand,
     NewSubscriptionTarget,
-    RevokeBenefitTransactionCommand,
     SubscriptionTarget,
 )
 from ffun.core.entities import NonEmptyString
@@ -56,72 +55,49 @@ def make_external_subscription_target(
     )
 
 
-def make_benefit_transaction(  # noqa: CCR001, CFQ002
+def make_benefit_transaction(  # noqa: CFQ002
     *,
     transaction_id: BenefitTransactionId | None = None,
     source_id: BenefitSourceId = BenefitSourceId(17),
     source_transaction_id: BenefitSourceTransactionId | None = None,
-    kind: BenefitTransactionKind = BenefitTransactionKind.grant,
+    entitlement_action: BenefitEntitlementAction = BenefitEntitlementAction.grant,
     user_id: UserId | None = None,
     benefit_id: BenefitId = BenefitId("test-benefit"),
     subscription_id: SubscriptionId | None = None,
     effective_at: datetime.datetime | None = None,
     period_starts_at: datetime.datetime | None = None,
     period_ends_at: datetime.datetime | None = None,
-    revokes_transaction_id: BenefitTransactionId | None = None,
 ) -> BenefitTransaction:
     now = effective_at or datetime.datetime.now(tz=datetime.UTC)
-
-    if kind == BenefitTransactionKind.grant:
-        period_starts_at = period_starts_at or now - datetime.timedelta(days=1)
-        period_ends_at = period_ends_at or now + datetime.timedelta(days=1)
-    else:
-        revokes_transaction_id = revokes_transaction_id or BenefitTransactionId(uuid.uuid4())
+    period_starts_at = period_starts_at or now - datetime.timedelta(days=1)
+    period_ends_at = period_ends_at or now + datetime.timedelta(days=1)
 
     return BenefitTransaction(
         id=transaction_id or BenefitTransactionId(uuid.uuid4()),
         source_id=source_id,
         source_transaction_id=source_transaction_id or BenefitSourceTransactionId(uuid.uuid4()),
-        kind=kind,
+        entitlement_action=entitlement_action,
         user_id=user_id or new_user_id(),
         benefit_id=benefit_id,
         subscription_id=subscription_id or new_subscription_id(),
         effective_at=now,
         period_starts_at=period_starts_at,
         period_ends_at=period_ends_at,
-        revokes_transaction_id=revokes_transaction_id,
     )
 
 
-def make_grant_command(
+def make_transaction_command(
     *,
     source_id: BenefitSourceId = BenefitSourceId(17),
     source_transaction_id: BenefitSourceTransactionId | None = None,
     subscription_target: SubscriptionTarget | None = None,
     effective_at: datetime.datetime | None = None,
-) -> GrantBenefitTransactionCommand:
-    return GrantBenefitTransactionCommand(
+) -> BenefitTransactionCommand:
+    return BenefitTransactionCommand(
         source_id=source_id,
         source_transaction_id=source_transaction_id or BenefitSourceTransactionId(uuid.uuid4()),
         subscription_target=subscription_target or NewSubscriptionTarget(),
         effective_at=effective_at or datetime.datetime.now(tz=datetime.UTC),
-    )
-
-
-def make_revoke_command(
-    *,
-    source_id: BenefitSourceId = BenefitSourceId(17),
-    source_transaction_id: BenefitSourceTransactionId | None = None,
-    subscription_target: SubscriptionTarget | None = None,
-    effective_at: datetime.datetime | None = None,
-    revokes_transaction_id: BenefitTransactionId | None = None,
-) -> RevokeBenefitTransactionCommand:
-    return RevokeBenefitTransactionCommand(
-        source_id=source_id,
-        source_transaction_id=source_transaction_id or BenefitSourceTransactionId(uuid.uuid4()),
-        subscription_target=subscription_target or NewSubscriptionTarget(),
-        effective_at=effective_at or datetime.datetime.now(tz=datetime.UTC),
-        revokes_transaction_id=revokes_transaction_id or BenefitTransactionId(uuid.uuid4()),
     )
 
 

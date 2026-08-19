@@ -1,38 +1,35 @@
 import datetime
-import uuid
 from typing import cast
 
 import pydantic
 import pytest
 
 from ffun.benefits.entities import (
+    BenefitEntitlementAction,
     BenefitPackage,
     BenefitTransaction,
-    BenefitTransactionKind,
-    GrantBenefitTransactionCommand,
+    BenefitTransactionCommand,
     InternalSubscriptionTarget,
     NewSubscriptionTarget,
-    RevokeBenefitTransactionCommand,
 )
 from ffun.benefits.tests.make import (
     make_benefit_package,
     make_benefit_transaction,
     make_external_subscription_target,
-    make_grant_command,
-    make_revoke_command,
+    make_transaction_command,
 )
 from ffun.core.entities import NonEmptyString
-from ffun.domain.entities import BenefitId, BenefitTransactionId
+from ffun.domain.entities import BenefitId
 from ffun.entitlements.entities import EntitlementGuarantee, EntitlementKindId
 from ffun.subscriptions.domain import new_subscription_id
 from ffun.subscriptions.tests.make import make_provider_subscription_reference
 
 
-class TestBenefitTransactionKind:
+class TestBenefitEntitlementAction:
     def test_values_are_stable(self) -> None:
-        assert [(kind.name, kind.value) for kind in BenefitTransactionKind] == [
-            ("grant", 2),
-            ("revoke", 3),
+        assert [(action.name, action.value) for action in BenefitEntitlementAction] == [
+            ("grant", 1),
+            ("revoke", 2),
         ]
 
 
@@ -97,17 +94,16 @@ class TestNewSubscriptionTarget:
 
 class TestBenefitTransactionCommand:
     def test_source_identity__returns_source_tuple(self) -> None:
-        command = make_grant_command()
+        command = make_transaction_command()
 
         assert command.source_identity == (command.source_id, command.source_transaction_id)
 
     def test_effective_at_must_have_timezone__rejects_naive_timestamp(self) -> None:
         with pytest.raises(pydantic.ValidationError, match="effective timestamp must have a UTC offset"):
-            make_grant_command(effective_at=datetime.datetime.now())
+            make_transaction_command(effective_at=datetime.datetime.now())
 
-    def test_concrete_type_identifies_operation(self) -> None:
-        assert isinstance(make_grant_command(), GrantBenefitTransactionCommand)
-        assert isinstance(make_revoke_command(), RevokeBenefitTransactionCommand)
+    def test_factory_returns_neutral_command(self) -> None:
+        assert isinstance(make_transaction_command(), BenefitTransactionCommand)
 
 
 class TestBenefitTransaction:
@@ -126,49 +122,10 @@ class TestBenefitTransaction:
         with pytest.raises(pydantic.ValidationError, match=rf"timestamp {field_name} must have a UTC offset"):
             BenefitTransaction.model_validate(data)
 
-    @pytest.mark.parametrize("field_name", ["period_starts_at", "period_ends_at"])
-    def test_validate_period_presence__grant_requires_complete_interval(self, field_name: str) -> None:
-        transaction = make_benefit_transaction()
-        data = cast(dict[str, object], transaction.model_dump())
-        data[field_name] = None
-
-        with pytest.raises(pydantic.ValidationError, match="must define its subscription period"):
-            BenefitTransaction.model_validate(data)
-
-    def test_validate_period_order__grant_period_start_must_be_before_period_end(self) -> None:
+    def test_validate_period_order__start_must_be_before_end(self) -> None:
         transaction = make_benefit_transaction()
         data = cast(dict[str, object], transaction.model_dump())
         data["period_starts_at"] = data["period_ends_at"]
 
         with pytest.raises(pydantic.ValidationError, match="period start must be earlier than period end"):
-            BenefitTransaction.model_validate(data)
-
-    def test_validate_period_presence__non_grant_rejects_interval(self) -> None:
-        transaction = make_benefit_transaction()
-        data = cast(dict[str, object], transaction.model_dump())
-        data.update(
-            kind=BenefitTransactionKind.revoke,
-            revokes_transaction_id=BenefitTransactionId(uuid.uuid4()),
-        )
-
-        with pytest.raises(pydantic.ValidationError, match="Only a benefit grant transaction"):
-            BenefitTransaction.model_validate(data)
-
-    def test_validate_revocation_reference__revocation_requires_grant_identity(self) -> None:
-        transaction = make_benefit_transaction(
-            kind=BenefitTransactionKind.revoke,
-            revokes_transaction_id=BenefitTransactionId(uuid.uuid4()),
-        )
-        data = cast(dict[str, object], transaction.model_dump())
-        data["revokes_transaction_id"] = None
-
-        with pytest.raises(pydantic.ValidationError, match="must identify the grant it revokes"):
-            BenefitTransaction.model_validate(data)
-
-    def test_validate_revocation_reference__grant_rejects_revocation_identity(self) -> None:
-        transaction = make_benefit_transaction()
-        data = cast(dict[str, object], transaction.model_dump())
-        data["revokes_transaction_id"] = BenefitTransactionId(uuid.uuid4())
-
-        with pytest.raises(pydantic.ValidationError, match="Only a benefit revocation transaction"):
             BenefitTransaction.model_validate(data)

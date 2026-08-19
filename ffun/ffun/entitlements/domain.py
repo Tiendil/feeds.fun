@@ -520,42 +520,6 @@ async def revoke_subscription_entitlements(  # noqa: CFQ002
     return outcomes, event_callbacks
 
 
-async def revoke_by_grant_transaction_id(  # noqa: CFQ002
-    execute: ExecuteType,
-    *,
-    grant_transaction_id: BenefitTransactionId,
-    revoked_by_transaction_id: BenefitTransactionId,
-    revoked_at: datetime.datetime,
-    evaluation_time: datetime.datetime,
-    actor_kind: AuditEntityKind,
-    actor_id: SerializedId,
-) -> tuple[list[SourceEntitlementChange], list[Callable[[], None]]]:
-    source_entitlements = await operations.load_source_entitlements_by_grant_transaction_id(
-        execute,
-        grant_transaction_id=grant_transaction_id,
-    )
-    outcomes: list[SourceEntitlementChange] = []
-    event_callbacks: list[Callable[[], None]] = []
-
-    for source_entitlement in source_entitlements:
-        outcome, callback = await revoke_source_entitlement(
-            execute,
-            source_id=source_entitlement.source_id,
-            grant_transaction_id=source_entitlement.grant_transaction_id,
-            revoked_by_transaction_id=revoked_by_transaction_id,
-            user_id=source_entitlement.user_id,
-            kind_id=source_entitlement.kind_id,
-            revoked_at=revoked_at,
-            evaluation_time=evaluation_time,
-            actor_kind=actor_kind,
-            actor_id=actor_id,
-        )
-        outcomes.append(outcome)
-        event_callbacks.append(callback)
-
-    return outcomes, event_callbacks
-
-
 async def get_entitlements(
     user_ids: list[UserId], kind_ids: list[EntitlementKindId]
 ) -> Mapping[UserId, Mapping[EntitlementKindId, EffectiveEntitlementInterval | None]]:

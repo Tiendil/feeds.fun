@@ -1231,63 +1231,6 @@ class TestRevokeSubscriptionEntitlements:
         assert len(callbacks) == len(granted) + len(future_granted)
 
 
-class TestRevokeByGrantTransactionId:
-    @pytest.mark.asyncio
-    async def test_missing_grant_returns_empty_results(self) -> None:
-        async with transaction() as transaction_execute:
-            outcomes, callbacks = await domain.revoke_by_grant_transaction_id(
-                transaction_execute,
-                grant_transaction_id=BenefitTransactionId(uuid.uuid4()),
-                revoked_by_transaction_id=_REVOKING_TRANSACTION_ID,
-                revoked_at=datetime.datetime.now(tz=datetime.UTC),
-                evaluation_time=datetime.datetime.now(tz=datetime.UTC),
-                actor_kind=_ACTOR_KIND,
-                actor_id=_ACTOR_ID,
-            )
-
-        assert outcomes == []
-        assert callbacks == []
-
-    @pytest.mark.asyncio
-    async def test_revokes_every_row_created_by_grant_transaction(self) -> None:
-        user_id = new_user_id()
-        source_id = EntitlementSourceId(f"test-{uuid.uuid4()}")
-        grant_transaction_id = BenefitTransactionId(uuid.uuid4())
-        now = datetime.datetime.now(tz=datetime.UTC)
-        async with transaction() as transaction_execute:
-            await domain.grant_source_entitlements(
-                transaction_execute,
-                source_id=source_id,
-                grant_transaction_id=grant_transaction_id,
-                user_id=user_id,
-                subscription_id=None,
-                guarantees=[
-                    EntitlementGuarantee(kind_id=_MONTH_TOKENS, value=20),
-                    EntitlementGuarantee(kind_id=_DAY_TOKENS, value=10),
-                ],
-                starts_at=now - datetime.timedelta(days=1),
-                expires_at=now + datetime.timedelta(days=1),
-                evaluation_time=now,
-                actor_kind=_ACTOR_KIND,
-                actor_id=_ACTOR_ID,
-            )
-
-        async with transaction() as transaction_execute:
-            outcomes, callbacks = await domain.revoke_by_grant_transaction_id(
-                transaction_execute,
-                grant_transaction_id=grant_transaction_id,
-                revoked_by_transaction_id=_REVOKING_TRANSACTION_ID,
-                revoked_at=now,
-                evaluation_time=now,
-                actor_kind=_ACTOR_KIND,
-                actor_id=_ACTOR_ID,
-            )
-
-        assert [outcome.source_state.kind_id for outcome in outcomes] == [_DAY_TOKENS, _MONTH_TOKENS]
-        assert all(not outcome.source_state.granted for outcome in outcomes)
-        assert len(callbacks) == 2
-
-
 class TestGetEntitlements:
     @pytest.mark.asyncio
     async def test_returns_every_user_and_selected_kind(self) -> None:

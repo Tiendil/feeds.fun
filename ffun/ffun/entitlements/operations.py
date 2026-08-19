@@ -173,33 +173,13 @@ async def load_source_entitlements_for_subscription(
     WHERE subscription_id = %(subscription_id)s
       AND %(evaluation_time)s < expires_at
       AND (revoked_at IS NULL OR GREATEST(starts_at, %(evaluation_time)s) < revoked_at)
-    ORDER BY kind_id, grant_transaction_id
+    ORDER BY user_id, kind_id, source_id, grant_transaction_id
     """
     rows = await execute(
         sql,
         {
             "subscription_id": subscription_id,
             "evaluation_time": evaluation_time,
-        },
-    )
-    return [row_to_source_entitlement(row) for row in rows]
-
-
-async def load_source_entitlements_by_grant_transaction_id(
-    execute: ExecuteType,
-    *,
-    grant_transaction_id: BenefitTransactionId,
-) -> list[SourceEntitlement]:
-    sql = """
-    SELECT *
-    FROM en_source_entitlements
-    WHERE grant_transaction_id = %(grant_transaction_id)s
-    ORDER BY user_id, kind_id
-    """
-    rows = await execute(
-        sql,
-        {
-            "grant_transaction_id": grant_transaction_id,
         },
     )
     return [row_to_source_entitlement(row) for row in rows]

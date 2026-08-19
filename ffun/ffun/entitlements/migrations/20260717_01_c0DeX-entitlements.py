@@ -35,11 +35,6 @@ ON en_source_entitlements (subscription_id)
 WHERE subscription_id IS NOT NULL
 """
 
-sql_create_source_entitlements_grant_transaction_idx = """
-CREATE INDEX en_source_entitlements_grant_transaction_id_idx
-ON en_source_entitlements (grant_transaction_id)
-"""
-
 sql_create_entitlements = """
 -- Materialized effective entitlement intervals derived from the source entitlement table.
 CREATE TABLE en_entitlements (
@@ -64,7 +59,6 @@ def apply_step(conn: Connection[dict[str, Any]]) -> None:
     cursor = conn.cursor()
     cursor.execute(sql_create_source_entitlements)
     cursor.execute(sql_create_source_entitlements_subscription_idx)
-    cursor.execute(sql_create_source_entitlements_grant_transaction_idx)
     cursor.execute(sql_create_entitlements)
     cursor.execute(sql_create_entitlements_expires_at_idx)
 

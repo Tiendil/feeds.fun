@@ -25,6 +25,20 @@ class TestSubscriptionStatusId:
             ("ended", 6),
         ]
 
+    @pytest.mark.parametrize(
+        ("status", "expected"),
+        [
+            (SubscriptionStatusId.pending, False),
+            (SubscriptionStatusId.trialing, True),
+            (SubscriptionStatusId.active, True),
+            (SubscriptionStatusId.past_due, True),
+            (SubscriptionStatusId.paused, False),
+            (SubscriptionStatusId.ended, False),
+        ],
+    )
+    def test_grants_benefits(self, status: SubscriptionStatusId, expected: bool) -> None:
+        assert status.grants_benefits is expected
+
 
 class TestSaveSubscriptionOutcome:
     def test_values_are_stable(self) -> None:

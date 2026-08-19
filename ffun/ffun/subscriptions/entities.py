@@ -39,6 +39,19 @@ class SubscriptionStatusId(enum.IntEnum):
     paused = 5
     ended = 6
 
+    @property
+    def grants_benefits(self) -> bool:
+        return self in _BENEFIT_GRANTING_STATUSES
+
+
+_BENEFIT_GRANTING_STATUSES = frozenset(
+    {
+        SubscriptionStatusId.trialing,
+        SubscriptionStatusId.active,
+        SubscriptionStatusId.past_due,
+    }
+)
+
 
 class SaveSubscriptionOutcome(enum.IntEnum):
     created = 1

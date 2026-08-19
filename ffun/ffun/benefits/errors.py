@@ -9,23 +9,11 @@ class UnknownBenefit(Error):
     pass
 
 
-class BenefitTransactionNotFound(Error):
-    pass
-
-
 class ConcurrentBenefitTransaction(Error):
     pass
 
 
-class InvalidBenefitRevocation(Error):
-    pass
-
-
-class InvalidBenefitGrant(Error):
-    pass
-
-
-class StaleBenefitGrant(Error):
+class StaleBenefitTransaction(Error):
     pass
 
 

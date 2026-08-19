@@ -30,7 +30,7 @@ Payment collection, provider APIs and notification protocols, provider objects o
 
 ## Module responsibility
 
-The module MUST own internal subscription identifiers, provider-subscription references, current subscription snapshots, their causal state-transaction references, benefit identifiers, normalized statuses, provider statuses, lifecycle timestamps, durable state replacement, current-state queries, audit records, and business events.
+The module MUST own internal subscription identifiers, provider-subscription references, current subscription snapshots, their causal state-transaction references, benefit identifiers, normalized statuses and their benefit-granting semantics, provider statuses, lifecycle timestamps, durable state replacement, current-state queries, audit records, and business events.
 
 The external subscription provider remains authoritative for commercial subscription state.
 The module MUST represent the latest accepted state locally and MUST NOT independently infer provider-side state transitions.
@@ -96,8 +96,13 @@ A subscription whose normalized status is `ended`, or whose end timestamp is pre
 Every subscription MUST contain both one normalized status and the non-empty provider status from which the caller obtained the normalized state.
 Provider statuses MUST remain open-ended external strings and MUST NOT be validated against a provider-specific closed set by this module.
 
-The module MUST NOT assign entitlement, access, or resource-limit meaning to any subscription status.
-Callers that make access decisions MUST use the owning domain boundaries for those decisions rather than infer access from subscription state.
+Each normalized subscription status MUST expose whether it grants the subscription's configured benefits.
+The `trialing`, `active`, and `past_due` statuses MUST grant benefits.
+The `pending`, `paused`, and `ended` statuses MUST NOT grant benefits.
+
+The module MUST NOT translate this status semantic into a benefit transaction action, apply entitlement grants, make access decisions, or own resource-limit policy.
+The benefits workflow MUST use this status semantic when deriving its entitlement action.
+All other callers that make access decisions MUST use the owning domain boundaries rather than infer access directly from subscription state.
 
 Status transitions MUST be accepted from any supported status to any supported status when supplied by a newer valid snapshot.
 The module MUST NOT reject a newer snapshot merely because its transition would be unusual for a particular provider.
