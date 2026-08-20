@@ -161,6 +161,13 @@ class TestGetEntitlementKind:
             domain.get_entitlement_kind(_MONTH_TOKENS)
 
 
+class TestGuaranteeKindId:
+    def test_returns_kind_id(self) -> None:
+        guarantee = EntitlementGuarantee(kind_id=_MONTH_TOKENS, value=10)
+
+        assert domain._guarantee_kind_id(guarantee) == _MONTH_TOKENS
+
+
 class TestMergeValues:
     @pytest.mark.parametrize(
         ("policy", "expected"),
