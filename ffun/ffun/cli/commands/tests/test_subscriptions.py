@@ -90,6 +90,10 @@ class TestSubscriptionStatusFromName:
         with pytest.raises(typer.BadParameter):
             subscriptions.subscription_status_from_name(str(SubscriptionStatusId.active.value))
 
+    def test_rejects_empty_name(self) -> None:
+        with pytest.raises(typer.BadParameter):
+            subscriptions.subscription_status_from_name("")
+
     def test_rejects_unknown_name(self) -> None:
         with pytest.raises(typer.BadParameter):
             subscriptions.subscription_status_from_name("unknown")
