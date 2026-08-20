@@ -73,6 +73,10 @@ class SourceEntitlement(BaseEntity):
         if self.revoked_at is not None and not utils.has_timezone(self.revoked_at):
             raise ValueError("Entitlement revocation timestamp must have a UTC offset")
 
+        return self
+
+    @pydantic.model_validator(mode="after")
+    def validate_revocation_reference(self) -> "SourceEntitlement":
         if (self.revoked_at is None) != (self.revoked_by_transaction_id is None):
             raise ValueError("Entitlement revocation time and transaction must be defined together")
 
