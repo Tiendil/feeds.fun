@@ -21,6 +21,8 @@ Terms defined in this section are stable project vocabulary. Project artifacts M
 - `collection` - curated feed collection configuration.
 - `integration` - external source-specific behavior, such as YouTube or Reddit support.
 - `entitlement guarantee` - one entitlement kind and integer value promised by a benefit package or another entitlement-granting product concept.
+- `benefit transaction` - one immutable accepted operation that records and atomically applies one complete subscription state.
+- `benefit transaction identifier` - the internally generated UUID that canonically identifies one benefit transaction.
 - `audit record` - append-only durable record of a business change or event, including its actor and subject entities.
 - `backend` - Python application in `ffun/ffun`.
 - `frontend` - Vue application in `site/src`.

@@ -15,8 +15,6 @@ Applying benefits to one-time purchases is also out of scope until a purchase-ow
 
 - `benefit identifier` - a stable local non-empty identifier that provider metadata or another trusted caller uses to select one configured package.
 - `benefit package` - configured user-facing title and description together with the entitlement guarantees sold as one product benefit.
-- `benefit transaction` - one immutable accepted operation that records and atomically applies one complete subscription state.
-- `benefit transaction identifier` - the internally generated UUID that canonically identifies one benefit transaction.
 - `transaction source identity` - the `source_id` and `source_transaction_id` tuple that identifies one durable operation at its origin.
 - `transaction effective time` - the source-reported timestamp associated with the management operation recorded by a benefit transaction; it is retained as ledger provenance and does not schedule entitlement revocation.
 - `entitlement action` - the provider-independent grant or revoke decision derived from the normalized subscription status and persisted by the benefit transaction.
