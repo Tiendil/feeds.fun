@@ -149,6 +149,21 @@ class TestInsertSourceEntitlement:
 
 class TestRevokeSourceEntitlement:
     @pytest.mark.asyncio
+    async def test_missing_source_raises_invalid_stored_entitlement(self) -> None:
+        entitlement = make_source_entitlement()
+
+        async with TableSizeNotChanged("en_source_entitlements"):
+            with pytest.raises(errors.InvalidStoredEntitlement) as exception_info:
+                await operations.revoke_source_entitlement(
+                    execute,
+                    entitlement,
+                    revoked_at=datetime.datetime.now(tz=datetime.UTC),
+                    revoked_by_transaction_id=_transaction_id(10),
+                )
+
+        assert "reason=Expected a source entitlement to exist" in str(exception_info.value)
+
+    @pytest.mark.asyncio
     async def test_sets_revocation_causality_and_updated_timestamp(self) -> None:
         entitlement = make_source_entitlement()
         await operations.insert_source_entitlement(execute, entitlement)
@@ -184,7 +199,7 @@ class TestRevokeSourceEntitlement:
         assert revoked_updated_at > created_at
 
     @pytest.mark.asyncio
-    async def test_existing_earlier_revocation_is_rejected_and_preserved(self) -> None:
+    async def test_existing_earlier_revocation_is_returned_and_preserved(self) -> None:
         entitlement = make_source_entitlement()
         await operations.insert_source_entitlement(execute, entitlement)
         original_revoked_at = datetime.datetime.now(tz=datetime.UTC)
@@ -197,14 +212,14 @@ class TestRevokeSourceEntitlement:
         )
         timestamps = await load_source_entitlement_timestamps(entitlement)
 
-        with pytest.raises(errors.InvalidStoredEntitlement):
-            await operations.revoke_source_entitlement(
-                execute,
-                revoked,
-                revoked_at=original_revoked_at + datetime.timedelta(days=1),
-                revoked_by_transaction_id=_transaction_id(11),
-            )
+        returned = await operations.revoke_source_entitlement(
+            execute,
+            revoked,
+            revoked_at=original_revoked_at + datetime.timedelta(days=1),
+            revoked_by_transaction_id=_transaction_id(11),
+        )
 
+        assert returned == revoked
         assert (
             await operations.load_source_entitlement(
                 execute,
@@ -218,32 +233,43 @@ class TestRevokeSourceEntitlement:
         assert await load_source_entitlement_timestamps(entitlement) == timestamps
 
     @pytest.mark.asyncio
-    async def test_earlier_revocation_replaces_future_revocation(self) -> None:
+    async def test_earlier_retry_returns_existing_revocation_and_preserves_it(self) -> None:
         entitlement = make_source_entitlement()
         await operations.insert_source_entitlement(execute, entitlement)
-        later = datetime.datetime.now(tz=datetime.UTC) + datetime.timedelta(days=2)
+        original_revoked_at = datetime.datetime.now(tz=datetime.UTC)
         stored = await operations.revoke_source_entitlement(
             execute,
             entitlement,
-            revoked_at=later,
+            revoked_at=original_revoked_at,
             revoked_by_transaction_id=_transaction_id(10),
         )
-        earlier = later - datetime.timedelta(days=1)
+        timestamps = await load_source_entitlement_timestamps(entitlement)
+        earlier = original_revoked_at - datetime.timedelta(days=1)
 
-        replaced = await operations.revoke_source_entitlement(
+        returned = await operations.revoke_source_entitlement(
             execute,
             stored,
             revoked_at=earlier,
             revoked_by_transaction_id=_transaction_id(11),
         )
 
-        assert replaced.revoked_at == earlier
-        assert replaced.revoked_by_transaction_id == _transaction_id(11)
+        assert returned == stored
+        assert (
+            await operations.load_source_entitlement(
+                execute,
+                entitlement.user_id,
+                entitlement.kind_id,
+                entitlement.source_id,
+                entitlement.grant_transaction_id,
+            )
+            == stored
+        )
+        assert await load_source_entitlement_timestamps(entitlement) == timestamps
 
 
 class TestLoadSourceEntitlementsForSubscription:
     @pytest.mark.asyncio
-    async def test_returns_active_and_future_linked_grants_in_kind_and_transaction_order(self) -> None:
+    async def test_returns_unrevoked_active_and_future_linked_grants_in_kind_and_transaction_order(self) -> None:
         subscription_id = new_subscription_id()
         now = datetime.datetime.now(tz=datetime.UTC)
         active_month = make_source_entitlement(
@@ -311,7 +337,7 @@ class TestLoadSourceEntitlementsForSubscription:
             evaluation_time=now,
         )
 
-        assert loaded == [active_day, future_day, active_month]
+        assert loaded == [active_day, active_month]
 
 
 class TestLoadSourceEntitlements:

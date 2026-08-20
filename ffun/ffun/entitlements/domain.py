@@ -85,12 +85,14 @@ def build_effective_timeline(  # noqa: CCR001
     source_entitlements: Sequence[SourceEntitlement],
     evaluation_time: datetime.datetime,
 ) -> list[EffectiveEntitlementInterval]:
+    unrevoked_source_entitlements = [
+        entitlement for entitlement in source_entitlements if entitlement.revoked_at is None
+    ]
     boundaries = sorted(
         {
             boundary
-            for entitlement in source_entitlements
-            for boundary in (entitlement.starts_at, entitlement.expires_at, entitlement.revoked_at)
-            if boundary is not None
+            for entitlement in unrevoked_source_entitlements
+            for boundary in (entitlement.starts_at, entitlement.expires_at)
         }
     )
     intervals: list[EffectiveEntitlementInterval] = []
@@ -101,10 +103,8 @@ def build_effective_timeline(  # noqa: CCR001
 
         values = [
             entitlement.value
-            for entitlement in source_entitlements
-            if entitlement.starts_at <= starts_at
-            and expires_at <= entitlement.expires_at
-            and (entitlement.revoked_at is None or expires_at <= entitlement.revoked_at)
+            for entitlement in unrevoked_source_entitlements
+            if entitlement.starts_at <= starts_at and expires_at <= entitlement.expires_at
         ]
 
         if not values:
@@ -279,7 +279,6 @@ async def _apply_source_revocation(  # noqa: CFQ002
     grant_transaction_id: BenefitTransactionId,
     revoked_by_transaction_id: BenefitTransactionId,
     user_id: UserId,
-    revoked_at: datetime.datetime,
     evaluation_time: datetime.datetime,
     actor_kind: AuditEntityKind,
     actor_id: SerializedId,
@@ -307,13 +306,13 @@ async def _apply_source_revocation(  # noqa: CFQ002
             grant_transaction_id=str(grant_transaction_id),
         )
 
-    if previous_source_state.revoked_at is not None and previous_source_state.revoked_at <= revoked_at:
+    if previous_source_state.revoked_at is not None:
         return _unchanged_outcome(previous_source_state, previous_effective_intervals, evaluation_time)
 
     new_source_state = await operations.revoke_source_entitlement(
         execute,
         previous_source_state,
-        revoked_at=revoked_at,
+        revoked_at=evaluation_time,
         revoked_by_transaction_id=revoked_by_transaction_id,
     )
     return await _rebuild_after_source_change(
@@ -406,7 +405,6 @@ async def revoke_source_entitlement(  # noqa: CFQ002
     revoked_by_transaction_id: BenefitTransactionId,
     user_id: UserId,
     kind_id: EntitlementKindId,
-    revoked_at: datetime.datetime,
     evaluation_time: datetime.datetime,
     actor_kind: AuditEntityKind,
     actor_id: SerializedId,
@@ -421,7 +419,6 @@ async def revoke_source_entitlement(  # noqa: CFQ002
             grant_transaction_id=grant_transaction_id,
             revoked_by_transaction_id=revoked_by_transaction_id,
             user_id=user_id,
-            revoked_at=revoked_at,
             evaluation_time=evaluation_time,
             actor_kind=actor_kind,
             actor_id=actor_id,
@@ -488,7 +485,6 @@ async def revoke_subscription_entitlements(  # noqa: CFQ002
     *,
     subscription_id: SubscriptionId,
     revoked_by_transaction_id: BenefitTransactionId,
-    revoked_at: datetime.datetime,
     evaluation_time: datetime.datetime,
     actor_kind: AuditEntityKind,
     actor_id: SerializedId,
@@ -509,7 +505,6 @@ async def revoke_subscription_entitlements(  # noqa: CFQ002
             revoked_by_transaction_id=revoked_by_transaction_id,
             user_id=source_entitlement.user_id,
             kind_id=source_entitlement.kind_id,
-            revoked_at=revoked_at,
             evaluation_time=evaluation_time,
             actor_kind=actor_kind,
             actor_id=actor_id,

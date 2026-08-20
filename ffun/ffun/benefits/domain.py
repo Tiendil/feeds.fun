@@ -157,7 +157,6 @@ async def _replace_benefit(  # noqa: CFQ002
         execute,
         subscription_id=benefit_transaction.subscription_id,
         revoked_by_transaction_id=benefit_transaction.id,
-        revoked_at=benefit_transaction.effective_at,
         evaluation_time=evaluation_time,
         actor_kind=actor_kind,
         actor_id=actor_id,

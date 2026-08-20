@@ -278,7 +278,6 @@ class TestReplaceBenefit:
             execute,
             subscription_id=benefit_transaction.subscription_id,
             revoked_by_transaction_id=benefit_transaction.id,
-            revoked_at=benefit_transaction.effective_at,
             evaluation_time=evaluation_time,
             actor_kind=_ACTOR_KIND,
             actor_id=_ACTOR_ID,
@@ -330,7 +329,6 @@ class TestReplaceBenefit:
             execute,
             subscription_id=benefit_transaction.subscription_id,
             revoked_by_transaction_id=benefit_transaction.id,
-            revoked_at=effective_at,
             evaluation_time=evaluation_time,
             actor_kind=_ACTOR_KIND,
             actor_id=_ACTOR_ID,
@@ -542,17 +540,18 @@ class TestApplySubscriptionTransaction:
         mocker.patch.object(domain.settings, "packages", (original_package, current_package))
         original_snapshot = make_subscription_snapshot(benefit_id=original_package.id)
         grant = await _apply(original_snapshot, make_transaction_command())
-        revoked_at = datetime.datetime.now(tz=datetime.UTC)
+        application_started_at = datetime.datetime.now(tz=datetime.UTC)
+        transaction_effective_at = application_started_at - datetime.timedelta(days=1)
         current_snapshot = original_snapshot.replace(
             benefit_id=current_package.id,
             status=SubscriptionStatusId.ended,
             provider_status="canceled",
-            ends_at=revoked_at,
+            ends_at=application_started_at,
             provider_updated_at=original_snapshot.provider_updated_at + datetime.timedelta(seconds=1),
         )
         command = make_transaction_command(
             subscription_target=InternalSubscriptionTarget(subscription_id=grant.subscription_id),
-            effective_at=revoked_at,
+            effective_at=transaction_effective_at,
         )
 
         with capture_logs() as logs:
@@ -562,6 +561,7 @@ class TestApplySubscriptionTransaction:
                 TableSizeDelta("a_records", delta=3),
             ):
                 revocation = await _apply(current_snapshot, command)
+        application_finished_at = datetime.datetime.now(tz=datetime.UTC)
 
         stored = await domain.get_benefit_transaction(revocation.transaction_id)
         assert stored is not None
@@ -581,7 +581,8 @@ class TestApplySubscriptionTransaction:
                 grant.transaction_id,
             )
             assert source is not None
-            assert source.revoked_at == revoked_at
+            assert source.revoked_at is not None
+            assert application_started_at <= source.revoked_at <= application_finished_at
             assert source.revoked_by_transaction_id == revocation.transaction_id
 
         assert (
@@ -845,11 +846,13 @@ class TestApplySubscriptionTransaction:
         )
         replacement_command = make_transaction_command(
             subscription_target=InternalSubscriptionTarget(subscription_id=first.subscription_id),
-            effective_at=now,
+            effective_at=now - datetime.timedelta(days=1),
         )
 
+        application_started_at = datetime.datetime.now(tz=datetime.UTC)
         async with TableSizeDelta("en_source_entitlements", delta=1):
             replacement = await _apply(replacement_snapshot, replacement_command)
+        application_finished_at = datetime.datetime.now(tz=datetime.UTC)
 
         previous_source = await entitlement_operations.load_source_entitlement(
             execute,
@@ -866,7 +869,8 @@ class TestApplySubscriptionTransaction:
             replacement.transaction_id,
         )
         assert previous_source is not None
-        assert previous_source.revoked_at == replacement_command.effective_at
+        assert previous_source.revoked_at is not None
+        assert application_started_at <= previous_source.revoked_at <= application_finished_at
         assert previous_source.revoked_by_transaction_id == replacement.transaction_id
         assert replacement_source is not None
         assert replacement_source.starts_at == replacement_snapshot.period_starts_at

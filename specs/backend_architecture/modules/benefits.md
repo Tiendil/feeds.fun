@@ -18,7 +18,7 @@ Applying benefits to one-time purchases is also out of scope until a purchase-ow
 - `benefit transaction` - one immutable accepted operation that records and atomically applies one complete subscription state.
 - `benefit transaction identifier` - the internally generated UUID that canonically identifies one benefit transaction.
 - `transaction source identity` - the `source_id` and `source_transaction_id` tuple that identifies one durable operation at its origin.
-- `transaction effective time` - the timestamp at which the management operation recorded by a benefit transaction takes effect.
+- `transaction effective time` - the source-reported timestamp associated with the management operation recorded by a benefit transaction; it is retained as ledger provenance and does not schedule entitlement revocation.
 - `entitlement action` - the provider-independent grant or revoke decision derived from the normalized subscription status and persisted by the benefit transaction.
 - `internal subscription identifier` - the generated UUID that identifies one provider-independent subscription projection.
 
@@ -123,7 +123,8 @@ Repeating an already accepted transaction source identity MUST remain an idempot
 
 Actualization MUST revoke every subscription-owned entitlement that is active at the evaluation time or can become active afterward.
 It MUST ignore entitlements whose effective lifetime ended before the evaluation time.
-For both `grant` and `revoke` actions, existing entitlements MUST be revoked at the benefit transaction's effective time because revocation represents a management operation rather than a planned subscription-period boundary.
+For both `grant` and `revoke` actions, existing entitlements MUST be revoked immediately at the workflow's evaluation time because revocation is a completed terminal transition rather than a planned subscription-period boundary.
+The benefit transaction's effective time MUST remain recorded in the benefit ledger for causal provenance and MUST NOT be used as the source entitlement's revocation time.
 For a `grant` action, the replacement package MUST still be granted from the supplied subscription period start.
 Each revoked source entitlement MUST retain its original grant transaction identifier and record the newly accepted benefit transaction as its revoking transaction identifier.
 The superseded source-entitlement grants MUST remain immutable except for their revocation state and audit history.

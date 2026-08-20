@@ -136,7 +136,7 @@ async def revoke_source_entitlement(
       AND kind_id = %(kind_id)s
       AND source_id = %(source_id)s
       AND grant_transaction_id = %(grant_transaction_id)s
-      AND (revoked_at IS NULL OR revoked_at > %(revoked_at)s)
+      AND revoked_at IS NULL
     RETURNING *
     """
 
@@ -153,10 +153,21 @@ async def revoke_source_entitlement(
     )
 
     if not rows:
-        raise errors.InvalidStoredEntitlement(
-            entity_kind="source_entitlement",
-            reason="Expected an unrevoked source entitlement to be updated",
+        stored_entitlement = await load_source_entitlement(
+            execute,
+            entitlement.user_id,
+            entitlement.kind_id,
+            entitlement.source_id,
+            entitlement.grant_transaction_id,
         )
+
+        if stored_entitlement is None:
+            raise errors.InvalidStoredEntitlement(
+                entity_kind="source_entitlement",
+                reason="Expected a source entitlement to exist",
+            )
+
+        return stored_entitlement
 
     return row_to_source_entitlement(rows[0])
 
@@ -172,7 +183,7 @@ async def load_source_entitlements_for_subscription(
     FROM en_source_entitlements
     WHERE subscription_id = %(subscription_id)s
       AND %(evaluation_time)s < expires_at
-      AND (revoked_at IS NULL OR GREATEST(starts_at, %(evaluation_time)s) < revoked_at)
+      AND revoked_at IS NULL
     ORDER BY user_id, kind_id, source_id, grant_transaction_id
     """
     rows = await execute(

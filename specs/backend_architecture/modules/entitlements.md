@@ -17,7 +17,7 @@ Purchased-subscription lifecycles, payment-service-provider protocols, product p
 - `grant transaction identifier` - the internal benefit transaction UUID for the causal operation that created one grant.
 - `revoking transaction identifier` - the internal benefit transaction UUID for the causal operation that revoked one grant.
 - `source entitlement` - one durable grant recorded by one source and grant transaction identifier for one user and entitlement kind.
-- `active source entitlement` - a source entitlement whose activation time has arrived and whose expiration and optional revocation times have not arrived at the evaluation time.
+- `active source entitlement` - an unrevoked source entitlement whose activation time has arrived and whose expiration time has not arrived at the evaluation time.
 - `effective entitlement interval` - a time interval during which merged source state grants one entitlement kind to one user with one value.
 - `merge policy` - the operation used to combine values from active source entitlements of the same kind.
 
@@ -66,7 +66,8 @@ Source identifiers MUST be non-empty, and transaction identifiers MUST be UUIDs 
 A grant MUST contain an integer value and timezone-aware activation and expiration times, with activation earlier than expiration.
 A grant being created MUST have neither a revocation time nor a revoking transaction identifier.
 
-A source entitlement is inactive before activation, at or after expiration, and at or after a revocation time.
+A source entitlement is inactive before activation, at or after expiration, and whenever it has revocation state.
+Revocation is a terminal state transition, not a scheduled interval boundary: every revoked source entitlement MUST be excluded from effective-state derivation regardless of its recorded revocation time.
 An already expired grant MAY be recorded, but it is immediately inactive.
 
 After creation, only revocation state may change.
@@ -76,7 +77,8 @@ Creating a grant whose identity and immutable values exactly match an existing g
 Reusing the same identity with different immutable values MUST fail.
 Retrying an identical grant after it has been revoked MUST remain a no-op and MUST NOT reactivate it.
 
-Revocation MUST capture one current time and the revoking benefit transaction identifier.
+Revocation MUST capture the workflow's evaluation time and the revoking benefit transaction identifier.
+The recorded revocation time MUST NOT differ from that evaluation time or represent a scheduled future revocation.
 The revocation time and revoking transaction identifier MUST either both be present or both be absent.
 Revoking an already revoked grant MUST be a no-op and preserve its original revocation time and revoking transaction identifier.
 Revoking a missing grant MUST fail.
@@ -90,13 +92,13 @@ The `lifetime_tokens` effective value MUST be the sum of all active lifetime gra
 
 ### Effective entitlement intervals
 
-Effective entitlement intervals MUST be derived from all source-owned grants for one user and kind.
+Effective entitlement intervals MUST be derived from all unrevoked source-owned grants for one user and kind.
 They MUST be half-open: activation is inclusive and expiration is exclusive.
 
 At any time, at most one effective interval may cover one user and kind.
 Absence of a covering interval means the entitlement is not granted.
 
-Each interval MUST have the value produced by applying the kind's merge policy to every source entitlement active throughout that interval.
+Each interval MUST have the value produced by applying the kind's merge policy to every unrevoked source entitlement active throughout that interval.
 Periods with no active source entitlement MUST be omitted.
 Adjacent intervals with equal values MUST be represented as one interval.
 
@@ -157,7 +159,7 @@ It MUST return a source-change result and corresponding zero-argument business-e
 `grant_source_entitlements` MUST accept a caller-owned transaction, one source identifier, one grant transaction identifier, one user, an optional subscription identifier, an ordered collection of guarantees, one activation and expiration interval, the caller-captured evaluation time, and the audit actor.
 It MUST apply guarantees in deterministic entitlement-kind order and return the ordered source-change results and corresponding callbacks.
 
-`revoke_subscription_entitlements` MUST accept a caller-owned transaction, one subscription identifier, one revoking transaction identifier, one revocation time, the caller-captured evaluation time, and the audit actor.
+`revoke_subscription_entitlements` MUST accept a caller-owned transaction, one subscription identifier, one revoking transaction identifier, the caller-captured evaluation time, and the audit actor.
 It MUST return the ordered source-change results and corresponding callbacks for every current or future source entitlement owned by the subscription, or empty collections when none exist.
 
 These change operations MUST use the supplied transaction for source state, effective state, locking, and audit records and MUST NOT emit business events before commit.

@@ -73,15 +73,11 @@ async def _revoke(
     source_entitlement: SourceEntitlement,
     *,
     revoked_by_transaction_id: BenefitTransactionId = _REVOKING_TRANSACTION_ID,
-    revoked_at: datetime.datetime | None = None,
     evaluation_time: datetime.datetime | None = None,
     emit_event: bool = True,
 ) -> tuple[domain.SourceEntitlementChange, Callable[[], None]]:
-    if revoked_at is None:
-        revoked_at = datetime.datetime.now(tz=datetime.UTC)
-
     if evaluation_time is None:
-        evaluation_time = revoked_at
+        evaluation_time = datetime.datetime.now(tz=datetime.UTC)
 
     async with transaction() as transaction_execute:
         outcome, callback = await domain.revoke_source_entitlement(
@@ -91,7 +87,6 @@ async def _revoke(
             revoked_by_transaction_id=revoked_by_transaction_id,
             user_id=source_entitlement.user_id,
             kind_id=source_entitlement.kind_id,
-            revoked_at=revoked_at,
             evaluation_time=evaluation_time,
             actor_kind=_ACTOR_KIND,
             actor_id=_ACTOR_ID,
@@ -236,7 +231,7 @@ class TestBuildEffectiveTimeline:
             (20, second.starts_at, second.expires_at),
         ]
 
-    def test_revocation_is_an_exclusive_boundary(self) -> None:
+    def test_revoked_entitlement_is_excluded_regardless_of_revocation_time(self) -> None:
         user_id = new_user_id()
         now = datetime.datetime.now(tz=datetime.UTC)
         revoked_at = now + datetime.timedelta(days=1)
@@ -255,9 +250,7 @@ class TestBuildEffectiveTimeline:
             evaluation_time=now,
         )
 
-        assert [(interval.starts_at, interval.expires_at) for interval in intervals] == [
-            (entitlement.starts_at, revoked_at)
-        ]
+        assert intervals == []
 
     def test_sum_policy_combines_same_source_transactions(self) -> None:
         user_id = new_user_id()
@@ -498,7 +491,6 @@ class TestApplySourceRevocation:
                     grant_transaction_id=source_state.grant_transaction_id,
                     revoked_by_transaction_id=_REVOKING_TRANSACTION_ID,
                     user_id=source_state.user_id,
-                    revoked_at=now,
                     evaluation_time=now,
                     actor_kind=_ACTOR_KIND,
                     actor_id=_ACTOR_ID,
@@ -521,7 +513,6 @@ class TestApplySourceRevocation:
                 grant_transaction_id=source_state.grant_transaction_id,
                 revoked_by_transaction_id=_REVOKING_TRANSACTION_ID,
                 user_id=source_state.user_id,
-                revoked_at=evaluation_time,
                 evaluation_time=evaluation_time,
                 actor_kind=_ACTOR_KIND,
                 actor_id=_ACTOR_ID,
@@ -542,7 +533,6 @@ class TestApplySourceRevocation:
         await _grant(source_state, evaluation_time=evaluation_time)
         first, _ = await _revoke(
             source_state,
-            revoked_at=evaluation_time,
             evaluation_time=evaluation_time,
         )
 
@@ -559,42 +549,13 @@ class TestApplySourceRevocation:
                     grant_transaction_id=source_state.grant_transaction_id,
                     revoked_by_transaction_id=BenefitTransactionId(uuid.uuid4()),
                     user_id=source_state.user_id,
-                    revoked_at=evaluation_time + datetime.timedelta(days=1),
-                    evaluation_time=evaluation_time,
+                    evaluation_time=evaluation_time + datetime.timedelta(days=1),
                     actor_kind=_ACTOR_KIND,
                     actor_id=_ACTOR_ID,
                 )
 
         assert not outcome.changed
         assert outcome.source_state == first.source_state
-
-    @pytest.mark.asyncio
-    async def test_earlier_revocation_replaces_future_revocation(self) -> None:
-        source_state = make_source_entitlement()
-        evaluation_time = datetime.datetime.now(tz=datetime.UTC)
-        await _grant(source_state, evaluation_time=evaluation_time)
-        later = evaluation_time + datetime.timedelta(days=2)
-        await _revoke(source_state, revoked_at=later, evaluation_time=evaluation_time)
-        earlier = later - datetime.timedelta(days=1)
-        earlier_transaction_id = BenefitTransactionId(uuid.uuid4())
-
-        async with transaction() as transaction_execute:
-            outcome = await domain._apply_source_revocation(
-                transaction_execute,
-                kind=domain.get_entitlement_kind(source_state.kind_id),
-                source_id=source_state.source_id,
-                grant_transaction_id=source_state.grant_transaction_id,
-                revoked_by_transaction_id=earlier_transaction_id,
-                user_id=source_state.user_id,
-                revoked_at=earlier,
-                evaluation_time=evaluation_time,
-                actor_kind=_ACTOR_KIND,
-                actor_id=_ACTOR_ID,
-            )
-
-        assert outcome.changed
-        assert outcome.source_state.revoked_at == earlier
-        assert outcome.source_state.revoked_by_transaction_id == earlier_transaction_id
 
 
 class TestEmitSourceChangeEvents:
@@ -952,7 +913,6 @@ class TestRevokeSourceEntitlement:
             ):
                 outcome, callback = await _revoke(
                     source_entitlement,
-                    revoked_at=evaluation_time,
                     evaluation_time=evaluation_time,
                     emit_event=False,
                 )
@@ -990,7 +950,7 @@ class TestRevokeSourceEntitlement:
         source_entitlement = make_source_entitlement()
         now = datetime.datetime.now(tz=datetime.UTC)
         await _grant(source_entitlement, evaluation_time=now)
-        first, _ = await _revoke(source_entitlement, revoked_at=now, evaluation_time=now)
+        first, _ = await _revoke(source_entitlement, evaluation_time=now)
 
         with capture_logs() as logs:
             async with (
@@ -1001,8 +961,7 @@ class TestRevokeSourceEntitlement:
                 second, callback = await _revoke(
                     source_entitlement,
                     revoked_by_transaction_id=BenefitTransactionId(uuid.uuid4()),
-                    revoked_at=now + datetime.timedelta(days=1),
-                    evaluation_time=now,
+                    evaluation_time=now + datetime.timedelta(days=1),
                     emit_event=False,
                 )
             callback()
@@ -1042,7 +1001,7 @@ class TestRevokeSourceEntitlement:
         await _grant(first, evaluation_time=now)
         await _grant(second, evaluation_time=now)
 
-        outcome, _ = await _revoke(second, revoked_at=now, evaluation_time=now)
+        outcome, _ = await _revoke(second, evaluation_time=now)
 
         assert outcome.effective_state == (True, 10)
         sources = await operations.load_source_entitlements(execute, user_id, _DAY_TOKENS)
@@ -1171,7 +1130,6 @@ class TestRevokeSubscriptionEntitlements:
                 transaction_execute,
                 subscription_id=new_subscription_id(),
                 revoked_by_transaction_id=_REVOKING_TRANSACTION_ID,
-                revoked_at=datetime.datetime.now(tz=datetime.UTC),
                 evaluation_time=datetime.datetime.now(tz=datetime.UTC),
                 actor_kind=_ACTOR_KIND,
                 actor_id=_ACTOR_ID,
@@ -1187,7 +1145,7 @@ class TestRevokeSubscriptionEntitlements:
         now = datetime.datetime.now(tz=datetime.UTC)
         future_transaction_id = BenefitTransactionId(uuid.UUID(int=3))
         async with transaction() as transaction_execute:
-            granted, _ = await domain.grant_source_entitlements(
+            granted, grant_callbacks = await domain.grant_source_entitlements(
                 transaction_execute,
                 source_id=_SOURCE_ID,
                 grant_transaction_id=_GRANT_TRANSACTION_ID,
@@ -1203,7 +1161,7 @@ class TestRevokeSubscriptionEntitlements:
                 actor_kind=_ACTOR_KIND,
                 actor_id=_ACTOR_ID,
             )
-            future_granted, _ = await domain.grant_source_entitlements(
+            future_granted, future_grant_callbacks = await domain.grant_source_entitlements(
                 transaction_execute,
                 source_id=_SOURCE_ID,
                 grant_transaction_id=future_transaction_id,
@@ -1217,16 +1175,21 @@ class TestRevokeSubscriptionEntitlements:
                 actor_id=_ACTOR_ID,
             )
 
+        for callback in grant_callbacks + future_grant_callbacks:
+            callback()
+
         async with transaction() as transaction_execute:
             outcomes, callbacks = await domain.revoke_subscription_entitlements(
                 transaction_execute,
                 subscription_id=subscription_id,
                 revoked_by_transaction_id=_REVOKING_TRANSACTION_ID,
-                revoked_at=now,
                 evaluation_time=now,
                 actor_kind=_ACTOR_KIND,
                 actor_id=_ACTOR_ID,
             )
+
+        for callback in callbacks:
+            callback()
 
         assert [(outcome.source_state.kind_id, outcome.source_state.grant_transaction_id) for outcome in outcomes] == [
             (_DAY_TOKENS, _GRANT_TRANSACTION_ID),
