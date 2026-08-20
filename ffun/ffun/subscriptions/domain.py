@@ -88,7 +88,7 @@ async def save_subscription(  # noqa: CCR001
         command, outcome = _decide_subscription_save(stored, snapshot)
 
         if command == _SaveSubscriptionCommand.upsert:
-            await operations.upsert_subscription(execute, incoming)
+            await operations.save_subscription(execute, incoming)
             current = incoming
         else:
             assert stored is not None

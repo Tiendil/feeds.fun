@@ -37,7 +37,7 @@ class TestSubscriptionStatusId:
         ],
     )
     def test_grants_benefits(self, status: SubscriptionStatusId, expected: bool) -> None:
-        assert status.grants_benefits is expected
+        assert status.grants_benefits == expected
 
 
 class TestSaveSubscriptionOutcome:

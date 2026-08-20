@@ -105,7 +105,7 @@ async def insert_provider_subscription_reference(
     )
 
 
-async def upsert_subscription(execute: ExecuteType, subscription: Subscription) -> None:
+async def save_subscription(execute: ExecuteType, subscription: Subscription) -> None:
     sql = """
     INSERT INTO sb_subscriptions (
         id,

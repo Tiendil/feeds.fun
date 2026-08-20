@@ -60,7 +60,7 @@ class TestLoadSubscription:
     @pytest.mark.asyncio
     async def test_loads_complete_snapshot_for_exact_identity(self) -> None:
         subscription = make_subscription()
-        await operations.upsert_subscription(execute, subscription)
+        await operations.save_subscription(execute, subscription)
 
         assert await operations.load_subscription(execute, subscription.id) == subscription
         assert await operations.load_subscription(execute, operations.new_subscription_id()) is None
@@ -163,7 +163,7 @@ class TestInsertProviderSubscriptionReference:
         assert await operations.load_provider_subscription_reference(execute, requested_reference) is None
 
 
-class TestUpsertSubscription:
+class TestSaveSubscription:
     @pytest.mark.asyncio
     async def test_inserts_complete_snapshot(self) -> None:
         subscription = make_subscription(
@@ -171,14 +171,14 @@ class TestUpsertSubscription:
         )
 
         async with TableSizeDelta("sb_subscriptions", delta=1):
-            await operations.upsert_subscription(execute, subscription)
+            await operations.save_subscription(execute, subscription)
 
         assert await operations.load_subscription(execute, subscription.id) == subscription
 
     @pytest.mark.asyncio
     async def test_updates_complete_mutable_snapshot(self) -> None:
         subscription = make_subscription()
-        await operations.upsert_subscription(execute, subscription)
+        await operations.save_subscription(execute, subscription)
         replacement = subscription.replace(
             state_transaction_id=BenefitTransactionId(uuid.uuid4()),
             benefit_id=BenefitId("replacement-benefit"),
@@ -190,28 +190,28 @@ class TestUpsertSubscription:
         )
 
         async with TableSizeNotChanged("sb_subscriptions"):
-            await operations.upsert_subscription(execute, replacement)
+            await operations.save_subscription(execute, replacement)
 
         assert await operations.load_subscription(execute, subscription.id) == replacement
 
     @pytest.mark.asyncio
     async def test_updates_only_provider_time(self) -> None:
         subscription = make_subscription()
-        await operations.upsert_subscription(execute, subscription)
+        await operations.save_subscription(execute, subscription)
         advanced = subscription.replace(
             state_transaction_id=BenefitTransactionId(uuid.uuid4()),
             provider_updated_at=subscription.provider_updated_at + datetime.timedelta(seconds=1),
         )
 
         async with TableSizeNotChanged("sb_subscriptions"):
-            await operations.upsert_subscription(execute, advanced)
+            await operations.save_subscription(execute, advanced)
 
         assert await operations.load_subscription(execute, subscription.id) == advanced
 
     @pytest.mark.asyncio
     async def test_does_not_update_immutable_ownership(self) -> None:
         subscription = make_subscription()
-        await operations.upsert_subscription(execute, subscription)
+        await operations.save_subscription(execute, subscription)
         incoming = subscription.replace(
             user_id=new_user_id(),
             state_transaction_id=BenefitTransactionId(uuid.uuid4()),
@@ -219,7 +219,7 @@ class TestUpsertSubscription:
         )
 
         async with TableSizeNotChanged("sb_subscriptions"):
-            await operations.upsert_subscription(execute, incoming)
+            await operations.save_subscription(execute, incoming)
 
         assert await operations.load_subscription(execute, subscription.id) == incoming.replace(
             user_id=subscription.user_id
@@ -241,8 +241,8 @@ class TestLoadSubscriptions:
             user_id=user_id,
             status=SubscriptionStatusId.ended,
         )
-        await operations.upsert_subscription(execute, active)
-        await operations.upsert_subscription(execute, ended)
+        await operations.save_subscription(execute, active)
+        await operations.save_subscription(execute, ended)
 
         assert await operations.load_subscriptions(
             execute,
@@ -275,7 +275,7 @@ class TestLoadSubscriptions:
         )
         other = make_subscription(user_id=other_user_id)
         for subscription in (earlier, same_start_later_identity, same_start_earlier_identity, other):
-            await operations.upsert_subscription(execute, subscription)
+            await operations.save_subscription(execute, subscription)
 
         loaded = await operations.load_subscriptions(execute, [selected_user_id, selected_user_id])
 
