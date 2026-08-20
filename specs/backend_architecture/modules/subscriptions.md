@@ -180,7 +180,7 @@ The public interface MUST provide these operations:
 `save_subscription` MUST accept a caller-owned transaction, the internal subscription identifier, the causal state transaction identifier, the complete semantic snapshot described by this specification, and the audit actor's kind and canonical identifier.
 It MUST return the resulting current subscription, the previous subscription for a business-state replacement, the `created`, `updated`, `refreshed`, `same`, or `stale` save outcome described by the snapshot replacement contract, and a zero-argument callback that emits the corresponding business event after commit.
 For a `refreshed`, `same`, or `stale` outcome, the returned callback MUST be a no-op.
-It MUST use the supplied transaction for the subscription state, lock, and audit record and MUST NOT emit a business event before commit.
+The resulting subscription state and required audit record MUST participate in the supplied transaction, and the operation MUST NOT emit a business event before commit.
 
 `load_provider_subscription_reference` MUST accept a caller-owned transaction and one complete provider subscription identity.
 It MUST return the mapped internal subscription identifier or no value without changing state.
@@ -202,7 +202,7 @@ After a successful commit, that caller MUST invoke the returned business-event c
 Post-commit callback invocation is best-effort: callback failure MUST NOT invalidate or roll back the committed subscription and audit state, and this module does not guarantee durable callback replay.
 
 `ffun.subscriptions.load_provider_subscription_reference`, `ffun.subscriptions.insert_provider_subscription_reference`, and `ffun.subscriptions.save_subscription` are explicitly approved to participate in the database transaction owned by `ffun.benefits.apply_subscription_transaction`.
-They MAY accept and use that workflow's execute callable for provider-reference lookup and persistence, subscription persistence, locking, and audit records.
+Their provider-reference, subscription-state, and required audit effects MAY participate in that workflow's transaction.
 This exception does not allow benefits to import subscription operations or access subscription tables directly, and it does not approve transaction sharing for unrelated workflows.
 
 ## Audit records
