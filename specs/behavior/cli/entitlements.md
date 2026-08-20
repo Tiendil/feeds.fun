@@ -6,7 +6,7 @@ This document describes the Feeds Fun CLI command family for inspecting user ent
 
 ## Scope
 
-This specification covers the public `ffun entitlements` command family and its effective-entitlement listing capability.
+This specification covers effective-entitlement inspection through the public `ffun entitlements` command family.
 
 Entitlement domain rules, source-entitlement changes, persistence, audit records, business events, and other CLI command families are out of scope.
 
