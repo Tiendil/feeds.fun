@@ -6,7 +6,7 @@ This document describes the public contract and observable behavior of the `ffun
 
 ## Scope
 
-This specification covers configured user-facing benefit packages, the immutable ledger of accepted benefit transactions, and benefits-owned workflows that atomically apply accepted benefit transactions to purchased states and entitlements.
+This specification covers the caller-visible `ffun.benefits` responsibility for provider-independent product benefits associated with purchased states.
 
 Payment-service-provider communication, product and price catalogs, checkout, invoices, purchased-state identity and lifecycle behavior, and persistence rules internal to purchased-state owners and entitlements are out of scope.
 

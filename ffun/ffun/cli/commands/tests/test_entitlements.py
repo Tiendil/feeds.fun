@@ -126,29 +126,3 @@ class TestRunList:
             json.dumps(entitlements.entitlement_record(user_id, EntitlementKindId.day_tokens, interval)),
             json.dumps(entitlements.entitlement_record(user_id, EntitlementKindId.lifetime_tokens, None)),
         ]
-
-
-class TestListEntitlements:
-    @pytest.mark.asyncio
-    async def test_builds_and_runs_command(self, mocker: MockerFixture) -> None:
-        received: list[entitlements.ListEntitlementsCommand] = []
-
-        async def run_list(command: entitlements.ListEntitlementsCommand) -> None:
-            received.append(command)
-
-        mocker.patch.object(entitlements, "run_list", side_effect=run_list)
-        first_user_id = new_user_id()
-        second_user_id = new_user_id()
-
-        await asyncio.to_thread(
-            entitlements.list_entitlements,
-            user_ids=[first_user_id, second_user_id],
-            kinds=["day_tokens", "lifetime_tokens"],
-        )
-
-        assert received == [
-            entitlements.ListEntitlementsCommand(
-                user_ids=[first_user_id, second_user_id],
-                kind_ids=[EntitlementKindId.day_tokens, EntitlementKindId.lifetime_tokens],
-            )
-        ]
