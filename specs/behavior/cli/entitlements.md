@@ -2,54 +2,23 @@
 
 ## Goal of the document
 
-This document describes the Feeds Fun CLI command family for managing and inspecting user entitlements.
+This document describes the Feeds Fun CLI command family for inspecting user entitlements.
 
 ## Scope
 
-This specification covers the public `ffun entitlements` command family and the entitlement capabilities it exposes.
+This specification covers the public `ffun entitlements` command family and its effective-entitlement listing capability.
 
-Entitlement domain rules, persistence, audit records, business events, and other CLI command families are out of scope. Output formats for `grant` and `revoke` are not yet specified.
+Entitlement domain rules, source-entitlement changes, persistence, audit records, business events, and other CLI command families are out of scope.
 
 ## Command group
 
 The root CLI MUST expose `entitlements` as a command group.
 
-The command group MUST provide CLI access to source entitlement changes and batch effective-entitlement listings.
+The command group MUST provide batch effective-entitlement listings.
 
 ## Commands
 
-The `grant` command MUST capture one current timestamp and use it consistently to resolve omitted timestamp parameters.
-
 Kind parameters MUST accept an `EntitlementKindId` enum member name and resolve it to the corresponding enum member before invoking the entitlement domain. Valid names MUST be derived from the enum rather than duplicated in the CLI specification or implementation.
-
-### `ffun entitlements grant`
-
-Creates one durable entitlement grant for a source transaction, user, and entitlement kind.
-
-Parameters:
-
-- `--user-id UUID` — required id of the affected user.
-- `--kind NAME` — required registered entitlement kind name.
-- `--source ID` — semantic id of the source that owns the state; defaults to `system`.
-- `--transaction-id ID` — required stable source-supplied id of the grant.
-- `--value INTEGER` — required entitlement value.
-- `--starts-at TIMESTAMP` — inclusive activation time in ISO 8601 format with an explicit UTC offset; defaults to the captured current timestamp.
-- `--expires-at TIMESTAMP` — exclusive expiration time in ISO 8601 format with an explicit UTC offset; defaults to the shared lifetime interval end marker for a lifetime kind and to the captured current timestamp plus 31 days for every other kind.
-- `--actor-kind {user|admin|psp|system}` — kind of the actor initiating the change; defaults to `admin`.
-- `--actor-id ID` — stable id of the actor initiating the change; defaults to `admin`.
-
-### `ffun entitlements revoke`
-
-Revokes one existing source entitlement grant.
-
-Parameters:
-
-- `--user-id UUID` — required id of the affected user.
-- `--kind NAME` — required registered entitlement kind name.
-- `--source ID` — semantic id of the source that owns the state; defaults to `system`.
-- `--transaction-id ID` — required stable source-supplied id of the grant to revoke.
-- `--actor-kind {user|admin|psp|system}` — kind of the actor initiating the change; defaults to `admin`.
-- `--actor-id ID` — stable id of the actor initiating the change; defaults to `admin`.
 
 ### `ffun entitlements list`
 

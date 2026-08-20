@@ -24,7 +24,7 @@ The root command MUST expose the following command groups:
 
 - `cleaner` — Cleans orphaned data and expired effective entitlements, and runs tag and feed normalization operations.
 - `debug` — Loads and inspects feeds through the available parsing paths.
-- [`entitlements`](cli/entitlements.md) — Manages source entitlements and lists effective entitlements.
+- [`entitlements`](cli/entitlements.md) — Lists effective entitlements.
 - `estimates` — Estimates entry publication rates for feeds and collections.
 - `experiments` — Runs ad hoc backend data experiments.
 - `feeds` — Performs administrative operations on feeds and their user links.
