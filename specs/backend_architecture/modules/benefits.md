@@ -143,7 +143,7 @@ For a transaction with a provider subscription identity, the workflow MUST resol
 When the command explicitly requests a new subscription, the workflow MUST generate a new internal subscription identifier and MUST reuse it when the same source transaction is retried.
 One provider subscription identity MUST NOT resolve to multiple internal subscriptions.
 The source identity constraint MUST prevent concurrent retries from applying one operation more than once.
-The initial implementation MAY reject one of two different operations concurrently creating the same provider subscription reference; it need not serialize this unlikely race until provider-identity locking is required in practice.
+The workflow MAY reject one of two distinct operations that concurrently attempt to create the same previously unknown provider subscription reference.
 
 For each newly accepted benefit transaction, the workflow MUST resolve the configured package, derive and persist the entitlement action, and apply the supplied subscription snapshot through the subscriptions domain boundary.
 A stale snapshot MUST fail and roll back because an obsolete snapshot cannot authorize replacement of the subscription's entitlement state.

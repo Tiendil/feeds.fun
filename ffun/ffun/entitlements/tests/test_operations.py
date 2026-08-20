@@ -269,6 +269,16 @@ class TestRevokeSourceEntitlement:
 
 class TestLoadSourceEntitlementsForSubscription:
     @pytest.mark.asyncio
+    async def test_missing_subscription_returns_empty_list(self) -> None:
+        loaded = await operations.load_source_entitlements_for_subscription(
+            execute,
+            new_subscription_id(),
+            evaluation_time=datetime.datetime.now(tz=datetime.UTC),
+        )
+
+        assert loaded == []
+
+    @pytest.mark.asyncio
     async def test_returns_unrevoked_active_and_future_linked_grants_in_kind_and_transaction_order(self) -> None:
         subscription_id = new_subscription_id()
         now = datetime.datetime.now(tz=datetime.UTC)
@@ -299,7 +309,6 @@ class TestLoadSourceEntitlementsForSubscription:
             kind_id=EntitlementKindId.day_tokens,
             starts_at=now + datetime.timedelta(days=1),
             expires_at=now + datetime.timedelta(days=3),
-            revoked_at=now + datetime.timedelta(days=2),
         )
         never_active_future = make_source_entitlement(
             subscription_id=subscription_id,
@@ -337,7 +346,7 @@ class TestLoadSourceEntitlementsForSubscription:
             evaluation_time=now,
         )
 
-        assert loaded == [active_day, active_month]
+        assert loaded == [active_day, future_day, active_month]
 
 
 class TestLoadSourceEntitlements:

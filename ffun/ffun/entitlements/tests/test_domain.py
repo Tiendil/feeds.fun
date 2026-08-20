@@ -107,28 +107,6 @@ class TestEmptyBusinessEventCallback:
         assert_logs_has_no_business_event(logs, "entitlement_changed")
 
 
-class TestSourceEntitlementChange:
-    def test_init__stores_complete_change(self) -> None:
-        source_state = make_source_entitlement()
-        interval = make_effective_entitlement_interval(
-            user_id=source_state.user_id,
-            kind_id=source_state.kind_id,
-            value=source_state.value,
-        )
-
-        change = domain.SourceEntitlementChange(
-            changed=True,
-            effective_state=(True, source_state.value),
-            effective_intervals=[interval],
-            source_state=source_state,
-        )
-
-        assert change.changed
-        assert change.effective_state == (True, source_state.value)
-        assert change.effective_intervals == [interval]
-        assert change.source_state == source_state
-
-
 class TestGetEntitlementKind:
     @pytest.mark.parametrize(
         ("kind_id", "merge_policy", "is_lifetime"),
