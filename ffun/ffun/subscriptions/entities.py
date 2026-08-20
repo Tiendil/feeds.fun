@@ -74,7 +74,7 @@ class SubscriptionSnapshot(BaseEntity):
     provider_updated_at: datetime.datetime
 
     @pydantic.model_validator(mode="after")
-    def validate_timestamps(self) -> "SubscriptionSnapshot":
+    def validate_timestamp_timezones(self) -> "SubscriptionSnapshot":
         for field_name, timestamp in (
             ("started_at", self.started_at),
             ("period_starts_at", self.period_starts_at),
@@ -86,6 +86,10 @@ class SubscriptionSnapshot(BaseEntity):
             if timestamp is not None and not utils.has_timezone(timestamp):
                 raise ValueError(f"Subscription timestamp {field_name} must have a UTC offset")
 
+        return self
+
+    @pydantic.model_validator(mode="after")
+    def validate_subscription_period(self) -> "SubscriptionSnapshot":
         if self.period_starts_at >= self.period_ends_at:
             raise ValueError("Subscription period start must be earlier than period end")
 
