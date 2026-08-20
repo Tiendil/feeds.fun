@@ -6,10 +6,9 @@ This document describes the public contract and observable behavior of the `ffun
 
 ## Scope
 
-This specification covers configured user-facing benefit packages, the immutable ledger of accepted benefit transactions, and the workflow that applies one complete subscription state to subscription and entitlement persistence.
+This specification covers configured user-facing benefit packages, the immutable ledger of accepted benefit transactions, and benefits-owned workflows that atomically apply accepted benefit transactions to purchased states and entitlements.
 
-Payment-service-provider communication, product and price catalogs, checkout, invoices, and the persistence rules internal to subscriptions and entitlements are out of scope.
-Applying benefits to one-time purchases is also out of scope until a purchase-owning workflow exists, but benefit packages and benefit transactions MUST remain reusable by that future workflow.
+Payment-service-provider communication, product and price catalogs, checkout, invoices, purchased-state identity and lifecycle behavior, and persistence rules internal to purchased-state owners and entitlements are out of scope.
 
 ## Dictionary
 
