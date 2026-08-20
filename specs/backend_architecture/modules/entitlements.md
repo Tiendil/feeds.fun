@@ -20,7 +20,6 @@ Purchased-subscription lifecycles, payment-service-provider protocols, product p
 - `active source entitlement` - a source entitlement whose activation time has arrived and whose expiration and optional revocation times have not arrived at the evaluation time.
 - `effective entitlement interval` - a time interval during which merged source state grants one entitlement kind to one user with one value.
 - `merge policy` - the operation used to combine values from active source entitlements of the same kind.
-- `entitlement guarantee` - one entitlement kind and integer value promised by a benefit or another granting product concept.
 
 ## Module responsibility
 

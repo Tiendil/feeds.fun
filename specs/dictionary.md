@@ -20,6 +20,7 @@ Terms defined in this section are stable project vocabulary. Project artifacts M
 - `rule` - user-defined score expression based on tags.
 - `collection` - curated feed collection configuration.
 - `integration` - external source-specific behavior, such as YouTube or Reddit support.
+- `entitlement guarantee` - one entitlement kind and integer value promised by a benefit package or another entitlement-granting product concept.
 - `audit record` - append-only durable record of a business change or event, including its actor and subject entities.
 - `backend` - Python application in `ffun/ffun`.
 - `frontend` - Vue application in `site/src`.
