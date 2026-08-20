@@ -20,8 +20,7 @@ The command group MUST provide a command that lists one user's subscriptions.
 
 Every command MUST identify the affected Feeds Fun user with the required `--user-id UUID` option.
 
-Subscription status parameters MUST accept a `SubscriptionStatusId` enum member name and resolve it to the corresponding enum member before invoking the subscription domain.
-Valid names MUST be derived from the enum rather than duplicated in the CLI specification or implementation.
+Subscription status parameters MUST accept the normalized subscription-status names defined by the subscriptions module.
 
 ## Commands
 
