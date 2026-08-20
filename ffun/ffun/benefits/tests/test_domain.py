@@ -33,8 +33,8 @@ from ffun.core.tests.helpers import (
 from ffun.domain.datetime_intervals import LIFETIME_INTERVAL_END_MARKER
 from ffun.domain.entities import BenefitId, BenefitTransactionId, SerializedId
 from ffun.entitlements import domain as entitlement_domain
-from ffun.entitlements import operations as entitlement_operations
 from ffun.entitlements.entities import EntitlementGuarantee, EntitlementKindId
+from ffun.entitlements.tests import helpers as entitlement_helpers
 from ffun.subscriptions import domain as subscription_domain
 from ffun.subscriptions.entities import (
     SaveSubscriptionOutcome,
@@ -481,14 +481,14 @@ class TestApplySubscriptionTransaction:
             state_transaction_id=result.transaction_id,
         )
 
-        day_source = await entitlement_operations.load_source_entitlement(
+        day_source = await entitlement_helpers.load_source_entitlement(
             execute,
             snapshot.user_id,
             EntitlementKindId.day_tokens,
             domain.BENEFITS_ENTITLEMENT_SOURCE_ID,
             result.transaction_id,
         )
-        lifetime_source = await entitlement_operations.load_source_entitlement(
+        lifetime_source = await entitlement_helpers.load_source_entitlement(
             execute,
             snapshot.user_id,
             EntitlementKindId.lifetime_tokens,
@@ -573,7 +573,7 @@ class TestApplySubscriptionTransaction:
         )
 
         for guarantee in original_package.entitlements:
-            source = await entitlement_operations.load_source_entitlement(
+            source = await entitlement_helpers.load_source_entitlement(
                 execute,
                 original_snapshot.user_id,
                 guarantee.kind_id,
@@ -586,7 +586,7 @@ class TestApplySubscriptionTransaction:
             assert source.revoked_by_transaction_id == revocation.transaction_id
 
         assert (
-            await entitlement_operations.load_source_entitlement(
+            await entitlement_helpers.load_source_entitlement(
                 execute,
                 original_snapshot.user_id,
                 EntitlementKindId.lifetime_tokens,
@@ -806,7 +806,7 @@ class TestApplySubscriptionTransaction:
             subscription_id=current_grant.subscription_id,
             state_transaction_id=current_grant.transaction_id,
         )
-        current_source = await entitlement_operations.load_source_entitlement(
+        current_source = await entitlement_helpers.load_source_entitlement(
             execute,
             current_snapshot.user_id,
             EntitlementKindId.day_tokens,
@@ -854,14 +854,14 @@ class TestApplySubscriptionTransaction:
             replacement = await _apply(replacement_snapshot, replacement_command)
         application_finished_at = datetime.datetime.now(tz=datetime.UTC)
 
-        previous_source = await entitlement_operations.load_source_entitlement(
+        previous_source = await entitlement_helpers.load_source_entitlement(
             execute,
             snapshot.user_id,
             EntitlementKindId.day_tokens,
             domain.BENEFITS_ENTITLEMENT_SOURCE_ID,
             first.transaction_id,
         )
-        replacement_source = await entitlement_operations.load_source_entitlement(
+        replacement_source = await entitlement_helpers.load_source_entitlement(
             execute,
             snapshot.user_id,
             EntitlementKindId.day_tokens,
@@ -921,7 +921,7 @@ class TestApplySubscriptionTransaction:
             subscription_id=grant.subscription_id,
             state_transaction_id=grant.transaction_id,
         )
-        source = await entitlement_operations.load_source_entitlement(
+        source = await entitlement_helpers.load_source_entitlement(
             execute,
             snapshot.user_id,
             EntitlementKindId.day_tokens,

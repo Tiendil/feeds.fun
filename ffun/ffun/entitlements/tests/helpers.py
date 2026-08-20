@@ -1,10 +1,26 @@
 import datetime
 from typing import cast
 
-from ffun.core.postgresql import execute
-from ffun.domain.entities import UserId
+from ffun.core.postgresql import ExecuteType, execute
+from ffun.domain.entities import BenefitTransactionId, UserId
 from ffun.entitlements import operations
-from ffun.entitlements.entities import EntitlementKindId, SourceEntitlement
+from ffun.entitlements.entities import EntitlementKindId, EntitlementSourceId, SourceEntitlement
+
+
+async def load_source_entitlement(
+    execute: ExecuteType,
+    user_id: UserId,
+    kind_id: EntitlementKindId,
+    source_id: EntitlementSourceId,
+    grant_transaction_id: BenefitTransactionId,
+) -> SourceEntitlement | None:
+    return await operations.load_source_entitlement(
+        execute,
+        user_id,
+        kind_id,
+        source_id,
+        grant_transaction_id,
+    )
 
 
 async def load_source_entitlement_timestamps(

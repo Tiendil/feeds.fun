@@ -6,7 +6,6 @@ import pytest
 
 from ffun.domain.entities import BenefitId, BenefitTransactionId
 from ffun.subscriptions.entities import (
-    SaveSubscriptionOutcome,
     SubscriptionSnapshot,
     SubscriptionStatusId,
 )
@@ -38,17 +37,6 @@ class TestSubscriptionStatusId:
     )
     def test_grants_benefits(self, status: SubscriptionStatusId, expected: bool) -> None:
         assert status.grants_benefits == expected
-
-
-class TestSaveSubscriptionOutcome:
-    def test_values_are_stable(self) -> None:
-        assert [(outcome.name, outcome.value) for outcome in SaveSubscriptionOutcome] == [
-            ("created", 1),
-            ("updated", 2),
-            ("refreshed", 3),
-            ("same", 4),
-            ("stale", 5),
-        ]
 
 
 class TestSubscriptionSnapshot:

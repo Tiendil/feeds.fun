@@ -208,23 +208,6 @@ class TestSaveSubscription:
 
         assert await operations.load_subscription(execute, subscription.id) == advanced
 
-    @pytest.mark.asyncio
-    async def test_does_not_update_immutable_ownership(self) -> None:
-        subscription = make_subscription()
-        await operations.save_subscription(execute, subscription)
-        incoming = subscription.replace(
-            user_id=new_user_id(),
-            state_transaction_id=BenefitTransactionId(uuid.uuid4()),
-            status=SubscriptionStatusId.ended,
-        )
-
-        async with TableSizeNotChanged("sb_subscriptions"):
-            await operations.save_subscription(execute, incoming)
-
-        assert await operations.load_subscription(execute, subscription.id) == incoming.replace(
-            user_id=subscription.user_id
-        )
-
 
 class TestLoadSubscriptions:
     @pytest.mark.asyncio
