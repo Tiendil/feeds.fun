@@ -90,7 +90,7 @@ Configured titles, descriptions, and entitlement guarantees MUST remain locally 
 ### Benefit transactions
 
 Each benefit transaction accepted by the module MUST have an internally generated UUID, one transaction source identity, one derived entitlement action, one user, one benefit identifier, one internal subscription identifier, one effective time, and the subscription period start and end copied from its supplied subscription snapshot.
-The source identifier MUST be a stable `SMALLINT` identifying the source subsystem.
+The source identifier MUST be a stable integer identifying the source subsystem.
 The source transaction identifier MUST be a UUID identifying a durable source-owned operation, not an identifier generated independently for each retry or webhook delivery attempt.
 For example, a Stripe adapter may supply the UUID of its persisted webhook record while retaining the original Stripe event identifier and payload in that record.
 Local subscription identity MUST be represented directly by the internal subscription identifier and MUST NOT be encoded as a generic target kind and target identifier pair.
@@ -107,7 +107,7 @@ The exact `source_id` and `source_transaction_id` tuple MUST be unique.
 Trusted callers MUST guarantee that a source identity permanently identifies exactly one logical operation and MUST NOT reuse it for different transaction data.
 The first accepted transaction for a source identity MUST remain authoritative.
 Repeating a source identity MUST return the previously generated internal transaction identifier and MUST be a no-op regardless of the transaction data supplied by the repeated request.
-If overlapping first attempts both pass the initial source lookup, the unique-key loser MUST fail with a benefit transaction concurrency error rather than loading the winner inside the same attempt.
+An overlapping attempt that loses the race to accept the same previously unseen source identity MUST fail with a benefit transaction concurrency error.
 Retrying after the winner commits MUST return the stored transaction normally.
 
 Benefit transactions MUST be append-only and MUST NOT be updated or deleted by normal workflows.
