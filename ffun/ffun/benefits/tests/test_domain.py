@@ -223,7 +223,11 @@ class TestAcceptSubscriptionTransaction:
         benefit_transaction = make_benefit_transaction()
         snapshot = make_subscription_snapshot(user_id=benefit_transaction.user_id)
 
-        async with transaction() as transaction_execute:
+        async with (
+            TableSizeDelta("b_transactions", delta=1),
+            TableSizeDelta("sb_subscriptions", delta=1),
+            transaction() as transaction_execute,
+        ):
             result, callback = await domain._accept_subscription_transaction(
                 transaction_execute,
                 benefit_transaction,
