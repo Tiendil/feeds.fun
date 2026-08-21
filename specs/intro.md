@@ -35,9 +35,10 @@ Detailed requirements for individual specifications are out of scope except for 
 - `specs/backend_architecture/errors.md` describes backend error and warning architecture.
 - `specs/backend_architecture/tests.md` describes backend pytest test placement.
 - `specs/backend_architecture/modules/audit.md` describes append-only audit persistence and its transactional domain interface.
-- `specs/backend_architecture/modules/benefits.md` describes configured user-facing benefit packages, the all-source transaction and provider-provenance ledger, and atomic application to subscriptions and entitlements.
+- `specs/backend_architecture/modules/benefits.md` describes configured user-facing benefit packages, the all-source transaction and provider-provenance ledger, and atomic application to purchased states and entitlements.
 - `specs/backend_architecture/modules/entitlements.md` describes entitlement source ownership, merging, persistence, audit history, and business events.
 - `specs/backend_architecture/modules/locks.md` describes collision-free, transaction-scoped logical mutexes backed by PostgreSQL.
+- `specs/backend_architecture/modules/one_time_purchases.md` describes internal one-time-purchase projections and lifecycle snapshots linked to causal benefit transactions.
 - `specs/backend_architecture/modules/resources.md` describes interval-scoped per-user resource accounting, reservations, and finalized usage.
 - `specs/backend_architecture/modules/subscriptions.md` describes internal purchased-subscription projections and lifecycle snapshots linked to causal benefit transactions.
 - `specs/behavior/cli.md` describes behavior shared by the backend CLI command families.

@@ -60,6 +60,7 @@ For example, `ffun.user_settings` owns the generic user settings machinery, whil
 - `ffun.meta` owns business logic that coordinates multiple domain modules.
 - `ffun.ontology` owns stored tag ontology behavior.
 - `ffun.openai` owns OpenAI service integration.
+- `ffun.one_time_purchases` owns durable provider-independent one-time-purchase identities, provider-purchase references, and lifecycle snapshots linked to causal benefit transactions.
 - `ffun.parsers` owns feed, entry, site, and OPML parsing logic.
 - `ffun.product` owns shared product-level definitions, configuration, and registration glue that have no more specific domain owner and are independently required by multiple production top-level modules.
 - `ffun.processors_quality` owns quality validation for tagging processors.
