@@ -4,6 +4,16 @@ This document provides instructions and guidelines for the AI agents working on 
 
 Every agent MUST follow the rules and guidelines outlined in this document when performing their work.
 
+## Simplicity-first design
+
+- Start with the smallest design that satisfies the current explicit requirements and preserves existing behavior. Do not design for hypothetical future requirements.
+- Every proposed abstraction, entity, table, column, persisted value, variant, or workflow must serve a current requirement and have a current consumer. If removing it does not break required behavior or an existing invariant, omit it.
+- Prefer one source of truth. Derive information when it is unambiguous, and do not duplicate facts for convenience, symmetry, debugging, auditability, or possible future use unless explicitly required.
+- Before presenting or implementing a design, perform a subtraction pass: try removing each newly introduced concept and keep it only when its absence causes a concrete problem.
+- Consider corner cases only when they follow from current requirements, existing behavior, or observed data and materially affect the design. Defer speculative cases instead of building for them.
+- When several approaches satisfy the requirements, recommend the one with fewer concepts, states, branches, storage paths, and migrations. Present additional flexibility only as an optional extension.
+- Simplicity does not mean merging unrelated interfaces at any cost. Do not combine APIs when doing so introduces mutually exclusive optional arguments, invalid states, or pervasive runtime branching.
+
 ## Environment
 
 All development-related operations MUST be performed in Docker containers, see `./docker-compose.yml` for details.
