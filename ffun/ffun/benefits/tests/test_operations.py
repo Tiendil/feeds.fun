@@ -27,6 +27,7 @@ class TestRowToBenefitTransaction:
         transaction = make_benefit_transaction()
         row = cast(dict[str, object], transaction.model_dump())
         row["created_at"] = datetime.datetime.now(tz=datetime.UTC)
+        row["one_time_purchase_id"] = None
 
         assert operations.row_to_benefit_transaction(row) == transaction
 
@@ -57,6 +58,24 @@ class TestSaveBenefitTransaction:
 
         assert created
         assert await operations.load_benefit_transaction(execute, transaction.id) == transaction
+        query_parameters: dict[str, object] = {"transaction_id": transaction.id}
+        rows = cast(
+            list[dict[str, object]],
+            await execute(
+                """
+                SELECT subscription_id, one_time_purchase_id
+                FROM b_transactions
+                WHERE id = %(transaction_id)s
+                """,
+                query_parameters,
+            ),
+        )
+        assert rows == [
+            {
+                "subscription_id": transaction.subscription_id,
+                "one_time_purchase_id": None,
+            }
+        ]
 
     @pytest.mark.asyncio
     async def test_duplicate_source_identity_is_no_op(self) -> None:

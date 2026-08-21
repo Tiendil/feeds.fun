@@ -11,7 +11,7 @@ __depends__: set[str] = set()
 
 
 sql_create_benefit_transactions = """
--- Immutable ledger of accepted subscription operations and their derived entitlement actions.
+-- Immutable ledger of accepted purchased-state operations and their derived entitlement actions.
 CREATE TABLE b_transactions (
     id UUID NOT NULL PRIMARY KEY,
     source_id SMALLINT NOT NULL,
@@ -19,13 +19,16 @@ CREATE TABLE b_transactions (
     entitlement_action SMALLINT NOT NULL,
     user_id UUID NOT NULL,
     benefit_id TEXT NOT NULL,
-    subscription_id UUID NOT NULL,
+    subscription_id UUID,
+    one_time_purchase_id UUID,
     effective_at TIMESTAMP WITH TIME ZONE NOT NULL,
     period_starts_at TIMESTAMP WITH TIME ZONE NOT NULL,
     period_ends_at TIMESTAMP WITH TIME ZONE NOT NULL,
     created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP,
     CONSTRAINT b_transactions_source_identity_unique
-        UNIQUE (source_id, source_transaction_id)
+        UNIQUE (source_id, source_transaction_id),
+    CONSTRAINT b_transactions_exactly_one_target_check
+        CHECK (num_nonnulls(subscription_id, one_time_purchase_id) = 1)
 )
 """
 
