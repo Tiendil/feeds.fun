@@ -56,6 +56,48 @@ class TestBenefitParameterDefinition:
                 maximum=10,
             )
 
+    def test_validate_value__accepts_boundary_values(self) -> None:
+        definition = BenefitParameterDefinition(
+            id=BenefitParameterId("quantity"),
+            minimum=10,
+            maximum=20,
+        )
+
+        definition.validate_value(10)
+        definition.validate_value(20)
+
+    @pytest.mark.parametrize("value", [None, True, 1.5, "10"])
+    def test_validate_value__rejects_non_strict_integers(self, value: object) -> None:
+        definition = BenefitParameterDefinition(
+            id=BenefitParameterId("quantity"),
+            minimum=1,
+            maximum=100,
+        )
+
+        with pytest.raises(errors.InvalidBenefitParameter) as exception_info:
+            definition.validate_value(value)
+
+        attributes = cast(dict[str, object], vars(exception_info.value))
+        assert attributes["parameter_id"] == definition.id
+        assert attributes["value_type"] == type(value).__name__
+
+    @pytest.mark.parametrize("value", [9, 21])
+    def test_validate_value__rejects_value_outside_configured_bounds(self, value: int) -> None:
+        definition = BenefitParameterDefinition(
+            id=BenefitParameterId("quantity"),
+            minimum=10,
+            maximum=20,
+        )
+
+        with pytest.raises(errors.InvalidBenefitParameter) as exception_info:
+            definition.validate_value(value)
+
+        attributes = cast(dict[str, object], vars(exception_info.value))
+        assert attributes["parameter_id"] == definition.id
+        assert attributes["value"] == value
+        assert attributes["minimum"] == definition.minimum
+        assert attributes["maximum"] == definition.maximum
+
 
 class TestParameterConstant:
     def test_materialize__returns_constant(self) -> None:
@@ -224,6 +266,82 @@ class TestBenefitPackageTemplate:
                 parameters=(parameter,),
                 entitlements={EntitlementKindId.day_tokens: ParameterReference(parameter_id=parameter.id)},
             )
+
+    def test_materialize__resolves_parameters_and_constants(self) -> None:
+        parameter = BenefitParameterDefinition(
+            id=BenefitParameterId("quantity"),
+            minimum=1,
+            maximum=100,
+        )
+        template = make_benefit_package_template(
+            parameters=(parameter,),
+            entitlements={
+                EntitlementKindId.month_tokens: ParameterConstant(value=42),
+                EntitlementKindId.lifetime_tokens: ParameterReference(parameter_id=parameter.id),
+            },
+        )
+
+        package = template.materialize({parameter.id: 25})
+
+        assert package.id == template.id
+        assert package.parameters == {parameter.id: 25}
+        assert package.entitlements == {
+            EntitlementKindId.month_tokens: 42,
+            EntitlementKindId.lifetime_tokens: 25,
+        }
+
+    def test_materialize__parameterless_template_requires_empty_parameters(self) -> None:
+        template = make_benefit_package_template()
+
+        assert template.materialize({}) == make_benefit_package()
+
+    def test_materialize__rejects_missing_parameter(self) -> None:
+        parameter = BenefitParameterDefinition(
+            id=BenefitParameterId("quantity"),
+            minimum=1,
+            maximum=100,
+        )
+        template = make_benefit_package_template(
+            parameters=(parameter,),
+            entitlements={EntitlementKindId.lifetime_tokens: ParameterReference(parameter_id=parameter.id)},
+        )
+
+        with pytest.raises(errors.MissingBenefitParameter) as exception_info:
+            template.materialize({})
+
+        attributes = cast(dict[str, object], vars(exception_info.value))
+        assert attributes["parameter_id"] == parameter.id
+
+    def test_materialize__rejects_unknown_parameter(self) -> None:
+        template = make_benefit_package_template()
+        parameter_id = BenefitParameterId("unknown")
+
+        with pytest.raises(errors.UnknownBenefitParameter) as exception_info:
+            template.materialize({parameter_id: 10})
+
+        attributes = cast(dict[str, object], vars(exception_info.value))
+        assert attributes["parameter_id"] == parameter_id
+
+    def test_materialize__validates_resolved_entitlement_against_current_kind(
+        self,
+        mocker: MockerFixture,
+    ) -> None:
+        template = make_benefit_package_template()
+        day_tokens = entitlement_entities.ENTITLEMENT_KINDS[0].replace(minimum_value=11)
+        mocker.patch.object(
+            entitlement_entities,
+            "ENTITLEMENT_KINDS",
+            (day_tokens, *entitlement_entities.ENTITLEMENT_KINDS[1:]),
+        )
+
+        with pytest.raises(errors.InvalidBenefitEntitlement) as exception_info:
+            template.materialize({})
+
+        attributes = cast(dict[str, object], vars(exception_info.value))
+        assert attributes["benefit_id"] == template.id
+        assert attributes["entitlement_kind_id"] == EntitlementKindId.day_tokens
+        assert attributes["value"] == 10
+        assert isinstance(exception_info.value.__cause__, ValueError)
 
 
 class TestInternalSubscriptionTarget:

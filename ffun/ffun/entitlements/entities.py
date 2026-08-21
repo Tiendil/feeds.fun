@@ -51,6 +51,10 @@ class EntitlementKind(BaseEntity):
 
         return self
 
+    def validate_value(self, value: EntitlementValue) -> None:
+        if not self.minimum_value <= value <= self.maximum_value:
+            raise ValueError("Entitlement value must be within entitlement kind bounds")
+
 
 class EntitlementGuarantee(BaseEntity):
     kind_id: EntitlementKindId
@@ -107,8 +111,7 @@ class SourceEntitlement(BaseEntity):
         if self.kind_id != kind.id:
             raise ValueError("Source entitlement kind must match entitlement kind")
 
-        if not kind.minimum_value <= self.value <= kind.maximum_value:
-            raise ValueError("Source entitlement value must be within entitlement kind bounds")
+        kind.validate_value(self.value)
 
         if not self.granted:
             raise ValueError("A source entitlement grant must not be revoked")

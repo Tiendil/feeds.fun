@@ -73,6 +73,19 @@ class TestEntitlementKind:
                 maximum_value=10,
             )
 
+    def test_validate_value__accepts_boundary_values(self) -> None:
+        kind = ENTITLEMENT_KINDS[0].replace(minimum_value=10, maximum_value=20)
+
+        kind.validate_value(10)
+        kind.validate_value(20)
+
+    @pytest.mark.parametrize("value", [9, 21])
+    def test_validate_value__rejects_value_outside_bounds(self, value: int) -> None:
+        kind = ENTITLEMENT_KINDS[0].replace(minimum_value=10, maximum_value=20)
+
+        with pytest.raises(ValueError, match="within entitlement kind bounds"):
+            kind.validate_value(value)
+
 
 class TestEntitlementGuarantee:
     @pytest.mark.parametrize("value", [None, True, 1.5, "1"])

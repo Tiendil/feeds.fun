@@ -1,7 +1,8 @@
 import datetime
 import enum
 import uuid
-from typing import Annotated, Literal, NewType, TypeAlias
+from collections.abc import Mapping
+from typing import Annotated, Literal, NewType, TypeAlias, cast
 
 import pydantic
 
@@ -45,6 +46,21 @@ class BenefitParameterDefinition(BaseEntity):
             raise ValueError("Benefit parameter minimum must not exceed maximum")
 
         return self
+
+    def validate_value(self, value: object) -> None:
+        if type(value) is not int:
+            raise errors.InvalidBenefitParameter(
+                parameter_id=self.id,
+                value_type=type(value).__name__,
+            )
+
+        if not self.minimum <= value <= self.maximum:
+            raise errors.InvalidBenefitParameter(
+                parameter_id=self.id,
+                value=value,
+                minimum=self.minimum,
+                maximum=self.maximum,
+            )
 
 
 class ParameterConstant(BaseEntity):
@@ -124,11 +140,13 @@ class BenefitPackageTemplate(BaseEntity):
 
             kind = entitlement_kinds[kind_id]
 
-            if not kind.minimum_value <= value_template.value <= kind.maximum_value:
+            try:
+                kind.validate_value(value_template.value)
+            except ValueError as error:
                 raise ValueError(
                     f"Benefit package template {self.id} constant for {kind_id.name} "
                     "must be within entitlement kind bounds"
-                )
+                ) from error
 
         return self
 
@@ -144,13 +162,62 @@ class BenefitPackageTemplate(BaseEntity):
             definition = parameters[value_template.parameter_id]
             kind = entitlement_kinds[kind_id]
 
-            if definition.minimum < kind.minimum_value or definition.maximum > kind.maximum_value:
+            try:
+                kind.validate_value(definition.minimum)
+                kind.validate_value(definition.maximum)
+            except ValueError as error:
                 raise ValueError(
                     f"Benefit package template {self.id} parameter {definition.id} range for {kind_id.name} "
                     "must be within entitlement kind bounds"
-                )
+                ) from error
 
         return self
+
+    def materialize(self, parameters: Mapping[BenefitParameterId, object]) -> BenefitPackage:
+        definitions = {definition.id: definition for definition in self.parameters}
+        supplied_parameter_ids = set(parameters)
+        missing_parameter_ids = set(definitions) - supplied_parameter_ids
+
+        if missing_parameter_ids:
+            raise errors.MissingBenefitParameter(parameter_id=min(missing_parameter_ids))
+
+        unknown_parameter_ids = supplied_parameter_ids - set(definitions)
+
+        if unknown_parameter_ids:
+            raise errors.UnknownBenefitParameter(parameter_id=min(unknown_parameter_ids))
+
+        normalized_parameters: BenefitParameters = {}
+
+        for definition in self.parameters:
+            value = parameters[definition.id]
+            definition.validate_value(value)
+            normalized_parameters[definition.id] = cast(EntitlementValue, value)
+
+        materialized_entitlements = {
+            kind_id: value_template.materialize(normalized_parameters)
+            for kind_id, value_template in self.entitlements.items()
+        }
+        entitlement_kinds = {kind.id: kind for kind in entitlement_entities.ENTITLEMENT_KINDS}
+
+        for kind_id, value in materialized_entitlements.items():
+            kind = entitlement_kinds[kind_id]
+
+            try:
+                kind.validate_value(value)
+            except ValueError as error:
+                raise errors.InvalidBenefitEntitlement(
+                    benefit_id=self.id,
+                    entitlement_kind_id=int(kind_id),
+                    value=value,
+                    minimum=kind.minimum_value,
+                    maximum=kind.maximum_value,
+                ) from error
+
+        return BenefitPackage(
+            id=self.id,
+            parameters=normalized_parameters,
+            entitlements=materialized_entitlements,
+        )
 
 
 class InternalSubscriptionTarget(BaseEntity):

@@ -13,6 +13,18 @@ class MissingBenefitParameter(Error):
     pass
 
 
+class UnknownBenefitParameter(Error):
+    pass
+
+
+class InvalidBenefitParameter(Error):
+    pass
+
+
+class InvalidBenefitEntitlement(Error):
+    pass
+
+
 class ConcurrentBenefitTransaction(Error):
     pass
 

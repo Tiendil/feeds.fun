@@ -1,5 +1,5 @@
 import datetime
-from collections.abc import Callable
+from collections.abc import Callable, Mapping
 from functools import singledispatch
 
 from ffun.audit.entities import AuditEntityKind
@@ -8,6 +8,7 @@ from ffun.benefits.entities import (
     BenefitEntitlementAction,
     BenefitPackage,
     BenefitPackageTemplate,
+    BenefitParameterId,
     BenefitTransaction,
     BenefitTransactionApplicationResult,
     BenefitTransactionCommand,
@@ -52,6 +53,13 @@ def get_benefit(benefit_id: BenefitId) -> BenefitPackageTemplate:
         return template
 
     raise errors.UnknownBenefit(benefit_id=benefit_id)
+
+
+def materialize_benefit_package(
+    benefit_id: BenefitId,
+    parameters: Mapping[BenefitParameterId, object],
+) -> BenefitPackage:
+    return get_benefit(benefit_id).materialize(parameters)
 
 
 @singledispatch  # type: ignore[misc]
@@ -193,16 +201,7 @@ async def _apply_transaction(  # noqa: CFQ002
     actor_kind: AuditEntityKind,
     actor_id: SerializedId,
 ) -> tuple[BenefitTransaction, list[Callable[[], None]]]:
-    template = get_benefit(subscription.benefit_id)
-    # TODO: This constant-only bridge preserves existing subscriptions until runtime package materialization is
-    # implemented. Remove it when apply_subscription_transaction accepts benefit parameters and calls
-    # materialize_benefit_package.
-    package = BenefitPackage(
-        id=template.id,
-        entitlements={
-            kind_id: value_template.materialize({}) for kind_id, value_template in template.entitlements.items()
-        },
-    )
+    package = materialize_benefit_package(subscription.benefit_id, {})
     subscription_id = await _resolve_regular_subscription_target(
         execute,
         command.subscription_target,

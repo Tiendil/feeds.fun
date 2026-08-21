@@ -10,11 +10,14 @@ from ffun.benefits import domain, errors, operations
 from ffun.benefits.entities import (
     BenefitEntitlementAction,
     BenefitPackageTemplate,
+    BenefitParameterDefinition,
+    BenefitParameterId,
     BenefitTransactionApplicationResult,
     BenefitTransactionCommand,
     InternalSubscriptionTarget,
     NewSubscriptionTarget,
     ParameterConstant,
+    ParameterReference,
 )
 from ffun.benefits.tests.make import (
     make_benefit_package,
@@ -107,6 +110,30 @@ class TestHasBenefit:
 
     def test_unknown_identifier(self, package: BenefitPackageTemplate) -> None:
         assert not domain.has_benefit(BenefitId("unknown"))
+
+
+class TestMaterializeBenefitPackage:
+    def test_materializes_configured_template(self, mocker: MockerFixture) -> None:
+        parameter = BenefitParameterDefinition(
+            id=BenefitParameterId("quantity"),
+            minimum=1,
+            maximum=100,
+        )
+        template = make_benefit_package_template(
+            parameters=(parameter,),
+            entitlements={EntitlementKindId.lifetime_tokens: ParameterReference(parameter_id=parameter.id)},
+        )
+        mocker.patch.object(domain.settings, "package_templates", (template,))
+
+        assert domain.materialize_benefit_package(template.id, {parameter.id: 25}) == make_benefit_package(
+            benefit_id=template.id,
+            parameters={parameter.id: 25},
+            entitlements={EntitlementKindId.lifetime_tokens: 25},
+        )
+
+    def test_unknown_identifier_raises_module_error(self, package: BenefitPackageTemplate) -> None:
+        with pytest.raises(errors.UnknownBenefit):
+            domain.materialize_benefit_package(BenefitId("unknown"), {})
 
 
 class TestResolveSubscriptionTarget:
