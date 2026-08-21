@@ -196,12 +196,13 @@ async def _apply_transaction(  # noqa: CFQ002
     command: BenefitTransactionCommand,
     execute: ExecuteType,
     subscription: SubscriptionSnapshot,
+    parameters: Mapping[BenefitParameterId, object],
     *,
     evaluation_time: datetime.datetime,
     actor_kind: AuditEntityKind,
     actor_id: SerializedId,
 ) -> tuple[BenefitTransaction, list[Callable[[], None]]]:
-    package = materialize_benefit_package(subscription.benefit_id, {})
+    package = materialize_benefit_package(subscription.benefit_id, parameters)
     subscription_id = await _resolve_regular_subscription_target(
         execute,
         command.subscription_target,
@@ -248,6 +249,7 @@ async def _apply_transaction(  # noqa: CFQ002
 
 async def apply_subscription_transaction(
     subscription: SubscriptionSnapshot,
+    parameters: Mapping[BenefitParameterId, object],
     command: BenefitTransactionCommand,
     *,
     actor_kind: AuditEntityKind,
@@ -276,6 +278,7 @@ async def apply_subscription_transaction(
             command,
             execute,
             subscription,
+            parameters,
             evaluation_time=evaluation_time,
             actor_kind=actor_kind,
             actor_id=actor_id,

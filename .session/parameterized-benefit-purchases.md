@@ -427,7 +427,7 @@ The implementation specifications should resolve:
 - [x] Add `BenefitPackageTemplate`, integer parameter definitions, kind-keyed entitlement mappings, uniform `ParameterConstant | ParameterReference` value templates, normalized integer parameters, and concrete `BenefitPackage` to `ffun.benefits`.
 - [x] Change benefits settings to store `package_templates`, validate them during configuration loading, and add focused template-validation tests.
 - [x] Add runtime package materialization and tests for missing, unknown, invalid, and incompatible parameter values.
-- [ ] Convert existing fixed subscription configuration to parameterless templates and route subscription application through materialization without changing current behavior.
+- [x] Convert existing fixed subscription configuration to parameterless templates and route subscription application through materialization without changing current behavior.
 - [ ] Extend the existing `b_transactions` ledger with explicit nullable subscription and one-time purchase identifiers and a strict exactly-one-target check constraint while preserving source idempotency, stale-update rollback, and post-commit callbacks.
 - [ ] Add `OneTimePurchaseId` and specify `ffun.one_time_purchases` identity, statuses, snapshots, references, freshness rules, audits, events, and public operations.
 - [ ] Implement the `ffun.one_time_purchases` entities, persistence, domain operations, migrations, and tests.

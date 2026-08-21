@@ -66,6 +66,7 @@ async def _apply(
 ) -> BenefitTransactionApplicationResult:
     return await domain.apply_subscription_transaction(
         subscription,
+        {},
         command,
         actor_kind=_ACTOR_KIND,
         actor_id=_ACTOR_ID,
@@ -414,6 +415,7 @@ class TestApplyTransaction:
             command,
             execute,
             snapshot,
+            {},
             evaluation_time=datetime.datetime.now(tz=datetime.UTC),
             actor_kind=_ACTOR_KIND,
             actor_id=_ACTOR_ID,
@@ -466,6 +468,7 @@ class TestApplyTransaction:
                 command,
                 execute,
                 snapshot,
+                {},
                 evaluation_time=datetime.datetime.now(tz=datetime.UTC),
                 actor_kind=_ACTOR_KIND,
                 actor_id=_ACTOR_ID,
@@ -553,6 +556,48 @@ class TestApplySubscriptionTransaction:
             grant_transaction_id=str(result.transaction_id),
         )
         assert_logs_has_business_event(logs, "entitlement_changed", user_id=snapshot.user_id)
+
+    @pytest.mark.asyncio
+    async def test_materializes_parameterized_template(self, mocker: MockerFixture) -> None:
+        quantity = BenefitParameterDefinition(
+            id=BenefitParameterId("quantity"),
+            minimum=1,
+            maximum=100,
+        )
+        package = make_benefit_package_template(
+            parameters=(quantity,),
+            entitlements={
+                EntitlementKindId.lifetime_tokens: ParameterReference(parameter_id=quantity.id),
+            },
+        )
+        mocker.patch.object(domain.settings, "package_templates", (package,))
+        snapshot = make_subscription_snapshot(benefit_id=package.id)
+        command = make_transaction_command()
+
+        async with (
+            TableSizeDelta("b_transactions", delta=1),
+            TableSizeDelta("sb_subscriptions", delta=1),
+            TableSizeDelta("en_source_entitlements", delta=1),
+            TableSizeDelta("en_entitlements", delta=1),
+            TableSizeDelta("a_records", delta=2),
+        ):
+            result = await domain.apply_subscription_transaction(
+                snapshot,
+                {quantity.id: 25},
+                command,
+                actor_kind=_ACTOR_KIND,
+                actor_id=_ACTOR_ID,
+            )
+
+        source = await entitlement_helpers.load_source_entitlement(
+            execute,
+            snapshot.user_id,
+            EntitlementKindId.lifetime_tokens,
+            domain.BENEFITS_ENTITLEMENT_SOURCE_ID,
+            result.transaction_id,
+        )
+        assert source is not None
+        assert source.value == 25
 
     @pytest.mark.asyncio
     async def test_revoke_is_inferred_from_status_and_replaces_complete_state(
