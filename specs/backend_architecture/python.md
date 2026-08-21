@@ -45,6 +45,10 @@ Such string values MUST be treated as stable compatibility identifiers and MUST 
 Non-persisted enum values that participate in serialization, configuration, an external-system protocol, or another compatibility contract MUST use an explicit stable representation appropriate to that boundary.
 When internal and boundary representations have independent compatibility lifecycles, code SHOULD convert between them explicitly instead of relying on shared underlying values.
 
+Code that exhaustively branches over an enum or another statically closed union SHOULD pass the unreachable value to `typing.assert_never()` instead of raising `AssertionError` directly.
+This makes the exhaustiveness requirement visible to static type checkers and causes newly added unhandled variants to fail type checking.
+Ordinary domain or validation exceptions remain appropriate when an unsupported value can legitimately arrive through an untyped or external boundary.
+
 ## Validation and resolution
 
 Validation functions and methods MUST only verify invariants.

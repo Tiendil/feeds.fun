@@ -171,7 +171,7 @@ async def _replace_benefit(  # noqa: CFQ002
         grant_transaction_id=benefit_transaction.id,
         user_id=benefit_transaction.user_id,
         subscription_id=benefit_transaction.subscription_id,
-        guarantees=package.entitlements,
+        guarantees=package.guarantees,
         starts_at=subscription.period_starts_at,
         expires_at=subscription.period_ends_at,
         evaluation_time=evaluation_time,

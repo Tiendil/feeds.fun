@@ -2,7 +2,7 @@ import datetime
 import itertools
 from collections.abc import Callable, Mapping, Sequence
 from functools import partial
-from typing import cast
+from typing import assert_never, cast
 
 from ffun.audit import domain as audit_domain
 from ffun.audit.entities import AuditEntityKind, AuditEventName
@@ -65,16 +65,20 @@ def merge_values(policy: MergePolicy, values: Sequence[int]) -> int:
     if not values:
         raise errors.InvalidMergeValues(reason="At least one entitlement value is required for merging")
 
-    if policy == MergePolicy.max:
-        return max(values)
+    match policy:
+        case MergePolicy.max:
+            value = max(values)
+        case MergePolicy.min:
+            value = min(values)
+        case MergePolicy.sum:
+            value = sum(values)
+        case _:
+            assert_never(policy)
 
-    if policy == MergePolicy.min:
-        return min(values)
+    if not entitlement_entities.MIN_ENTITLEMENT_VALUE <= value <= entitlement_entities.MAX_ENTITLEMENT_VALUE:
+        raise errors.InvalidMergeValues(reason="Merged entitlement value exceeds persistence-safe bounds")
 
-    if policy == MergePolicy.sum:
-        return sum(values)
-
-    raise AssertionError(f"Unsupported entitlement merge policy: {policy}")
+    return value
 
 
 def build_effective_timeline(  # noqa: CCR001

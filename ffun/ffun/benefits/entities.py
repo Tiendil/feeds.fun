@@ -5,10 +5,11 @@ from typing import Annotated, Literal, NewType, TypeAlias
 
 import pydantic
 
+from ffun.benefits import errors
 from ffun.core import utils
 from ffun.core.entities import BaseEntity, NonEmptyString
 from ffun.domain.entities import BenefitId, BenefitTransactionId, SubscriptionId, UserId
-from ffun.entitlements.entities import EntitlementGuarantee
+from ffun.entitlements.entities import EntitlementGuarantee, EntitlementKindId, EntitlementValue
 from ffun.subscriptions.entities import (
     ProviderAccountId,
     ProviderId,
@@ -20,25 +21,66 @@ BenefitSourceId = NewType("BenefitSourceId", int)
 BenefitSourceTransactionId = NewType("BenefitSourceTransactionId", uuid.UUID)
 
 
+class BenefitParameterId(NonEmptyString):
+    __slots__ = ()
+
+
+BenefitParameters: TypeAlias = dict[BenefitParameterId, EntitlementValue]
+
+
 class BenefitEntitlementAction(enum.IntEnum):
     grant = 1
     revoke = 2
 
 
+class BenefitParameterDefinition(BaseEntity):
+    id: BenefitParameterId
+    minimum: EntitlementValue
+    maximum: EntitlementValue
+
+    @pydantic.model_validator(mode="after")
+    def validate_bounds(self) -> "BenefitParameterDefinition":
+        if self.minimum > self.maximum:
+            raise ValueError("Benefit parameter minimum must not exceed maximum")
+
+        return self
+
+
+class ParameterConstant(BaseEntity):
+    value: EntitlementValue
+
+    def materialize(self, parameters: BenefitParameters) -> EntitlementValue:
+        return self.value
+
+
+class ParameterReference(BaseEntity):
+    parameter_id: BenefitParameterId
+
+    def materialize(self, parameters: BenefitParameters) -> EntitlementValue:
+        try:
+            return parameters[self.parameter_id]
+        except KeyError as error:
+            raise errors.MissingBenefitParameter(parameter_id=self.parameter_id) from error
+
+
 class BenefitPackage(BaseEntity):
+    id: BenefitId
+    parameters: BenefitParameters = pydantic.Field(default_factory=dict)
+    entitlements: dict[EntitlementKindId, EntitlementValue] = pydantic.Field(min_length=1)
+
+    @property
+    def guarantees(self) -> tuple[EntitlementGuarantee, ...]:
+        return tuple(
+            EntitlementGuarantee(kind_id=kind_id, value=value) for kind_id, value in sorted(self.entitlements.items())
+        )
+
+
+class BenefitPackageTemplate(BaseEntity):
     id: BenefitId
     title: NonEmptyString
     description: str
-    entitlements: tuple[EntitlementGuarantee, ...] = ()
-
-    @pydantic.model_validator(mode="after")
-    def entitlement_kinds_must_be_unique(self) -> "BenefitPackage":
-        kind_ids = [entitlement.kind_id for entitlement in self.entitlements]
-
-        if len(kind_ids) != len(set(kind_ids)):
-            raise ValueError("Benefit package entitlement kinds must be unique")
-
-        return self
+    parameters: tuple[BenefitParameterDefinition, ...] = ()
+    entitlements: dict[EntitlementKindId, ParameterConstant | ParameterReference] = pydantic.Field(min_length=1)
 
 
 class InternalSubscriptionTarget(BaseEntity):

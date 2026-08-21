@@ -7,7 +7,7 @@ from pytest_mock import MockerFixture
 from ffun.benefits.settings import Settings
 from ffun.benefits.tests.make import make_benefit_package
 from ffun.domain.entities import BenefitId
-from ffun.entitlements.entities import EntitlementGuarantee, EntitlementKindId
+from ffun.entitlements.entities import EntitlementKindId
 
 
 class TestSettings:
@@ -36,9 +36,8 @@ class TestSettings:
         packages = [
             {
                 "id": "configured",
-                "title": "Configured package",
-                "description": "Loaded from the environment",
-                "entitlements": [{"kind_id": EntitlementKindId.month_tokens.value, "value": 42}],
+                "parameters": {},
+                "entitlements": {str(EntitlementKindId.month_tokens.value): 42},
             }
         ]
         mocker.patch.dict("os.environ", {"FFUN_BENEFITS_PACKAGES": json.dumps(packages)})
@@ -48,8 +47,6 @@ class TestSettings:
         assert settings.packages == (
             make_benefit_package(
                 benefit_id=BenefitId("configured"),
-                title="Configured package",
-                description="Loaded from the environment",
-                entitlements=(EntitlementGuarantee(kind_id=EntitlementKindId.month_tokens, value=42),),
+                entitlements={EntitlementKindId.month_tokens: 42},
             ),
         )

@@ -160,9 +160,12 @@ class TestMergeValues:
         with pytest.raises(errors.InvalidMergeValues, match="At least one"):
             domain.merge_values(MergePolicy.max, [])
 
-    def test_unsupported_policy(self) -> None:
-        with pytest.raises(AssertionError, match="Unsupported"):
-            domain.merge_values(cast(MergePolicy, "unsupported"), [1])
+    def test_result_must_fit_persistence_bounds(self) -> None:
+        with pytest.raises(errors.InvalidMergeValues, match="persistence-safe bounds"):
+            domain.merge_values(
+                MergePolicy.sum,
+                [entitlement_entities.MAX_ENTITLEMENT_VALUE, 1],
+            )
 
 
 class TestBuildEffectiveTimeline:

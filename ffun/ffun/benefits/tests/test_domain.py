@@ -292,7 +292,7 @@ class TestReplaceBenefit:
             grant_transaction_id=benefit_transaction.id,
             user_id=benefit_transaction.user_id,
             subscription_id=benefit_transaction.subscription_id,
-            guarantees=package.entitlements,
+            guarantees=(EntitlementGuarantee(kind_id=EntitlementKindId.day_tokens, value=10),),
             starts_at=snapshot.period_starts_at,
             expires_at=snapshot.period_ends_at,
             evaluation_time=evaluation_time,
@@ -453,10 +453,10 @@ class TestApplySubscriptionTransaction:
     @pytest.mark.asyncio
     async def test_grant_persists_atomic_state_and_emits_events(self, mocker: MockerFixture) -> None:
         package = make_benefit_package(
-            entitlements=(
-                EntitlementGuarantee(kind_id=EntitlementKindId.day_tokens, value=10),
-                EntitlementGuarantee(kind_id=EntitlementKindId.lifetime_tokens, value=100),
-            )
+            entitlements={
+                EntitlementKindId.day_tokens: 10,
+                EntitlementKindId.lifetime_tokens: 100,
+            }
         )
         mocker.patch.object(domain.settings, "packages", (package,))
         snapshot = make_subscription_snapshot(benefit_id=package.id, status=SubscriptionStatusId.active)
@@ -532,14 +532,14 @@ class TestApplySubscriptionTransaction:
     ) -> None:
         original_package = make_benefit_package(
             benefit_id=BenefitId("original"),
-            entitlements=(
-                EntitlementGuarantee(kind_id=EntitlementKindId.day_tokens, value=10),
-                EntitlementGuarantee(kind_id=EntitlementKindId.month_tokens, value=20),
-            ),
+            entitlements={
+                EntitlementKindId.day_tokens: 10,
+                EntitlementKindId.month_tokens: 20,
+            },
         )
         current_package = make_benefit_package(
             benefit_id=BenefitId("current"),
-            entitlements=(EntitlementGuarantee(kind_id=EntitlementKindId.lifetime_tokens, value=30),),
+            entitlements={EntitlementKindId.lifetime_tokens: 30},
         )
         mocker.patch.object(domain.settings, "packages", (original_package, current_package))
         original_snapshot = make_subscription_snapshot(benefit_id=original_package.id)
@@ -576,11 +576,11 @@ class TestApplySubscriptionTransaction:
             state_transaction_id=revocation.transaction_id,
         )
 
-        for guarantee in original_package.entitlements:
+        for kind_id in original_package.entitlements:
             source = await entitlement_helpers.load_source_entitlement(
                 execute,
                 original_snapshot.user_id,
-                guarantee.kind_id,
+                kind_id,
                 domain.BENEFITS_ENTITLEMENT_SOURCE_ID,
                 grant.transaction_id,
             )
@@ -604,29 +604,8 @@ class TestApplySubscriptionTransaction:
         assert sum(record.get("event") == "entitlement_changed" for record in logs) == 2
 
     @pytest.mark.asyncio
-    async def test_empty_package_changes_no_entitlement_state(self, mocker: MockerFixture) -> None:
-        package = make_benefit_package(entitlements=())
-        mocker.patch.object(domain.settings, "packages", (package,))
-        snapshot = make_subscription_snapshot(benefit_id=package.id)
-
-        with capture_logs() as logs:
-            async with (
-                TableSizeDelta("b_transactions", delta=1),
-                TableSizeDelta("sb_subscriptions", delta=1),
-                TableSizeNotChanged("en_source_entitlements"),
-                TableSizeNotChanged("en_entitlements"),
-                TableSizeDelta("a_records", delta=1),
-            ):
-                result = await _apply(snapshot, make_transaction_command())
-
-        assert result.transaction_created
-        assert_logs_has_business_event(logs, "subscription_changed", user_id=snapshot.user_id)
-        assert_logs_has_no_business_event(logs, "source_entitlement_changed")
-        assert_logs_has_no_business_event(logs, "entitlement_changed")
-
-    @pytest.mark.asyncio
     async def test_external_target_creates_and_reuses_reference(self, mocker: MockerFixture) -> None:
-        package = make_benefit_package(entitlements=())
+        package = make_benefit_package()
         mocker.patch.object(domain.settings, "packages", (package,))
         target = make_external_subscription_target()
         first_snapshot = make_subscription_snapshot(benefit_id=package.id)

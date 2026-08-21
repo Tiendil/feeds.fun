@@ -9,6 +9,10 @@ class UnknownBenefit(Error):
     pass
 
 
+class MissingBenefitParameter(Error):
+    pass
+
+
 class ConcurrentBenefitTransaction(Error):
     pass
 

@@ -1,6 +1,6 @@
 import datetime
 import enum
-from typing import TypeAlias
+from typing import Annotated, TypeAlias
 
 import pydantic
 
@@ -15,6 +15,14 @@ class EntitlementSourceId(NonEmptyString):
 
 
 EffectiveEntitlementState: TypeAlias = tuple[bool, int | None]
+
+MIN_ENTITLEMENT_VALUE = 1
+MAX_ENTITLEMENT_VALUE = 2**63 - 1
+
+EntitlementValue: TypeAlias = Annotated[
+    int,
+    pydantic.Field(strict=True, ge=MIN_ENTITLEMENT_VALUE, le=MAX_ENTITLEMENT_VALUE),
+]
 
 
 class EntitlementKindId(enum.IntEnum):
@@ -33,11 +41,20 @@ class EntitlementKind(BaseEntity):
     id: EntitlementKindId
     merge_policy: MergePolicy
     is_lifetime: bool
+    minimum_value: EntitlementValue = MIN_ENTITLEMENT_VALUE
+    maximum_value: EntitlementValue = MAX_ENTITLEMENT_VALUE
+
+    @pydantic.model_validator(mode="after")
+    def validate_value_bounds(self) -> "EntitlementKind":
+        if self.minimum_value > self.maximum_value:
+            raise ValueError("Entitlement kind minimum value must not exceed maximum value")
+
+        return self
 
 
 class EntitlementGuarantee(BaseEntity):
     kind_id: EntitlementKindId
-    value: int = pydantic.Field(strict=True)
+    value: EntitlementValue
 
 
 ENTITLEMENT_KINDS: tuple[EntitlementKind, ...] = (
@@ -53,7 +70,7 @@ class SourceEntitlement(BaseEntity):
     user_id: UserId
     subscription_id: SubscriptionId | None = None
     kind_id: EntitlementKindId
-    value: int = pydantic.Field(strict=True)
+    value: EntitlementValue
     starts_at: datetime.datetime
     expires_at: datetime.datetime
     revoked_at: datetime.datetime | None = None
@@ -90,6 +107,9 @@ class SourceEntitlement(BaseEntity):
         if self.kind_id != kind.id:
             raise ValueError("Source entitlement kind must match entitlement kind")
 
+        if not kind.minimum_value <= self.value <= kind.maximum_value:
+            raise ValueError("Source entitlement value must be within entitlement kind bounds")
+
         if not self.granted:
             raise ValueError("A source entitlement grant must not be revoked")
 
@@ -115,7 +135,7 @@ class SourceEntitlement(BaseEntity):
 class EffectiveEntitlementInterval(BaseEntity):
     user_id: UserId
     kind_id: EntitlementKindId
-    value: int
+    value: EntitlementValue
     starts_at: datetime.datetime
     expires_at: datetime.datetime
 

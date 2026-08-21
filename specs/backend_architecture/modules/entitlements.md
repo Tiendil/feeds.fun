@@ -20,6 +20,7 @@ Purchased-subscription lifecycles, payment-service-provider protocols, product p
 - `active source entitlement` - an unrevoked source entitlement whose activation time has arrived and whose expiration time has not arrived at the evaluation time.
 - `effective entitlement interval` - a time interval during which merged source state grants one entitlement kind to one user with one value.
 - `merge policy` - the operation used to combine values from active source entitlements of the same kind.
+- `persistence-safe entitlement value range` - the inclusive integer range from `1` through `9,223,372,036,854,775,807`, which fits positive values stored using signed 64-bit integer persistence.
 
 ## Module responsibility
 
@@ -36,7 +37,8 @@ They MUST NOT independently reproduce merge behavior or derive access from sourc
 ### Entitlement kinds
 
 Entitlement kinds MUST form a closed set of stable identifiers.
-Each kind MUST define one merge policy and whether grants of that kind are lifetime grants.
+Each kind MUST define one merge policy, whether grants of that kind are lifetime grants, and inclusive minimum and maximum accepted source-grant values.
+The accepted bounds MUST be within the persistence-safe entitlement value range, and the minimum MUST NOT exceed the maximum.
 
 The supported kinds MUST be:
 
@@ -45,6 +47,7 @@ The supported kinds MUST be:
 - `lifetime_tokens`, stable value `3`, merged using `sum`, and lifetime.
 
 Stable kind values MUST NOT be changed or reused.
+The currently supported entitlement kinds MUST each accept the complete persistence-safe entitlement value range.
 
 The supported merge policies MUST be:
 
@@ -53,6 +56,9 @@ The supported merge policies MUST be:
 - `sum`, which adds all active values.
 
 Merging an empty value collection MUST fail.
+Every merged value MUST remain within the persistence-safe entitlement value range.
+A source change that would produce an out-of-range effective value MUST fail atomically without retaining the source change, effective intervals, audit records, or business events.
+This requirement applies even when every individual source value is valid, such as when `sum` would exceed the upper bound.
 
 Non-lifetime grants MUST use a source-supplied expiration time.
 Lifetime grants MUST use the project's stable lifetime interval-end marker.
@@ -63,7 +69,9 @@ The marker represents an unbounded interval and MUST NOT be interpreted as a sem
 One source entitlement MUST be identified by the exact tuple of source, grant transaction identifier, user id, and entitlement kind.
 
 Source identifiers MUST be non-empty, and transaction identifiers MUST be UUIDs issued by the benefits transaction ledger.
-A grant MUST contain an integer value and timezone-aware activation and expiration times, with activation earlier than expiration.
+A grant MUST contain a strict integer value within its entitlement kind's accepted source-grant bounds and timezone-aware activation and expiration times, with activation earlier than expiration.
+Boolean, floating-point, string, and implicitly coerced values MUST NOT satisfy the integer contract.
+Zero and negative values MUST be rejected; absence of an effective interval, rather than a zero-valued grant, represents an entitlement that is not granted.
 A grant being created MUST have neither a revocation time nor a revoking transaction identifier.
 
 A source entitlement is inactive before activation, at or after expiration, and whenever it has revocation state.

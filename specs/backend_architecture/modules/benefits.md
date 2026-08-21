@@ -6,97 +6,169 @@ This document describes the public contract and observable behavior of the `ffun
 
 ## Scope
 
-This specification covers the caller-visible `ffun.benefits` responsibility for provider-independent product benefits associated with purchased states.
+This specification covers the caller-visible `ffun.benefits` responsibility for provider-independent product benefits associated with subscription and one-time-purchase states.
 
 Payment-service-provider communication, product and price catalogs, checkout, invoices, purchased-state identity and lifecycle behavior, and persistence rules internal to purchased-state owners and entitlements are out of scope.
 
 ## Dictionary
 
-- `benefit identifier` - a stable local non-empty identifier that provider metadata or another trusted caller uses to select one configured package.
-- `benefit package` - configured user-facing title and description together with the entitlement guarantees sold as one product benefit.
+- `benefit identifier` - a stable local non-empty identifier that provider metadata or another trusted caller uses to select one configured benefit package template.
+- `benefit parameter` - one named normalized integer value accepted by a benefit package template at materialization time.
+- `benefit package template` - configured user-facing title and description, accepted benefit-parameter definitions, and the locally controlled mapping from entitlement kinds to constant or parameter-referenced values.
+- `benefit package` - one concrete result of materializing a benefit package template with normalized benefit parameters; it contains only resolved entitlement guarantees.
+- `package materialization` - deterministic validation and application of normalized benefit parameters to one configured benefit package template to produce one concrete benefit package.
 - `transaction source identity` - the `source_id` and `source_transaction_id` tuple that identifies one durable operation at its origin.
 - `transaction effective time` - the source-reported timestamp associated with the management operation recorded by a benefit transaction; it is retained as ledger provenance and does not schedule entitlement revocation.
-- `entitlement action` - the provider-independent grant or revoke decision derived from the normalized subscription status and persisted by the benefit transaction.
+- `entitlement action` - the provider-independent grant or revoke decision derived from the normalized purchased-state status and persisted by the benefit transaction.
 - `internal subscription identifier` - the generated UUID that identifies one provider-independent subscription projection.
+- `internal one-time purchase identifier` - the generated UUID that identifies one provider-independent one-time-purchase projection.
 
 ## Module responsibility
 
-The module MUST own benefit-package configuration, benefit lookup by stable local identifier, benefit-transaction persistence and idempotency, translation of subscription benefit-granting semantics into entitlement actions, and atomic coordination of subscription and entitlement state.
+The module MUST own benefit-package-template configuration, template lookup by stable local identifier, benefit-parameter validation, package materialization, benefit-transaction persistence and idempotency, translation of purchased-state benefit-granting semantics into entitlement actions, and atomic coordination of purchased and entitlement state.
 
-Provider adapters and other trusted callers MUST resolve a benefit identifier from authoritative metadata and supply one complete normalized subscription snapshot.
-The benefits module MUST derive the entitlement action from the supplied normalized subscription status's benefit-granting semantic.
+Provider adapters and other trusted callers MUST resolve a benefit identifier and normalized benefit parameters from authoritative metadata and supply one complete normalized subscription or one-time-purchase snapshot.
+The benefits module MUST derive the entitlement action from the supplied snapshot status's benefit-granting semantic.
 Callers MUST NOT select a grant or revoke transaction type independently of that state.
-The supplied subscription snapshot MUST be authoritative for the benefit identifier and current subscription period.
+Callers MUST NOT supply materialized entitlement guarantees.
+Each supplied snapshot MUST be authoritative for its benefit identifier and purchased-state lifecycle data.
 
 The module MUST NOT communicate with a provider or maintain a second mapping from provider product or price identifiers to benefits.
 It MUST NOT own provider prices, currencies, amounts, tax behavior, billing periods, or checkout configuration.
 
 The subscriptions module owns internal subscription identities, provider-subscription references, the persisted current benefit identifier, and the benefit-granting semantics of normalized statuses, but does not copy benefit details or apply entitlement changes.
+The one-time-purchases module owns internal purchase identities, provider-purchase references, the persisted current benefit identifier, and the benefit-granting semantics of normalized purchase statuses, but does not copy benefit details, persist benefit parameters, or apply entitlement changes.
 The entitlements module owns source and effective entitlement state.
 Callers MUST use the benefits workflow instead of independently recording one causal transaction across those modules.
 
 ## Domain behavior
 
-### Benefit packages
+### Benefit package templates
 
-Each benefit package MUST have one stable non-empty identifier, one non-empty user-facing title, one user-facing description, and zero or more entitlement guarantees.
-Package identifiers MUST be unique in configuration.
-Guarantee entitlement kinds MUST be unique within one package, and each guarantee value MUST be an integer.
+Each benefit package template MUST have one stable non-empty identifier, one non-empty user-facing title, one user-facing description, zero or more parameter definitions, and a non-empty mapping from entitlement kinds to entitlement value templates.
+Template identifiers MUST be unique in configuration.
+Parameter identifiers MUST be non-empty and unique within one template.
+Each parameter definition MUST declare one required inclusive minimum and one required inclusive maximum for its normalized integer value.
+
+Each entitlement value template MUST be either one configured integer constant or one direct reference to a parameter declared by the same package template.
+The template language MUST NOT allow callers to select entitlement kinds and MUST NOT contain general expressions or transformations.
+Entitlement kinds MUST be unique by construction as mapping keys and MUST NOT be duplicated inside mapped values.
+Package templates MUST make no token-specific assumption and MAY map any locally supported entitlement kind whose value contract is satisfied.
+
+Configuration loading MUST reject duplicate template or parameter identifiers, parameter references to undeclared parameters, constants incompatible with their entitlement kinds, parameter definitions incompatible with the kinds that reference them, invalid or incomplete constraints, invalid constants, and declared parameters that are not referenced by any entitlement value template.
+Benefits settings MUST expose configured templates as `package_templates`, not as already materialized packages.
+An existing fixed package MUST be represented as a parameterless template whose entitlement mappings contain constants.
+
+### Integer value constraints
+
+Each parameter minimum and maximum MUST be a strict integer within the `ffun.entitlements` persistence-safe entitlement value range, and the minimum MUST NOT exceed the maximum.
+Boolean, floating-point, string, and implicitly coerced constraint values MUST be invalid.
+The complete declared parameter range MUST fit within the accepted source-grant bounds of every entitlement kind that references that parameter.
+
+Every configured constant MUST be a strict integer within the accepted source-grant bounds of its mapped entitlement kind.
+Template validation MUST enforce parameter-range and constant compatibility before the template becomes available for lookup or materialization.
+Runtime parameter values and materialized guarantees MUST use the same kind-owned bounds rather than defining a second, wider benefits-specific value range.
+
+### Package materialization and configuration evolution
+
+Package materialization MUST resolve the configured template by benefit identifier and validate the complete supplied parameter collection before resolving any entitlement value.
+The collection MUST supply each declared parameter exactly once and MUST contain no undeclared parameter.
+An input representation capable of carrying duplicate parameter names MUST reject duplicates rather than selecting one value.
+Each supplied value MUST be a strict integer within its declared inclusive bounds.
+Boolean, floating-point, string, and implicitly coerced values MUST be rejected rather than normalized into integers.
+
+Materialization MUST resolve every constant or parameter reference, validate each resolved integer against its entitlement kind, and return a concrete benefit package containing the template identifier, the normalized parameter mapping, and the fully resolved kind-keyed entitlement guarantees.
+The result MUST contain no unresolved parameter references.
+Materialization MUST be deterministic for the same validated template configuration and normalized parameter values.
+A parameterless template MUST materialize only from an empty parameter collection.
+Looking up or materializing an unknown benefit identifier MUST fail without changing benefit-transaction, purchased-state, or entitlement state.
+
+Every previously unseen subscription or one-time-purchase benefit transaction MUST materialize the current configured template from the parameters supplied for that transaction.
+This requirement applies whether the purchased-state status grants or revokes benefits.
+An idempotent retry of an already accepted source identity MUST return the stored transaction result without resolving the template, validating parameters, or materializing a package again.
 
 Benefit configuration MUST NOT contain a revision number.
-A configured package is the current desired entitlement definition for every granting subscription that references its benefit identifier.
-The title, description, and guarantees of an existing package MAY change without introducing a new benefit identifier.
-Such a configuration change MUST NOT mutate benefit transactions, subscriptions, or entitlements by itself.
-It becomes effective for an existing subscription only when a newly identified benefit transaction actualizes that subscription; until then, the previously persisted entitlement state remains authoritative.
-Benefit transactions MUST record the stable benefit identifier and MUST NOT snapshot the package title, description, or complete guarantee set.
-A benefit identifier MUST NOT be reused for an unrelated product and MUST remain configured while a current subscription can reference it.
-
-Looking up an unknown benefit identifier MUST fail without changing benefit-transaction, subscription, or entitlement state.
+The current template is the desired entitlement definition for every new transaction that references its benefit identifier.
+Changing a template MUST NOT mutate existing benefit transactions, purchased-state snapshots, or entitlements by itself.
+The change becomes effective for an existing purchased state only when a newly identified benefit transaction actualizes that state; until then, the previously persisted entitlement state remains authoritative.
+Benefit transactions MUST record the stable benefit identifier and MUST NOT store supplied parameters or snapshot the template, materialized package, title, description, or complete guarantee set.
+Source-entitlement records MUST remain authoritative for the concrete entitlement values and intervals actually granted or revoked by historical transactions.
+Changing template display text MAY retain the same benefit identifier.
+Incompatible changes to parameter names or entitlement bindings SHOULD use a new benefit identifier, and an old template MUST remain configured while provider records can still initiate transactions that reference it.
+A benefit identifier MUST NOT be reused for an unrelated product.
 
 ### Entitlement-action derivation
 
-The subscriptions module MUST determine whether each normalized status grants benefits.
+Each purchased-state-owning module MUST determine whether each of its normalized statuses grants benefits.
 The benefits module MUST translate a benefit-granting status to the `grant` action and a non-benefit-granting status to the `revoke` action.
-Accordingly, the resulting status-to-action mapping MUST be:
+For subscriptions, the resulting status-to-action mapping MUST be:
 
 - `trialing`, `active`, and `past_due` MUST produce the `grant` action.
 - `pending`, `paused`, and `ended` MUST produce the `revoke` action.
 
-The action describes the desired entitlement state resulting from the complete subscription snapshot.
+The one-time-purchases module MUST define the corresponding benefit-granting semantic for every normalized purchase status, and the benefits module MUST apply the same translation without reproducing that status policy.
+
+The action describes the complete desired entitlement state owned by the selected subscription or one-time purchase after applying its supplied snapshot.
 It is not an instruction to reverse an earlier benefit transaction.
-A `grant` action MAY revoke superseded subscription-owned entitlement rows before granting the current package.
-A `revoke` action MUST leave the subscription with no active or future subscription-owned entitlements and MUST NOT identify or reverse one historical transaction.
+A `grant` action MAY revoke entitlements superseded within that purchased-state owner's scope before granting the materialized package.
+A `revoke` action MUST leave the selected subscription or one-time purchase with no active or future owned entitlements and MUST NOT identify or reverse one historical transaction.
 
 The derived action MUST be persisted in the immutable benefit transaction so historical operations retain the policy decision made when they were accepted.
 Changing the status-to-action policy later MUST NOT reinterpret existing benefit transactions.
 
-### Subscription selection
+### Purchased-state selection
+
+#### Subscription selection
 
 A subscription application MUST require a non-empty benefit identifier on the supplied subscription snapshot.
 The workflow MAY accept a complete provider subscription identity to select an internal subscription.
 It MUST resolve and persist that mapping through the subscriptions public domain boundary.
 It MUST NOT persist or reproduce provider-subscription reference behavior inside benefits persistence.
 
-Benefit transactions MUST NOT contain provider identifiers.
-Provider customer and product identifiers are inputs to provider-adapter decisions and MUST NOT be accepted or persisted by the benefits module.
-The source-owned operation record remains responsible for provider payloads and diagnostic provenance.
-
 The trusted caller MUST include the benefit identifier obtained from provider-owned product metadata.
-Configured titles, descriptions, and entitlement guarantees MUST remain locally authoritative and MUST NOT be accepted as provider-supplied display data.
+The benefit parameters for a subscription transaction MUST be supplied separately from its subscription snapshot.
+
+#### One-time-purchase selection
+
+A one-time-purchase application MUST require a non-empty benefit identifier on the supplied purchase snapshot.
+The workflow MAY accept a complete provider-purchase identity to select an internal one-time purchase.
+It MUST resolve and persist that mapping through the one-time-purchases public domain boundary.
+It MUST NOT persist or reproduce provider-purchase reference behavior inside benefits persistence.
+
+The trusted caller MUST include the benefit identifier and normalized benefit parameters obtained from authoritative provider metadata or another trusted source record.
+Benefit parameters MUST be supplied separately from the purchase snapshot and MUST NOT be persisted as purchase state.
+
+#### Provider boundary
+
+Benefit transactions MUST NOT contain provider identifiers.
+Provider customer, product, subscription, and purchase identifiers are inputs to provider-adapter decisions and MUST NOT be accepted or persisted as benefit-transaction data.
+The source-owned operation record remains responsible for provider payloads and diagnostic provenance.
+Configured titles, descriptions, parameter bindings, and entitlement guarantees MUST remain locally authoritative and MUST NOT be accepted as provider-supplied package data.
 
 ### Benefit transactions
 
-Each benefit transaction accepted by the module MUST have an internally generated UUID, one transaction source identity, one derived entitlement action, one user, one benefit identifier, one internal subscription identifier, one effective time, and the subscription period start and end copied from its supplied subscription snapshot.
+Each benefit transaction accepted by the module MUST have an internally generated UUID, one transaction source identity, one derived entitlement action, one user, one benefit identifier, one effective time, one applicable entitlement interval, and exactly one target-specific detail variant.
+The subscription detail variant MUST contain one internal subscription identifier and no one-time-purchase identifier.
+The one-time-purchase detail variant MUST contain one internal one-time-purchase identifier and no subscription identifier.
+A transaction with no target or with both targets MUST be invalid.
+Target identity MUST NOT be encoded as a generic target-kind and target-identifier pair.
+The target kind MUST be derived from the detail variant and MUST NOT be duplicated as independent transaction data.
+
 The source identifier MUST be a stable integer identifying the source subsystem.
 The source transaction identifier MUST be a UUID identifying a durable source-owned operation, not an identifier generated independently for each retry or webhook delivery attempt.
 For example, a Stripe adapter may supply the UUID of its persisted webhook record while retaining the original Stripe event identifier and payload in that record.
-Local subscription identity MUST be represented directly by the internal subscription identifier and MUST NOT be encoded as a generic target kind and target identifier pair.
-A future purchase workflow MUST introduce a distinct purchase identifier rather than generalizing the subscription relationship.
+
+The applicable interval for a subscription transaction MUST be copied from its supplied subscription snapshot.
+The applicable interval for a one-time-purchase transaction MUST come from authoritative purchase context accepted by the workflow.
+Every lifetime entitlement MUST use the project's stable lifetime interval-end marker regardless of target type.
+
+The transaction MUST NOT contain benefit parameters or a materialized package.
+Its target detail variant and the corresponding application result MUST preserve whether the transaction concerns a subscription or a one-time purchase without requiring callers to interpret nullable unrelated fields.
 
 The supported entitlement actions and stable values MUST be:
 
-- `grant`, stable value `1`, which makes the configured package the subscription's complete desired entitlement state.
-- `revoke`, stable value `2`, which makes the subscription's complete desired entitlement state empty.
+- `grant`, stable value `1`, which makes the materialized package the selected purchased-state target's complete desired entitlement state.
+- `revoke`, stable value `2`, which makes the selected purchased-state target's complete desired entitlement state empty.
 
 Assigned values MUST NOT be changed or reused.
 
@@ -109,31 +181,35 @@ Retrying after the winner commits MUST return the stored transaction normally.
 
 Benefit transactions MUST be append-only and MUST NOT be updated or deleted by normal workflows.
 
-### Subscription actualization
+### Purchased-state actualization
 
-Every newly accepted transaction MUST apply the supplied subscription snapshot and actualize the complete set of entitlements owned by that subscription.
-The benefits module MUST NOT provide a subscription-only command that can persist a subscription snapshot without considering its entitlements.
-A transaction whose supplied snapshot produces the `stale` subscription save outcome MUST fail with a stale-benefit-transaction error and roll back the benefit transaction and every other change in the workflow.
+Every newly accepted transaction MUST apply the supplied snapshot through its owning module and actualize the complete set of entitlements owned by the selected subscription or one-time purchase.
+The benefits module MUST NOT provide a purchased-state-only command that can persist a subscription or purchase snapshot without considering its entitlements.
+A transaction whose supplied snapshot is stale MUST fail with a benefits-owned stale-benefit-transaction error and roll back the benefit transaction and every other workflow change.
 The stale source identity MUST NOT be persisted as an accepted benefit transaction.
-Actualization MUST run when the subscriptions module produces the `same` or `refreshed` save outcome even though the supplied snapshot did not change the persisted subscription business state.
-Repeating an already accepted transaction source identity MUST remain an idempotent no-op and MUST NOT actualize the subscription again; a maintenance or mass actualization MUST use a new source transaction identity.
+Actualization MUST run when the owning module accepts an unchanged or freshness-only snapshot even though the supplied snapshot did not change persisted business state.
+Repeating an already accepted transaction source identity MUST remain an idempotent no-op and MUST NOT actualize the purchased state again; maintenance or mass actualization MUST use a new source transaction identity.
 
-Actualization MUST revoke every subscription-owned entitlement that is active at the evaluation time or can become active afterward.
+Actualization MUST revoke every entitlement owned by the selected subscription or one-time purchase that is active at the evaluation time or can become active afterward.
 It MUST ignore entitlements whose effective lifetime ended before the evaluation time.
-For both `grant` and `revoke` actions, existing entitlements MUST be revoked immediately at the workflow's evaluation time because revocation is a completed terminal transition rather than a planned subscription-period boundary.
+For both `grant` and `revoke` actions, existing entitlements MUST be revoked immediately at the workflow's evaluation time because revocation is a completed terminal transition rather than a planned period boundary.
 The benefit transaction's effective time MUST remain recorded in the benefit ledger for causal provenance and MUST NOT be used as the source entitlement's revocation time.
-For a `grant` action, the replacement package MUST still be granted from the supplied subscription period start.
+For a `grant` action, the replacement package MUST be granted from the applicable interval start.
 Each revoked source entitlement MUST retain its original grant transaction identifier and record the newly accepted benefit transaction as its revoking transaction identifier.
 The superseded source-entitlement grants MUST remain immutable except for their revocation state and audit history.
 
-For a `grant` action, the workflow MUST then resolve the current configured package recorded by the transaction and create one source entitlement for every package guarantee.
-Every resulting source entitlement MUST use `benefits` as its semantic entitlement source, the internal benefit transaction UUID as its grant transaction identifier, and the internal subscription identifier as its subscription owner.
+For a `grant` action, the workflow MUST create one source entitlement for every guarantee in the package materialized for that transaction.
+Guarantees MUST be applied in entitlement-kind identifier order so template mapping insertion order cannot affect persistence, audit records, business events, or lock acquisition.
+Every resulting source entitlement MUST use `benefits` as its semantic entitlement source, the internal benefit transaction UUID as its grant transaction identifier, and exactly one subscription or one-time-purchase owner matching the transaction detail variant.
 The originating PSP, administrator, support tool, or system component MUST remain identifiable through the corresponding benefit transaction's source identity and source-owned operation record.
-All non-lifetime guarantees MUST use the accepted transaction's persisted subscription period.
-Lifetime guarantees MUST use `period_starts_at` and the project's stable lifetime interval-end marker.
+All non-lifetime guarantees MUST use the transaction's applicable interval.
+Lifetime guarantees MUST use that interval's start and the project's stable lifetime interval-end marker.
 
-For a `revoke` action, the workflow MUST NOT create source entitlements after revoking the subscription-owned state.
-A revoke action for a subscription without current or future source entitlements MUST succeed with an empty entitlement-change result.
+For a `revoke` action, the workflow MUST NOT create source entitlements after revoking the selected owner's state.
+A revoke action for a target without current or future source entitlements MUST succeed with an empty entitlement-change result.
+
+Different one-time purchases MUST have independent ownership scopes.
+Consequently, a correction, refund, reversal, or other non-granting state for one purchase MUST NOT revoke entitlements owned by another purchase, and entitlement-kind merge policy alone MUST determine their combined effective value.
 
 ### Subscription application
 
@@ -145,20 +221,38 @@ One provider subscription identity MUST NOT resolve to multiple internal subscri
 The source identity constraint MUST prevent concurrent retries from applying one operation more than once.
 The workflow MAY reject one of two distinct operations that concurrently attempt to create the same previously unknown provider subscription reference.
 
-For each newly accepted benefit transaction, the workflow MUST resolve the configured package, derive and persist the entitlement action, and apply the supplied subscription snapshot through the subscriptions domain boundary.
+For each newly accepted benefit transaction, the workflow MUST materialize the current configured template with the separately supplied benefit parameters, derive and persist the entitlement action, and apply the supplied subscription snapshot through the subscriptions domain boundary.
+A subscription using a parameterless template MUST supply an empty parameter collection.
 A stale snapshot MUST fail and roll back because an obsolete snapshot cannot authorize replacement of the subscription's entitlement state.
 
-The benefit transaction, subscription snapshot, changed source entitlements, derived effective entitlement intervals, and all required audit records MUST commit or roll back as one unit.
-Changes for the same transaction source identity, internal subscription identity, and affected user and entitlement kind MUST retain the serialization guarantees of the participating modules.
+### One-time-purchase application
 
-The `ffun.benefits.apply_subscription_transaction` workflow is explicitly approved as the owner of one database transaction that includes benefit-transaction persistence, subscription persistence, and entitlement persistence.
-Within that transaction, it MAY pass its execute callable to the subscription-reference and subscription-save operations exposed by `ffun.subscriptions`, and to the grant and subscription-revocation operations exposed by `ffun.entitlements`.
-This exception applies only to this benefits subscription-application workflow.
-The workflow MUST call both modules through their public domain boundaries and MUST NOT import their operation modules or access their tables directly.
+Every transaction accepted by `apply_one_time_purchase_transaction` MUST be associated with one internal one-time-purchase identifier.
+The command MUST select the purchase by supplying an existing internal purchase identifier, supplying a complete provider-purchase identity, or explicitly requesting a new purchase.
+For a transaction with a provider-purchase identity, the workflow MUST resolve the internal purchase through the one-time-purchases module's dedicated provider-purchase reference; when no reference exists, it MUST generate a new internal purchase identifier and ask that module to persist the reference atomically.
+When the command explicitly requests a new purchase, the workflow MUST generate a new internal purchase identifier and MUST reuse it when the same source transaction is retried.
+One provider-purchase identity MUST NOT resolve to multiple internal purchases.
+The source identity constraint MUST prevent concurrent retries from applying one operation more than once.
+The workflow MAY reject one of two distinct operations that concurrently attempt to create the same previously unknown provider-purchase reference.
+
+For each newly accepted transaction, the workflow MUST materialize the current configured template with benefit parameters supplied separately from the purchase snapshot, derive and persist the entitlement action from the normalized purchase status, and apply the snapshot through the one-time-purchases domain boundary.
+This materialization requirement MUST apply to completions, corrections, refunds, reversals, disputes, and every other granting or non-granting purchase status.
+A stale snapshot MUST fail and roll back because obsolete purchase state cannot authorize replacement of the purchase's entitlement state.
+
+### Atomicity and callbacks
+
+The benefit transaction, purchased-state snapshot, changed source entitlements, derived effective entitlement intervals, and all required audit records MUST commit or roll back as one unit.
+Changes for the same transaction source identity, internal purchased-state identity, and affected user and entitlement kind MUST retain the serialization guarantees of the participating modules.
+
+The `ffun.benefits.apply_subscription_transaction` workflow is explicitly approved as the owner of one database transaction that includes benefit-transaction persistence, subscription persistence through `ffun.subscriptions`, and entitlement persistence through `ffun.entitlements`.
+The `ffun.benefits.apply_one_time_purchase_transaction` workflow is explicitly approved as the owner of one database transaction that includes benefit-transaction persistence, purchase persistence through `ffun.one_time_purchases`, and entitlement persistence through `ffun.entitlements`.
+Within each transaction, the benefits workflow MAY pass its execute callable to the target-reference and target-save operations exposed by the corresponding purchased-state module and to the matching grant and owner-scoped revocation operations exposed by `ffun.entitlements`.
+These exceptions apply only to the two named benefits application workflows.
+Each workflow MUST call participating modules through their public domain boundaries and MUST NOT import their operation modules or access their tables directly.
 
 Business events from participating modules MUST be emitted only after the shared transaction commits.
-The workflow MUST collect the callbacks returned by transaction-participating subscription and entitlement operations and begin invoking them only after that commit.
-Any failure before commit MUST leave the previous transaction ledger, subscription, source entitlements, effective entitlements, and audit history unchanged and MUST emit no events.
+The workflow MUST collect the callbacks returned by transaction-participating purchased-state and entitlement operations and begin invoking them only after that commit.
+Any failure before commit MUST leave the previous transaction ledger, purchased state, source entitlements, effective entitlements, and audit history unchanged and MUST emit no events.
 Callback invocation is best-effort post-commit delivery: a callback failure MUST NOT roll back or otherwise invalidate the already committed state.
 One callback failure MAY prevent the workflow from invoking callbacks that remain in the collection.
 The workflow does not guarantee durable callback replay, and retrying an already accepted transaction source identity MUST NOT replay callbacks from the original application.
@@ -167,26 +261,35 @@ The workflow does not guarantee durable callback replay, and retrying an already
 
 The public interface MUST provide these operations:
 
-- `has_benefit` reports whether one benefit identifier has a configured package.
-- `get_benefit` returns one configured package for a benefit identifier and fails when the identifier is unknown.
+- `has_benefit` reports whether one benefit identifier has a configured package template.
+- `get_benefit` returns one configured package template for a benefit identifier and fails when the identifier is unknown.
+- `materialize_benefit_package` resolves one configured template and returns its concrete package for a complete normalized parameter collection.
 - `get_benefit_transaction` returns one benefit transaction for an internal transaction identifier, or no value when it is unknown.
 - `apply_subscription_transaction` atomically records one subscription-related benefit transaction and applies one complete subscription snapshot.
+- `apply_one_time_purchase_transaction` atomically records one purchase-related benefit transaction and applies one complete one-time-purchase snapshot.
 
-`apply_subscription_transaction` MUST accept one complete provider-neutral subscription snapshot, one neutral benefit transaction command, and the audit actor.
+`apply_subscription_transaction` MUST accept one complete provider-neutral subscription snapshot, one complete benefit-parameter collection, one subscription benefit transaction command, and the audit actor.
 The command MUST contain the `source_id` and `source_transaction_id` transaction identity, subscription selection, and effective time.
 It MUST NOT contain a caller-selected entitlement action or a historical transaction to revoke.
-A stale snapshot MUST raise a benefits-owned stale-benefit-transaction error containing the selected subscription identity and the incoming and current provider update times.
+A stale subscription snapshot MUST raise a benefits-owned stale-benefit-transaction error containing the subscription transaction detail and the incoming and current provider update times.
 
-The result MUST contain the internal benefit transaction identifier, the internal subscription identifier, and whether the transaction was newly created.
-An idempotent transaction retry MUST report that the transaction was not created because its original atomic effects already committed.
+`apply_one_time_purchase_transaction` MUST accept one complete provider-neutral purchase snapshot, one complete benefit-parameter collection, one purchase benefit transaction command, and the audit actor.
+The command MUST contain the `source_id` and `source_transaction_id` transaction identity, one-time-purchase selection, effective time, and authoritative applicable interval.
+It MUST NOT contain a caller-selected entitlement action, arbitrary entitlement guarantees, or a historical transaction to revoke.
+A stale purchase snapshot MUST raise a benefits-owned stale-benefit-transaction error containing the purchase transaction detail and the incoming and current provider update times.
+
+The subscription application result MUST contain the internal benefit transaction identifier, the internal subscription identifier, and whether the transaction was newly created.
+The one-time-purchase application result MUST instead contain the internal benefit transaction identifier, the internal one-time-purchase identifier, and whether the transaction was newly created.
+Neither typed result MUST expose an unrelated optional target identifier.
+An idempotent retry of either transaction type MUST report that the transaction was not created because its original atomic effects already committed.
 
 ## Audit records
 
 The module does not define an additional audit event.
-The immutable benefit transaction records the source-owned operation reference and derived entitlement action, while its application MUST cause subscriptions and entitlements to append their specified audit records inside the shared transaction for every corresponding non-no-op state change.
+The immutable benefit transaction records the source-owned operation reference, typed purchased-state detail, and derived entitlement action, while its application MUST cause the corresponding purchased-state and entitlement modules to append their specified audit records inside the shared transaction for every corresponding non-no-op state change.
 
 ## Business events
 
 The module does not define an additional business event.
-After commit, its subscription application MUST attempt to cause subscriptions and entitlements to emit their specified events for every corresponding non-no-op state change.
+After commit, each purchased-state application MUST attempt to cause the corresponding purchased-state and entitlement modules to emit their specified events for every corresponding non-no-op state change.
 That delivery is best-effort: callback failure does not invalidate committed state, and this module does not provide durable replay.

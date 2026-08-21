@@ -9,7 +9,10 @@ from ffun.domain.datetime_intervals import LIFETIME_INTERVAL_END_MARKER
 from ffun.domain.entities import BenefitTransactionId
 from ffun.entitlements.entities import (
     ENTITLEMENT_KINDS,
+    MAX_ENTITLEMENT_VALUE,
+    MIN_ENTITLEMENT_VALUE,
     EntitlementGuarantee,
+    EntitlementKind,
     EntitlementKindId,
     EntitlementSourceId,
     MergePolicy,
@@ -46,6 +49,29 @@ class TestEntitlementKinds:
             MergePolicy.sum,
         ]
         assert [kind.is_lifetime for kind in ENTITLEMENT_KINDS] == [False, False, True]
+        assert [kind.minimum_value for kind in ENTITLEMENT_KINDS] == [MIN_ENTITLEMENT_VALUE] * 3
+        assert [kind.maximum_value for kind in ENTITLEMENT_KINDS] == [MAX_ENTITLEMENT_VALUE] * 3
+
+
+class TestEntitlementKind:
+    def test_validate_value_bounds__accepts_equal_bounds(self) -> None:
+        EntitlementKind(
+            id=EntitlementKindId.day_tokens,
+            merge_policy=MergePolicy.max,
+            is_lifetime=False,
+            minimum_value=10,
+            maximum_value=10,
+        )
+
+    def test_validate_value_bounds__rejects_reversed_bounds(self) -> None:
+        with pytest.raises(pydantic.ValidationError, match="minimum value must not exceed maximum value"):
+            EntitlementKind(
+                id=EntitlementKindId.day_tokens,
+                merge_policy=MergePolicy.max,
+                is_lifetime=False,
+                minimum_value=20,
+                maximum_value=10,
+            )
 
 
 class TestEntitlementGuarantee:
@@ -53,6 +79,11 @@ class TestEntitlementGuarantee:
     def test_init__value_must_be_integer(self, value: object) -> None:
         with pytest.raises(pydantic.ValidationError, match="integer"):
             EntitlementGuarantee(kind_id=EntitlementKindId.day_tokens, value=cast(int, value))
+
+    @pytest.mark.parametrize("value", [0, -1, MAX_ENTITLEMENT_VALUE + 1])
+    def test_init__value_must_fit_persistence_range(self, value: int) -> None:
+        with pytest.raises(pydantic.ValidationError):
+            EntitlementGuarantee(kind_id=EntitlementKindId.day_tokens, value=value)
 
 
 class TestSourceEntitlement:
@@ -121,6 +152,14 @@ class TestSourceEntitlement:
 
         with pytest.raises(ValueError, match="kind must match"):
             entitlement.validate_grant(ENTITLEMENT_KINDS[1])
+
+    @pytest.mark.parametrize("value", [9, 21])
+    def test_validate_grant__requires_value_within_kind_bounds(self, value: int) -> None:
+        entitlement = make_source_entitlement(value=value)
+        kind = ENTITLEMENT_KINDS[0].replace(minimum_value=10, maximum_value=20)
+
+        with pytest.raises(ValueError, match="within entitlement kind bounds"):
+            entitlement.validate_grant(kind)
 
     def test_validate_grant__rejects_revoked_entitlement(self) -> None:
         entitlement = make_source_entitlement(revoked_at=datetime.datetime.now(tz=datetime.UTC))
