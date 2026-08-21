@@ -9,6 +9,7 @@ from ffun.benefits import errors
 from ffun.core import utils
 from ffun.core.entities import BaseEntity, NonEmptyString
 from ffun.domain.entities import BenefitId, BenefitTransactionId, SubscriptionId, UserId
+from ffun.entitlements import entities as entitlement_entities
 from ffun.entitlements.entities import EntitlementGuarantee, EntitlementKindId, EntitlementValue
 from ffun.subscriptions.entities import (
     ProviderAccountId,
@@ -81,6 +82,75 @@ class BenefitPackageTemplate(BaseEntity):
     description: str
     parameters: tuple[BenefitParameterDefinition, ...] = ()
     entitlements: dict[EntitlementKindId, ParameterConstant | ParameterReference] = pydantic.Field(min_length=1)
+
+    @pydantic.model_validator(mode="after")
+    def parameter_ids_must_be_unique(self) -> "BenefitPackageTemplate":
+        parameter_ids = [definition.id for definition in self.parameters]
+
+        if len(parameter_ids) != len(set(parameter_ids)):
+            raise ValueError(f"Benefit package template {self.id} parameter ids must be unique")
+
+        return self
+
+    @pydantic.model_validator(mode="after")
+    def parameter_references_must_be_valid(self) -> "BenefitPackageTemplate":
+        declared_parameter_ids = {definition.id for definition in self.parameters}
+        referenced_parameter_ids = {
+            value_template.parameter_id
+            for value_template in self.entitlements.values()
+            if isinstance(value_template, ParameterReference)
+        }
+        undeclared_parameter_ids = referenced_parameter_ids - declared_parameter_ids
+
+        if undeclared_parameter_ids:
+            parameter_list = ", ".join(sorted(undeclared_parameter_ids))
+            raise ValueError(f"Benefit package template {self.id} references undeclared parameters: {parameter_list}")
+
+        unused_parameter_ids = declared_parameter_ids - referenced_parameter_ids
+
+        if unused_parameter_ids:
+            parameter_list = ", ".join(sorted(unused_parameter_ids))
+            raise ValueError(f"Benefit package template {self.id} has unused parameters: {parameter_list}")
+
+        return self
+
+    @pydantic.model_validator(mode="after")
+    def constant_values_must_match_entitlement_kinds(self) -> "BenefitPackageTemplate":
+        entitlement_kinds = {kind.id: kind for kind in entitlement_entities.ENTITLEMENT_KINDS}
+
+        for kind_id, value_template in self.entitlements.items():
+            if not isinstance(value_template, ParameterConstant):
+                continue
+
+            kind = entitlement_kinds[kind_id]
+
+            if not kind.minimum_value <= value_template.value <= kind.maximum_value:
+                raise ValueError(
+                    f"Benefit package template {self.id} constant for {kind_id.name} "
+                    "must be within entitlement kind bounds"
+                )
+
+        return self
+
+    @pydantic.model_validator(mode="after")
+    def parameter_ranges_must_match_entitlement_kinds(self) -> "BenefitPackageTemplate":
+        entitlement_kinds = {kind.id: kind for kind in entitlement_entities.ENTITLEMENT_KINDS}
+        parameters = {definition.id: definition for definition in self.parameters}
+
+        for kind_id, value_template in self.entitlements.items():
+            if not isinstance(value_template, ParameterReference):
+                continue
+
+            definition = parameters[value_template.parameter_id]
+            kind = entitlement_kinds[kind_id]
+
+            if definition.minimum < kind.minimum_value or definition.maximum > kind.maximum_value:
+                raise ValueError(
+                    f"Benefit package template {self.id} parameter {definition.id} range for {kind_id.name} "
+                    "must be within entitlement kind bounds"
+                )
+
+        return self
 
 
 class InternalSubscriptionTarget(BaseEntity):

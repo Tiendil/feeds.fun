@@ -7,6 +7,7 @@ from ffun.benefits import errors, operations
 from ffun.benefits.entities import (
     BenefitEntitlementAction,
     BenefitPackage,
+    BenefitPackageTemplate,
     BenefitTransaction,
     BenefitTransactionApplicationResult,
     BenefitTransactionCommand,
@@ -32,10 +33,10 @@ BENEFITS_ENTITLEMENT_SOURCE_ID = EntitlementSourceId("benefits")
 get_benefit_transaction = run_in_transaction(operations.load_benefit_transaction)
 
 
-def _find_benefit(benefit_id: BenefitId) -> BenefitPackage | None:
-    for package in settings.packages:
-        if package.id == benefit_id:
-            return package
+def _find_benefit(benefit_id: BenefitId) -> BenefitPackageTemplate | None:
+    for template in settings.package_templates:
+        if template.id == benefit_id:
+            return template
 
     return None
 
@@ -44,11 +45,11 @@ def has_benefit(benefit_id: BenefitId) -> bool:
     return _find_benefit(benefit_id) is not None
 
 
-def get_benefit(benefit_id: BenefitId) -> BenefitPackage:
-    package = _find_benefit(benefit_id)
+def get_benefit(benefit_id: BenefitId) -> BenefitPackageTemplate:
+    template = _find_benefit(benefit_id)
 
-    if package is not None:
-        return package
+    if template is not None:
+        return template
 
     raise errors.UnknownBenefit(benefit_id=benefit_id)
 
@@ -192,7 +193,16 @@ async def _apply_transaction(  # noqa: CFQ002
     actor_kind: AuditEntityKind,
     actor_id: SerializedId,
 ) -> tuple[BenefitTransaction, list[Callable[[], None]]]:
-    package = get_benefit(subscription.benefit_id)
+    template = get_benefit(subscription.benefit_id)
+    # TODO: This constant-only bridge preserves existing subscriptions until runtime package materialization is
+    # implemented. Remove it when apply_subscription_transaction accepts benefit parameters and calls
+    # materialize_benefit_package.
+    package = BenefitPackage(
+        id=template.id,
+        entitlements={
+            kind_id: value_template.materialize({}) for kind_id, value_template in template.entitlements.items()
+        },
+    )
     subscription_id = await _resolve_regular_subscription_target(
         execute,
         command.subscription_target,

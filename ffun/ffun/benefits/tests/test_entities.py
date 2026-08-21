@@ -3,6 +3,7 @@ from typing import cast
 
 import pydantic
 import pytest
+from pytest_mock import MockerFixture
 
 from ffun.benefits import errors
 from ffun.benefits.entities import (
@@ -18,12 +19,14 @@ from ffun.benefits.entities import (
 )
 from ffun.benefits.tests.make import (
     make_benefit_package,
+    make_benefit_package_template,
     make_benefit_transaction,
     make_external_subscription_target,
     make_transaction_command,
 )
 from ffun.core.entities import NonEmptyString
 from ffun.domain.entities import BenefitId
+from ffun.entitlements import entities as entitlement_entities
 from ffun.entitlements.entities import MAX_ENTITLEMENT_VALUE, EntitlementGuarantee, EntitlementKindId
 from ffun.subscriptions.domain import new_subscription_id
 from ffun.subscriptions.tests.make import make_provider_subscription_reference
@@ -150,6 +153,76 @@ class TestBenefitPackageTemplate:
                 title=NonEmptyString("Empty"),
                 description="No guarantees",
                 entitlements={},
+            )
+
+    def test_parameter_ids_must_be_unique__rejects_duplicate_ids(self) -> None:
+        parameter = BenefitParameterDefinition(
+            id=BenefitParameterId("quantity"),
+            minimum=1,
+            maximum=100,
+        )
+
+        with pytest.raises(pydantic.ValidationError, match="parameter ids must be unique"):
+            make_benefit_package_template(
+                parameters=(parameter, parameter),
+                entitlements={EntitlementKindId.lifetime_tokens: ParameterReference(parameter_id=parameter.id)},
+            )
+
+    def test_parameter_references_must_be_valid__rejects_undeclared_reference(self) -> None:
+        with pytest.raises(pydantic.ValidationError, match="references undeclared parameters: quantity"):
+            make_benefit_package_template(
+                entitlements={
+                    EntitlementKindId.lifetime_tokens: ParameterReference(parameter_id=BenefitParameterId("quantity"))
+                },
+            )
+
+    def test_parameter_references_must_be_valid__rejects_unused_parameter(self) -> None:
+        parameter = BenefitParameterDefinition(
+            id=BenefitParameterId("quantity"),
+            minimum=1,
+            maximum=100,
+        )
+
+        with pytest.raises(pydantic.ValidationError, match="has unused parameters: quantity"):
+            make_benefit_package_template(parameters=(parameter,))
+
+    def test_constant_values_must_match_entitlement_kinds__rejects_incompatible_constant(
+        self,
+        mocker: MockerFixture,
+    ) -> None:
+        day_tokens = entitlement_entities.ENTITLEMENT_KINDS[0].replace(minimum_value=10, maximum_value=20)
+        mocker.patch.object(
+            entitlement_entities,
+            "ENTITLEMENT_KINDS",
+            (day_tokens, *entitlement_entities.ENTITLEMENT_KINDS[1:]),
+        )
+
+        with pytest.raises(
+            pydantic.ValidationError,
+            match="constant for day_tokens must be within entitlement kind bounds",
+        ):
+            make_benefit_package_template(entitlements={EntitlementKindId.day_tokens: ParameterConstant(value=9)})
+
+    def test_parameter_ranges_must_match_entitlement_kinds__rejects_incompatible_range(
+        self,
+        mocker: MockerFixture,
+    ) -> None:
+        day_tokens = entitlement_entities.ENTITLEMENT_KINDS[0].replace(minimum_value=10, maximum_value=20)
+        mocker.patch.object(
+            entitlement_entities,
+            "ENTITLEMENT_KINDS",
+            (day_tokens, *entitlement_entities.ENTITLEMENT_KINDS[1:]),
+        )
+        parameter = BenefitParameterDefinition(
+            id=BenefitParameterId("quantity"),
+            minimum=9,
+            maximum=20,
+        )
+
+        with pytest.raises(pydantic.ValidationError, match="parameter quantity range for day_tokens"):
+            make_benefit_package_template(
+                parameters=(parameter,),
+                entitlements={EntitlementKindId.day_tokens: ParameterReference(parameter_id=parameter.id)},
             )
 
 

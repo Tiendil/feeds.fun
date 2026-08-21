@@ -27,6 +27,13 @@ Code MUST still validate semantic constraints that type annotations cannot expre
 Code that constructs a semantically specific typed value from raw or untyped data MUST validate the semantic invariants of that type at the construction boundary.
 Functions and methods that receive the constructed typed value MUST assume those invariants hold and MUST NOT repeat their validation.
 
+## Temporary implementation code
+
+Production code intentionally introduced as a temporary bridge MUST include an adjacent `TODO` comment.
+The comment MUST explain why the temporary code is currently necessary and identify the concrete condition, milestone, or tracked work item after which it MUST be removed.
+Vague comments such as "remove later" are insufficient.
+The comment MUST be removed together with the temporary code.
+
 ## Closed value sets
 
 Project-owned closed sets of named values SHOULD use enums instead of `typing.Literal`.

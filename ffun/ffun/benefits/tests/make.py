@@ -4,6 +4,8 @@ import uuid
 from ffun.benefits.entities import (
     BenefitEntitlementAction,
     BenefitPackage,
+    BenefitPackageTemplate,
+    BenefitParameterDefinition,
     BenefitParameterId,
     BenefitSourceId,
     BenefitSourceTransactionId,
@@ -11,8 +13,11 @@ from ffun.benefits.entities import (
     BenefitTransactionCommand,
     ExternalSubscriptionTarget,
     NewSubscriptionTarget,
+    ParameterConstant,
+    ParameterReference,
     SubscriptionTarget,
 )
+from ffun.core.entities import NonEmptyString
 from ffun.domain.domain import new_user_id
 from ffun.domain.entities import BenefitId, BenefitTransactionId, SubscriptionId, UserId
 from ffun.entitlements.entities import EntitlementKindId, EntitlementValue
@@ -40,6 +45,24 @@ def make_benefit_package(
 
     return BenefitPackage(
         id=benefit_id,
+        parameters=parameters,
+        entitlements=entitlements,
+    )
+
+
+def make_benefit_package_template(
+    *,
+    benefit_id: BenefitId = BenefitId("test-benefit"),
+    parameters: tuple[BenefitParameterDefinition, ...] = (),
+    entitlements: dict[EntitlementKindId, ParameterConstant | ParameterReference] | None = None,
+) -> BenefitPackageTemplate:
+    if entitlements is None:
+        entitlements = {EntitlementKindId.day_tokens: ParameterConstant(value=10)}
+
+    return BenefitPackageTemplate(
+        id=benefit_id,
+        title=NonEmptyString("Test benefit"),
+        description="Test benefit package template",
         parameters=parameters,
         entitlements=entitlements,
     )

@@ -9,14 +9,16 @@ from ffun.audit.entities import AuditEntityKind
 from ffun.benefits import domain, errors, operations
 from ffun.benefits.entities import (
     BenefitEntitlementAction,
-    BenefitPackage,
+    BenefitPackageTemplate,
     BenefitTransactionApplicationResult,
     BenefitTransactionCommand,
     InternalSubscriptionTarget,
     NewSubscriptionTarget,
+    ParameterConstant,
 )
 from ffun.benefits.tests.make import (
     make_benefit_package,
+    make_benefit_package_template,
     make_benefit_transaction,
     make_external_subscription_target,
     make_subscription_snapshot,
@@ -49,9 +51,9 @@ _ACTOR_ID = SerializedId("provider-hook")
 
 
 @pytest.fixture  # type: ignore[misc]
-def package(mocker: MockerFixture) -> BenefitPackage:
-    configured = make_benefit_package()
-    mocker.patch.object(domain.settings, "packages", (configured,))
+def package(mocker: MockerFixture) -> BenefitPackageTemplate:
+    configured = make_benefit_package_template()
+    mocker.patch.object(domain.settings, "package_templates", (configured,))
     return configured
 
 
@@ -81,18 +83,18 @@ class TestGetBenefitTransaction:
 
 
 class TestFindBenefit:
-    def test_returns_configured_package(self, package: BenefitPackage) -> None:
+    def test_returns_configured_template(self, package: BenefitPackageTemplate) -> None:
         assert domain._find_benefit(package.id) == package
 
-    def test_unknown_identifier(self, package: BenefitPackage) -> None:
+    def test_unknown_identifier(self, package: BenefitPackageTemplate) -> None:
         assert domain._find_benefit(BenefitId("unknown")) is None
 
 
 class TestGetBenefit:
-    def test_returns_configured_package(self, package: BenefitPackage) -> None:
+    def test_returns_configured_template(self, package: BenefitPackageTemplate) -> None:
         assert domain.get_benefit(package.id) == package
 
-    def test_unknown_identifier_raises_module_error(self, package: BenefitPackage) -> None:
+    def test_unknown_identifier_raises_module_error(self, package: BenefitPackageTemplate) -> None:
         with pytest.raises(errors.UnknownBenefit) as exception_info:
             domain.get_benefit(BenefitId("unknown"))
 
@@ -100,10 +102,10 @@ class TestGetBenefit:
 
 
 class TestHasBenefit:
-    def test_configured_identifier(self, package: BenefitPackage) -> None:
+    def test_configured_identifier(self, package: BenefitPackageTemplate) -> None:
         assert domain.has_benefit(package.id)
 
-    def test_unknown_identifier(self, package: BenefitPackage) -> None:
+    def test_unknown_identifier(self, package: BenefitPackageTemplate) -> None:
         assert not domain.has_benefit(BenefitId("unknown"))
 
 
@@ -351,7 +353,7 @@ class TestApplyTransaction:
     )
     async def test_builds_transaction_with_derived_action_and_combines_callbacks(
         self,
-        package: BenefitPackage,
+        package: BenefitPackageTemplate,
         mocker: MockerFixture,
         status: SubscriptionStatusId,
         expected: BenefitEntitlementAction,
@@ -407,7 +409,7 @@ class TestApplyTransaction:
     @pytest.mark.asyncio
     async def test_stale_subscription_raises_before_entitlement_replacement(
         self,
-        package: BenefitPackage,
+        package: BenefitPackageTemplate,
         mocker: MockerFixture,
     ) -> None:
         snapshot = make_subscription_snapshot(benefit_id=package.id)
@@ -452,13 +454,13 @@ class TestApplyTransaction:
 class TestApplySubscriptionTransaction:
     @pytest.mark.asyncio
     async def test_grant_persists_atomic_state_and_emits_events(self, mocker: MockerFixture) -> None:
-        package = make_benefit_package(
+        package = make_benefit_package_template(
             entitlements={
-                EntitlementKindId.day_tokens: 10,
-                EntitlementKindId.lifetime_tokens: 100,
+                EntitlementKindId.day_tokens: ParameterConstant(value=10),
+                EntitlementKindId.lifetime_tokens: ParameterConstant(value=100),
             }
         )
-        mocker.patch.object(domain.settings, "packages", (package,))
+        mocker.patch.object(domain.settings, "package_templates", (package,))
         snapshot = make_subscription_snapshot(benefit_id=package.id, status=SubscriptionStatusId.active)
         command = make_transaction_command()
 
@@ -530,18 +532,18 @@ class TestApplySubscriptionTransaction:
         self,
         mocker: MockerFixture,
     ) -> None:
-        original_package = make_benefit_package(
+        original_package = make_benefit_package_template(
             benefit_id=BenefitId("original"),
             entitlements={
-                EntitlementKindId.day_tokens: 10,
-                EntitlementKindId.month_tokens: 20,
+                EntitlementKindId.day_tokens: ParameterConstant(value=10),
+                EntitlementKindId.month_tokens: ParameterConstant(value=20),
             },
         )
-        current_package = make_benefit_package(
+        current_package = make_benefit_package_template(
             benefit_id=BenefitId("current"),
-            entitlements={EntitlementKindId.lifetime_tokens: 30},
+            entitlements={EntitlementKindId.lifetime_tokens: ParameterConstant(value=30)},
         )
-        mocker.patch.object(domain.settings, "packages", (original_package, current_package))
+        mocker.patch.object(domain.settings, "package_templates", (original_package, current_package))
         original_snapshot = make_subscription_snapshot(benefit_id=original_package.id)
         grant = await _apply(original_snapshot, make_transaction_command())
         application_started_at = datetime.datetime.now(tz=datetime.UTC)
@@ -605,8 +607,8 @@ class TestApplySubscriptionTransaction:
 
     @pytest.mark.asyncio
     async def test_external_target_creates_and_reuses_reference(self, mocker: MockerFixture) -> None:
-        package = make_benefit_package()
-        mocker.patch.object(domain.settings, "packages", (package,))
+        package = make_benefit_package_template()
+        mocker.patch.object(domain.settings, "package_templates", (package,))
         target = make_external_subscription_target()
         first_snapshot = make_subscription_snapshot(benefit_id=package.id)
         second_snapshot = first_snapshot.replace(
@@ -634,7 +636,7 @@ class TestApplySubscriptionTransaction:
     @pytest.mark.asyncio
     async def test_source_retry_returns_first_result_and_ignores_new_payload(
         self,
-        package: BenefitPackage,
+        package: BenefitPackageTemplate,
     ) -> None:
         first_snapshot = make_subscription_snapshot(benefit_id=package.id)
         command = make_transaction_command()
@@ -665,7 +667,7 @@ class TestApplySubscriptionTransaction:
         assert_logs_has_no_business_event(logs, "entitlement_changed")
 
     @pytest.mark.asyncio
-    async def test_unknown_benefit_rolls_back_all_state(self, package: BenefitPackage) -> None:
+    async def test_unknown_benefit_rolls_back_all_state(self, package: BenefitPackageTemplate) -> None:
         reference = make_provider_subscription_reference()
         target = make_external_subscription_target(reference)
         snapshot = make_subscription_snapshot(benefit_id=BenefitId("unknown"))
@@ -690,7 +692,7 @@ class TestApplySubscriptionTransaction:
     @pytest.mark.asyncio
     async def test_concurrent_source_loser_rolls_back_external_reference(
         self,
-        package: BenefitPackage,
+        package: BenefitPackageTemplate,
         mocker: MockerFixture,
     ) -> None:
         reference = make_provider_subscription_reference()
@@ -719,7 +721,7 @@ class TestApplySubscriptionTransaction:
     @pytest.mark.asyncio
     async def test_entitlement_failure_rolls_back_transaction_subscription_reference_and_audit(
         self,
-        package: BenefitPackage,
+        package: BenefitPackageTemplate,
         mocker: MockerFixture,
     ) -> None:
         reference = make_provider_subscription_reference()
@@ -759,7 +761,7 @@ class TestApplySubscriptionTransaction:
     @pytest.mark.asyncio
     async def test_stale_revoke_rolls_back_and_preserves_current_entitlements(
         self,
-        package: BenefitPackage,
+        package: BenefitPackageTemplate,
     ) -> None:
         current_snapshot = make_subscription_snapshot(benefit_id=package.id)
         current_grant = await _apply(current_snapshot, make_transaction_command())
@@ -813,7 +815,7 @@ class TestApplySubscriptionTransaction:
     @pytest.mark.asyncio
     async def test_new_grant_preserves_and_revokes_previous_source_grant(
         self,
-        package: BenefitPackage,
+        package: BenefitPackageTemplate,
     ) -> None:
         now = datetime.datetime.now(tz=datetime.UTC)
         snapshot = make_subscription_snapshot(
@@ -862,7 +864,7 @@ class TestApplySubscriptionTransaction:
     @pytest.mark.asyncio
     async def test_revocation_failure_rolls_back_transaction_and_subscription(
         self,
-        package: BenefitPackage,
+        package: BenefitPackageTemplate,
         mocker: MockerFixture,
     ) -> None:
         snapshot = make_subscription_snapshot(benefit_id=package.id)

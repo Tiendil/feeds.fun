@@ -1,21 +1,21 @@
 import pydantic
 import pydantic_settings
 
-from ffun.benefits.entities import BenefitPackage
+from ffun.benefits.entities import BenefitPackageTemplate
 from ffun.core.settings import BaseSettings
 
 
 class Settings(BaseSettings):
     # Keep package ids stable: do not reuse an id for an unrelated product or
     # remove one while a current subscription can reference it.
-    packages: tuple[BenefitPackage, ...] = ()
+    package_templates: tuple[BenefitPackageTemplate, ...] = ()
 
     @pydantic.model_validator(mode="after")
-    def package_ids_must_be_unique(self) -> "Settings":
-        package_ids = [package.id for package in self.packages]
+    def package_template_ids_must_be_unique(self) -> "Settings":
+        template_ids = [template.id for template in self.package_templates]
 
-        if len(package_ids) != len(set(package_ids)):
-            raise ValueError("Benefit package ids must be unique")
+        if len(template_ids) != len(set(template_ids)):
+            raise ValueError("Benefit package template ids must be unique")
 
         return self
 
