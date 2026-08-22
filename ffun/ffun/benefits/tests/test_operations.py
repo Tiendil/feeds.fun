@@ -3,6 +3,7 @@ import uuid
 from typing import cast
 
 import pytest
+from psycopg.errors import CheckViolation
 from pydantic import ValidationError
 
 from ffun.benefits import errors, operations
@@ -98,6 +99,66 @@ class TestSaveBenefitTransaction:
             )
             == first
         )
+
+
+class TestBenefitTransactionTargetConstraint:
+    @pytest.mark.asyncio
+    @pytest.mark.parametrize(
+        ("subscription_id", "one_time_purchase_id"),
+        [
+            (None, None),
+            (uuid.uuid4(), uuid.uuid4()),
+        ],
+    )
+    async def test_rejects_invalid_target_shape(
+        self,
+        subscription_id: uuid.UUID | None,
+        one_time_purchase_id: uuid.UUID | None,
+    ) -> None:
+        transaction = make_benefit_transaction()
+        arguments = cast(dict[str, object], transaction.model_dump())
+        arguments.update(
+            {
+                "subscription_id": subscription_id,
+                "one_time_purchase_id": one_time_purchase_id,
+            }
+        )
+        check_violation = cast(type[Exception], CheckViolation)
+
+        # Developer-approved direct SQL is required because valid entities cannot represent an invalid target shape.
+        async with TableSizeNotChanged("b_transactions"):
+            with pytest.raises(check_violation):
+                await execute(
+                    """
+                    INSERT INTO b_transactions (
+                        id,
+                        source_id,
+                        source_transaction_id,
+                        entitlement_action,
+                        user_id,
+                        benefit_id,
+                        subscription_id,
+                        one_time_purchase_id,
+                        effective_at,
+                        period_starts_at,
+                        period_ends_at
+                    )
+                    VALUES (
+                        %(id)s,
+                        %(source_id)s,
+                        %(source_transaction_id)s,
+                        %(entitlement_action)s,
+                        %(user_id)s,
+                        %(benefit_id)s,
+                        %(subscription_id)s,
+                        %(one_time_purchase_id)s,
+                        %(effective_at)s,
+                        %(period_starts_at)s,
+                        %(period_ends_at)s
+                    )
+                    """,
+                    arguments,
+                )
 
 
 class TestLoadBenefitTransaction:

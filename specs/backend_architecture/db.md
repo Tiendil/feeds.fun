@@ -145,8 +145,10 @@ Operations that need one consistent application-level timestamp across multiple 
 ## Idempotency And Constraints
 
 Schema constraints MUST be limited to structural storage integrity, such as nullability, primary keys, foreign keys, uniqueness, and ownership keys.
+Row-local cross-column constraints MAY enforce structural combinations such as paired nullability and exactly-one or at-most-one ownership keys.
 
-Business invariants, including allowed values, cross-column value combinations, and state-transition rules, MUST be validated by domain or service logic before an operation persists the state. Database schemas MUST NOT use `CHECK` constraints or other schema-level validation to enforce business invariants.
+Business invariants, including allowed values and state-transition rules, MUST be validated by domain or service logic before an operation persists the state, even when a row-local schema constraint also protects the corresponding stored shape.
+Database schemas MUST NOT use constraints, triggers, or other schema-level validation to enforce invariants that depend on data owned by another top-level backend module.
 
 Database operations SHOULD use `ON CONFLICT` when repeated calls are expected to be harmless.
 

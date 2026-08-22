@@ -7,7 +7,7 @@ import pydantic
 from ffun.core import utils
 from ffun.core.entities import BaseEntity, NonEmptyString
 from ffun.domain.datetime_intervals import LIFETIME_INTERVAL_END_MARKER
-from ffun.domain.entities import BenefitTransactionId, SubscriptionId, UserId
+from ffun.domain.entities import BenefitTransactionId, OneTimePurchaseId, SubscriptionId, UserId
 
 
 class EntitlementSourceId(NonEmptyString):
@@ -73,12 +73,20 @@ class SourceEntitlement(BaseEntity):
     grant_transaction_id: BenefitTransactionId
     user_id: UserId
     subscription_id: SubscriptionId | None = None
+    one_time_purchase_id: OneTimePurchaseId | None = None
     kind_id: EntitlementKindId
     value: EntitlementValue
     starts_at: datetime.datetime
     expires_at: datetime.datetime
     revoked_at: datetime.datetime | None = None
     revoked_by_transaction_id: BenefitTransactionId | None = None
+
+    @pydantic.model_validator(mode="after")
+    def validate_owner(self) -> "SourceEntitlement":
+        if self.subscription_id is not None and self.one_time_purchase_id is not None:
+            raise ValueError("A source entitlement may have at most one purchased-state owner")
+
+        return self
 
     @pydantic.model_validator(mode="after")
     def validate_state(self) -> "SourceEntitlement":  # noqa: CCR001
@@ -128,6 +136,7 @@ class SourceEntitlement(BaseEntity):
             and self.grant_transaction_id == other.grant_transaction_id
             and self.user_id == other.user_id
             and self.subscription_id == other.subscription_id
+            and self.one_time_purchase_id == other.one_time_purchase_id
             and self.kind_id == other.kind_id
             and self.value == other.value
             and self.starts_at == other.starts_at

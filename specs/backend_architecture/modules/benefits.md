@@ -149,6 +149,7 @@ Each benefit transaction accepted by the module MUST have an internally generate
 The subscription detail variant MUST contain one internal subscription identifier and no one-time-purchase identifier.
 The one-time-purchase detail variant MUST contain one internal one-time-purchase identifier and no subscription identifier.
 A transaction with no target or with both targets MUST be invalid.
+Benefit-transaction persistence MUST enforce this row shape with a local check constraint requiring exactly one of the nullable subscription and one-time-purchase identifier columns.
 Target identity MUST NOT be encoded as a generic target-kind and target-identifier pair.
 The target kind MUST be derived from the detail variant and MUST NOT be duplicated as independent transaction data.
 

@@ -2,7 +2,7 @@ import datetime
 import uuid
 
 from ffun.domain.domain import new_user_id
-from ffun.domain.entities import BenefitTransactionId, SubscriptionId, UserId
+from ffun.domain.entities import BenefitTransactionId, OneTimePurchaseId, SubscriptionId, UserId
 from ffun.entitlements.entities import (
     EffectiveEntitlementInterval,
     EntitlementKindId,
@@ -35,6 +35,7 @@ def make_source_entitlement(  # noqa: CFQ002
     source_id: EntitlementSourceId = EntitlementSourceId("test"),
     grant_transaction_id: BenefitTransactionId | None = None,
     subscription_id: SubscriptionId | None = None,
+    one_time_purchase_id: OneTimePurchaseId | None = None,
     kind_id: EntitlementKindId = EntitlementKindId.day_tokens,
     value: int = 10,
     starts_at: datetime.datetime | None = None,
@@ -48,6 +49,7 @@ def make_source_entitlement(  # noqa: CFQ002
         grant_transaction_id=grant_transaction_id or BenefitTransactionId(uuid.uuid4()),
         user_id=user_id or new_user_id(),
         subscription_id=subscription_id,
+        one_time_purchase_id=one_time_purchase_id,
         kind_id=kind_id,
         value=value,
         starts_at=starts_at or now - datetime.timedelta(days=1),

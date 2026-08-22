@@ -20,7 +20,7 @@ def new_benefit_transaction_id() -> BenefitTransactionId:
 def row_to_benefit_transaction(row: Mapping[str, object]) -> BenefitTransaction:
     data = dict(row)
     data.pop("created_at", None)
-    # TODO: Preserve this field when purchase-target transaction entities are introduced.
+    # TODO: BenefitTransaction cannot validate purchase targets yet; preserve this field when those entities exist.
     data.pop("one_time_purchase_id", None)
 
     try:

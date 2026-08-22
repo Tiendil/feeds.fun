@@ -33,6 +33,7 @@ from ffun.entitlements.entities import (
 from ffun.entitlements.tests.helpers import clear_effective_intervals
 from ffun.entitlements.tests.make import make_effective_entitlement_interval, make_source_entitlement
 from ffun.locks.entities import LockKind
+from ffun.one_time_purchases.domain import new_purchase_id
 from ffun.subscriptions.domain import new_subscription_id
 
 _DAY_TOKENS = EntitlementKindId.day_tokens
@@ -342,6 +343,7 @@ class TestRebuildAfterSourceChange:
         assert records[-1].attributes == {
             "source_id": source_state.source_id,
             "subscription_id": str(source_state.subscription_id),
+            "one_time_purchase_id": None,
             "grant_transaction_id": str(source_state.grant_transaction_id),
             "revoked_by_transaction_id": None,
             "kind_id": source_state.kind_id.value,
@@ -583,6 +585,7 @@ class TestEmitSourceChangeEvents:
             user_id=source_state.user_id,
             source_id=source_state.source_id,
             subscription_id=str(source_state.subscription_id),
+            one_time_purchase_id=None,
             grant_transaction_id=str(source_state.grant_transaction_id),
             revoked_by_transaction_id=(
                 str(source_state.revoked_by_transaction_id)
@@ -1033,6 +1036,7 @@ class TestGrantSourceEntitlements:
                 grant_transaction_id=_GRANT_TRANSACTION_ID,
                 user_id=new_user_id(),
                 subscription_id=None,
+                one_time_purchase_id=None,
                 guarantees=[],
                 starts_at=datetime.datetime.now(tz=datetime.UTC),
                 expires_at=datetime.datetime.now(tz=datetime.UTC) + datetime.timedelta(days=1),
@@ -1058,6 +1062,7 @@ class TestGrantSourceEntitlements:
                     grant_transaction_id=_GRANT_TRANSACTION_ID,
                     user_id=user_id,
                     subscription_id=subscription_id,
+                    one_time_purchase_id=None,
                     guarantees=[
                         EntitlementGuarantee(kind_id=_LIFETIME_TOKENS, value=30),
                         EntitlementGuarantee(kind_id=_DAY_TOKENS, value=10),
@@ -1082,6 +1087,52 @@ class TestGrantSourceEntitlements:
         assert sum(record.get("event") == "entitlement_changed" for record in logs) == 2
 
     @pytest.mark.asyncio
+    async def test_grants_one_time_purchase_owned_guarantee_with_audit_and_events(self) -> None:
+        user_id = new_user_id()
+        one_time_purchase_id = new_purchase_id()
+        now = datetime.datetime.now(tz=datetime.UTC)
+
+        with capture_logs() as logs:
+            async with transaction() as transaction_execute:
+                outcomes, callbacks = await domain.grant_source_entitlements(
+                    transaction_execute,
+                    source_id=_SOURCE_ID,
+                    grant_transaction_id=_GRANT_TRANSACTION_ID,
+                    user_id=user_id,
+                    subscription_id=None,
+                    one_time_purchase_id=one_time_purchase_id,
+                    guarantees=[EntitlementGuarantee(kind_id=_LIFETIME_TOKENS, value=30)],
+                    starts_at=now,
+                    expires_at=now + datetime.timedelta(days=1),
+                    evaluation_time=now,
+                    actor_kind=_ACTOR_KIND,
+                    actor_id=_ACTOR_ID,
+                )
+
+            assert_logs_has_no_business_event(logs, "source_entitlement_changed")
+            for callback in callbacks:
+                callback()
+
+        assert len(outcomes) == 1
+        assert outcomes[0].source_state.subscription_id is None
+        assert outcomes[0].source_state.one_time_purchase_id == one_time_purchase_id
+        records = await audit_domain.load_records_for_subject(
+            execute,
+            subject_kind=AuditEntityKind.user,
+            subject_id=SerializedId(str(user_id)),
+        )
+        assert records[-1].attributes["subscription_id"] is None
+        assert records[-1].attributes["one_time_purchase_id"] == str(one_time_purchase_id)
+        assert_logs_has_business_event(
+            logs,
+            "source_entitlement_changed",
+            user_id=user_id,
+            subscription_id=None,
+            one_time_purchase_id=str(one_time_purchase_id),
+            granted=True,
+        )
+
+    @pytest.mark.asyncio
     async def test_invalid_interval_is_module_error_and_rolls_back(self) -> None:
         user_id = new_user_id()
         now = datetime.datetime.now(tz=datetime.UTC)
@@ -1099,6 +1150,7 @@ class TestGrantSourceEntitlements:
                         grant_transaction_id=_GRANT_TRANSACTION_ID,
                         user_id=user_id,
                         subscription_id=None,
+                        one_time_purchase_id=None,
                         guarantees=[EntitlementGuarantee(kind_id=_DAY_TOKENS, value=10)],
                         starts_at=now,
                         expires_at=now,
@@ -1137,6 +1189,7 @@ class TestRevokeSubscriptionEntitlements:
                 grant_transaction_id=_GRANT_TRANSACTION_ID,
                 user_id=user_id,
                 subscription_id=subscription_id,
+                one_time_purchase_id=None,
                 guarantees=[
                     EntitlementGuarantee(kind_id=_DAY_TOKENS, value=10),
                     EntitlementGuarantee(kind_id=_MONTH_TOKENS, value=20),
@@ -1153,6 +1206,7 @@ class TestRevokeSubscriptionEntitlements:
                 grant_transaction_id=future_transaction_id,
                 user_id=user_id,
                 subscription_id=subscription_id,
+                one_time_purchase_id=None,
                 guarantees=[EntitlementGuarantee(kind_id=_DAY_TOKENS, value=30)],
                 starts_at=now + datetime.timedelta(days=1),
                 expires_at=now + datetime.timedelta(days=2),
@@ -1185,6 +1239,111 @@ class TestRevokeSubscriptionEntitlements:
         assert all(not outcome.source_state.granted for outcome in outcomes)
         assert all(outcome.source_state.revoked_by_transaction_id == _REVOKING_TRANSACTION_ID for outcome in outcomes)
         assert len(callbacks) == len(granted) + len(future_granted)
+
+
+class TestRevokeOneTimePurchaseEntitlements:
+    @pytest.mark.asyncio
+    async def test_missing_purchase_grants_return_empty_results(self) -> None:
+        async with transaction() as transaction_execute:
+            outcomes, callbacks = await domain.revoke_one_time_purchase_entitlements(
+                transaction_execute,
+                one_time_purchase_id=new_purchase_id(),
+                revoked_by_transaction_id=_REVOKING_TRANSACTION_ID,
+                evaluation_time=datetime.datetime.now(tz=datetime.UTC),
+                actor_kind=_ACTOR_KIND,
+                actor_id=_ACTOR_ID,
+            )
+
+        assert outcomes == []
+        assert callbacks == []
+
+    @pytest.mark.asyncio
+    async def test_revokes_purchase_grants_and_rebuilds_timeline_without_other_purchase(self) -> None:
+        user_id = new_user_id()
+        one_time_purchase_id = new_purchase_id()
+        other_purchase_id = new_purchase_id()
+        now = datetime.datetime.now(tz=datetime.UTC)
+        future_transaction_id = BenefitTransactionId(uuid.UUID(int=3))
+        other_transaction_id = BenefitTransactionId(uuid.UUID(int=4))
+
+        grants = (
+            (_GRANT_TRANSACTION_ID, one_time_purchase_id, 100, -1, 1),
+            (future_transaction_id, one_time_purchase_id, 50, 1, 2),
+            (other_transaction_id, other_purchase_id, 250, -1, 1),
+        )
+        grant_callbacks = []
+        async with transaction() as transaction_execute:
+            for transaction_id, purchase_id, value, starts_in_days, expires_in_days in grants:
+                _, callbacks = await domain.grant_source_entitlements(
+                    transaction_execute,
+                    source_id=_SOURCE_ID,
+                    grant_transaction_id=transaction_id,
+                    user_id=user_id,
+                    subscription_id=None,
+                    one_time_purchase_id=purchase_id,
+                    guarantees=[EntitlementGuarantee(kind_id=_LIFETIME_TOKENS, value=value)],
+                    starts_at=now + datetime.timedelta(days=starts_in_days),
+                    expires_at=now + datetime.timedelta(days=expires_in_days),
+                    evaluation_time=now,
+                    actor_kind=_ACTOR_KIND,
+                    actor_id=_ACTOR_ID,
+                )
+                grant_callbacks.extend(callbacks)
+
+        for callback in grant_callbacks:
+            callback()
+
+        with capture_logs() as logs:
+            async with transaction() as transaction_execute:
+                outcomes, callbacks = await domain.revoke_one_time_purchase_entitlements(
+                    transaction_execute,
+                    one_time_purchase_id=one_time_purchase_id,
+                    revoked_by_transaction_id=_REVOKING_TRANSACTION_ID,
+                    evaluation_time=now,
+                    actor_kind=_ACTOR_KIND,
+                    actor_id=_ACTOR_ID,
+                )
+
+            assert_logs_has_no_business_event(logs, "source_entitlement_changed")
+            for callback in callbacks:
+                callback()
+
+        assert [outcome.source_state.grant_transaction_id for outcome in outcomes] == [
+            _GRANT_TRANSACTION_ID,
+            future_transaction_id,
+        ]
+        assert all(not outcome.source_state.granted for outcome in outcomes)
+        assert all(outcome.source_state.one_time_purchase_id == one_time_purchase_id for outcome in outcomes)
+        assert len(callbacks) == 2
+        effective = (await domain.get_entitlements([user_id], [_LIFETIME_TOKENS]))[user_id][_LIFETIME_TOKENS]
+        assert effective is not None
+        assert effective.value == 250
+
+        source_entitlements = await operations.load_source_entitlements(execute, user_id, _LIFETIME_TOKENS)
+        assert {source.grant_transaction_id: source.granted for source in source_entitlements} == {
+            _GRANT_TRANSACTION_ID: False,
+            future_transaction_id: False,
+            other_transaction_id: True,
+        }
+        records = await audit_domain.load_records_for_subject(
+            execute,
+            subject_kind=AuditEntityKind.user,
+            subject_id=SerializedId(str(user_id)),
+        )
+        assert [record.attributes["one_time_purchase_id"] for record in records[-2:]] == [
+            str(one_time_purchase_id),
+            str(one_time_purchase_id),
+        ]
+        assert sum(record.get("event") == "source_entitlement_changed" for record in logs) == 2
+        assert sum(record.get("event") == "entitlement_changed" for record in logs) == 2
+        assert_logs_has_business_event(
+            logs,
+            "source_entitlement_changed",
+            user_id=user_id,
+            one_time_purchase_id=str(one_time_purchase_id),
+            revoked_by_transaction_id=str(_REVOKING_TRANSACTION_ID),
+            granted=False,
+        )
 
 
 class TestGetEntitlements:

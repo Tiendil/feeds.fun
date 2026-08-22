@@ -19,6 +19,7 @@ from ffun.entitlements.entities import (
     SourceEntitlement,
 )
 from ffun.entitlements.tests.make import make_effective_entitlement_interval, make_source_entitlement
+from ffun.one_time_purchases.domain import new_purchase_id
 from ffun.subscriptions.domain import new_subscription_id
 
 
@@ -116,6 +117,13 @@ class TestSourceEntitlement:
         with pytest.raises(pydantic.ValidationError, match="activation timestamp must be earlier than expiration"):
             make_source_entitlement(starts_at=now, expires_at=now)
 
+    def test_init__rejects_multiple_purchased_state_owners(self) -> None:
+        with pytest.raises(pydantic.ValidationError, match="at most one purchased-state owner"):
+            make_source_entitlement(
+                subscription_id=new_subscription_id(),
+                one_time_purchase_id=new_purchase_id(),
+            )
+
     @pytest.mark.parametrize(
         ("revoked_at", "revoked_by_transaction_id"),
         [
@@ -207,6 +215,7 @@ class TestSourceEntitlement:
             "grant_transaction_id",
             "user_id",
             "subscription_id",
+            "one_time_purchase_id",
             "kind_id",
             "value",
             "starts_at",
@@ -220,6 +229,7 @@ class TestSourceEntitlement:
             "grant_transaction_id": BenefitTransactionId(uuid.uuid4()),
             "user_id": make_source_entitlement().user_id,
             "subscription_id": new_subscription_id(),
+            "one_time_purchase_id": new_purchase_id(),
             "kind_id": EntitlementKindId.month_tokens,
             "value": 20,
             "starts_at": entitlement.starts_at + datetime.timedelta(microseconds=1),

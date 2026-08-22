@@ -321,6 +321,7 @@ class TestReplaceBenefit:
             grant_transaction_id=benefit_transaction.id,
             user_id=benefit_transaction.user_id,
             subscription_id=benefit_transaction.subscription_id,
+            one_time_purchase_id=None,
             guarantees=(EntitlementGuarantee(kind_id=EntitlementKindId.day_tokens, value=10),),
             starts_at=snapshot.period_starts_at,
             expires_at=snapshot.period_ends_at,

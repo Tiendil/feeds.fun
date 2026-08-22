@@ -4,7 +4,7 @@ import uuid
 from typing import cast
 
 import pytest
-from psycopg.errors import UniqueViolation
+from psycopg.errors import CheckViolation, UniqueViolation
 from pydantic import ValidationError
 
 from ffun.core.postgresql import execute, transaction
@@ -15,6 +15,7 @@ from ffun.entitlements import errors, operations
 from ffun.entitlements.entities import EntitlementKindId, EntitlementSourceId
 from ffun.entitlements.tests.helpers import load_effective_interval_timestamps, load_source_entitlement_timestamps
 from ffun.entitlements.tests.make import make_effective_entitlement_interval, make_source_entitlement
+from ffun.one_time_purchases.domain import new_purchase_id
 from ffun.subscriptions.domain import new_subscription_id
 
 
@@ -111,6 +112,66 @@ class TestInsertSourceEntitlement:
         assert loaded == entitlement
         created_at, updated_at = await load_source_entitlement_timestamps(entitlement)
         assert created_at == updated_at
+
+    @pytest.mark.asyncio
+    async def test_inserts_one_time_purchase_owner(self) -> None:
+        entitlement = make_source_entitlement(one_time_purchase_id=new_purchase_id())
+
+        async with TableSizeDelta("en_source_entitlements", delta=1):
+            await operations.insert_source_entitlement(execute, entitlement)
+
+        assert (
+            await operations.load_source_entitlement(
+                execute,
+                entitlement.user_id,
+                entitlement.kind_id,
+                entitlement.source_id,
+                entitlement.grant_transaction_id,
+            )
+            == entitlement
+        )
+
+    @pytest.mark.asyncio
+    async def test_rejects_multiple_purchased_state_owners(self) -> None:
+        entitlement = make_source_entitlement(subscription_id=new_subscription_id())
+        arguments = cast(dict[str, object], entitlement.model_dump())
+        arguments["one_time_purchase_id"] = new_purchase_id()
+        check_violation = cast(type[Exception], CheckViolation)
+
+        # Developer-approved direct SQL is required because valid entities reject multiple owners before persistence.
+        async with TableSizeNotChanged("en_source_entitlements"):
+            with pytest.raises(check_violation):
+                await execute(
+                    """
+                    INSERT INTO en_source_entitlements (
+                        source_id,
+                        grant_transaction_id,
+                        user_id,
+                        subscription_id,
+                        one_time_purchase_id,
+                        kind_id,
+                        value,
+                        starts_at,
+                        expires_at,
+                        revoked_at,
+                        revoked_by_transaction_id
+                    )
+                    VALUES (
+                        %(source_id)s,
+                        %(grant_transaction_id)s,
+                        %(user_id)s,
+                        %(subscription_id)s,
+                        %(one_time_purchase_id)s,
+                        %(kind_id)s,
+                        %(value)s,
+                        %(starts_at)s,
+                        %(expires_at)s,
+                        %(revoked_at)s,
+                        %(revoked_by_transaction_id)s
+                    )
+                    """,
+                    arguments,
+                )
 
     @pytest.mark.asyncio
     async def test_same_source_can_insert_multiple_grant_transactions(self) -> None:
@@ -343,6 +404,72 @@ class TestLoadSourceEntitlementsForSubscription:
         loaded = await operations.load_source_entitlements_for_subscription(
             execute,
             subscription_id,
+            evaluation_time=now,
+        )
+
+        assert loaded == [active_day, future_day, active_month]
+
+
+class TestLoadSourceEntitlementsForOneTimePurchase:
+    @pytest.mark.asyncio
+    async def test_missing_purchase_returns_empty_list(self) -> None:
+        loaded = await operations.load_source_entitlements_for_one_time_purchase(
+            execute,
+            new_purchase_id(),
+            evaluation_time=datetime.datetime.now(tz=datetime.UTC),
+        )
+
+        assert loaded == []
+
+    @pytest.mark.asyncio
+    async def test_returns_unrevoked_active_and_future_linked_grants_in_kind_and_transaction_order(self) -> None:
+        one_time_purchase_id = new_purchase_id()
+        now = datetime.datetime.now(tz=datetime.UTC)
+        active_month = make_source_entitlement(
+            one_time_purchase_id=one_time_purchase_id,
+            grant_transaction_id=_transaction_id(2),
+            kind_id=EntitlementKindId.month_tokens,
+            starts_at=now - datetime.timedelta(days=1),
+            expires_at=now + datetime.timedelta(days=1),
+        )
+        active_day = make_source_entitlement(
+            one_time_purchase_id=one_time_purchase_id,
+            grant_transaction_id=_transaction_id(1),
+            user_id=active_month.user_id,
+            kind_id=EntitlementKindId.day_tokens,
+            starts_at=now - datetime.timedelta(days=1),
+            expires_at=now + datetime.timedelta(days=1),
+        )
+        future_day = make_source_entitlement(
+            one_time_purchase_id=one_time_purchase_id,
+            grant_transaction_id=_transaction_id(3),
+            user_id=active_month.user_id,
+            kind_id=EntitlementKindId.day_tokens,
+            starts_at=now + datetime.timedelta(days=1),
+            expires_at=now + datetime.timedelta(days=3),
+        )
+        expired = make_source_entitlement(
+            one_time_purchase_id=one_time_purchase_id,
+            starts_at=now - datetime.timedelta(days=2),
+            expires_at=now,
+        )
+        revoked = make_source_entitlement(
+            one_time_purchase_id=one_time_purchase_id,
+            starts_at=now - datetime.timedelta(days=1),
+            expires_at=now + datetime.timedelta(days=1),
+            revoked_at=now,
+        )
+        other_purchase = make_source_entitlement(
+            one_time_purchase_id=new_purchase_id(),
+            starts_at=now - datetime.timedelta(days=1),
+            expires_at=now + datetime.timedelta(days=1),
+        )
+        for entitlement in (active_month, active_day, future_day, expired, revoked, other_purchase):
+            await operations.insert_source_entitlement(execute, entitlement)
+
+        loaded = await operations.load_source_entitlements_for_one_time_purchase(
+            execute,
+            one_time_purchase_id,
             evaluation_time=now,
         )
 

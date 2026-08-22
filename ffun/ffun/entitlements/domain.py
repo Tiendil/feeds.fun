@@ -9,7 +9,7 @@ from ffun.audit.entities import AuditEntityKind, AuditEventName
 from ffun.core import logging
 from ffun.core.postgresql import ExecuteType, execute
 from ffun.domain.datetime_intervals import LIFETIME_INTERVAL_END_MARKER
-from ffun.domain.entities import BenefitTransactionId, SerializedId, SubscriptionId, UserId
+from ffun.domain.entities import BenefitTransactionId, OneTimePurchaseId, SerializedId, SubscriptionId, UserId
 from ffun.entitlements import entities as entitlement_entities
 from ffun.entitlements import errors, operations
 from ffun.entitlements.entities import (
@@ -169,6 +169,11 @@ async def _rebuild_after_source_change(  # noqa: CFQ002
             "subscription_id": (
                 str(new_source_state.subscription_id) if new_source_state.subscription_id is not None else None
             ),
+            "one_time_purchase_id": (
+                str(new_source_state.one_time_purchase_id)
+                if new_source_state.one_time_purchase_id is not None
+                else None
+            ),
             "grant_transaction_id": str(new_source_state.grant_transaction_id),
             "revoked_by_transaction_id": (
                 str(new_source_state.revoked_by_transaction_id)
@@ -322,6 +327,7 @@ def _emit_source_change_events(outcome: SourceEntitlementChange) -> None:
         user_id=source_state.user_id,
         source_id=source_state.source_id,
         subscription_id=source_state.subscription_id,
+        one_time_purchase_id=source_state.one_time_purchase_id,
         grant_transaction_id=source_state.grant_transaction_id,
         kind_id=source_state.kind_id,
         granted=source_state.granted,
@@ -429,6 +435,7 @@ async def grant_source_entitlements(  # noqa: CFQ002
     grant_transaction_id: BenefitTransactionId,
     user_id: UserId,
     subscription_id: SubscriptionId | None,
+    one_time_purchase_id: OneTimePurchaseId | None,
     guarantees: Sequence[EntitlementGuarantee],
     starts_at: datetime.datetime,
     expires_at: datetime.datetime,
@@ -447,6 +454,7 @@ async def grant_source_entitlements(  # noqa: CFQ002
                 grant_transaction_id=grant_transaction_id,
                 user_id=user_id,
                 subscription_id=subscription_id,
+                one_time_purchase_id=one_time_purchase_id,
                 kind_id=guarantee.kind_id,
                 value=guarantee.value,
                 starts_at=starts_at,
@@ -480,6 +488,41 @@ async def revoke_subscription_entitlements(  # noqa: CFQ002
     source_entitlements = await operations.load_source_entitlements_for_subscription(
         execute,
         subscription_id,
+        evaluation_time=evaluation_time,
+    )
+    outcomes: list[SourceEntitlementChange] = []
+    event_callbacks: list[Callable[[], None]] = []
+
+    for source_entitlement in source_entitlements:
+        outcome, callback = await revoke_source_entitlement(
+            execute,
+            source_id=source_entitlement.source_id,
+            grant_transaction_id=source_entitlement.grant_transaction_id,
+            revoked_by_transaction_id=revoked_by_transaction_id,
+            user_id=source_entitlement.user_id,
+            kind_id=source_entitlement.kind_id,
+            evaluation_time=evaluation_time,
+            actor_kind=actor_kind,
+            actor_id=actor_id,
+        )
+        outcomes.append(outcome)
+        event_callbacks.append(callback)
+
+    return outcomes, event_callbacks
+
+
+async def revoke_one_time_purchase_entitlements(  # noqa: CFQ002
+    execute: ExecuteType,
+    *,
+    one_time_purchase_id: OneTimePurchaseId,
+    revoked_by_transaction_id: BenefitTransactionId,
+    evaluation_time: datetime.datetime,
+    actor_kind: AuditEntityKind,
+    actor_id: SerializedId,
+) -> tuple[list[SourceEntitlementChange], list[Callable[[], None]]]:
+    source_entitlements = await operations.load_source_entitlements_for_one_time_purchase(
+        execute,
+        one_time_purchase_id,
         evaluation_time=evaluation_time,
     )
     outcomes: list[SourceEntitlementChange] = []

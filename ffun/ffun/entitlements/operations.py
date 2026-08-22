@@ -7,7 +7,7 @@ from pydantic import ValidationError
 from pypika import Parameter, PostgreSQLQuery
 
 from ffun.core.postgresql import ExecuteType
-from ffun.domain.entities import BenefitTransactionId, SubscriptionId, UserId
+from ffun.domain.entities import BenefitTransactionId, OneTimePurchaseId, SubscriptionId, UserId
 from ffun.entitlements import errors
 from ffun.entitlements.entities import (
     EffectiveEntitlementInterval,
@@ -74,6 +74,7 @@ async def insert_source_entitlement(execute: ExecuteType, entitlement: SourceEnt
         grant_transaction_id,
         user_id,
         subscription_id,
+        one_time_purchase_id,
         kind_id,
         value,
         starts_at,
@@ -86,6 +87,7 @@ async def insert_source_entitlement(execute: ExecuteType, entitlement: SourceEnt
         %(grant_transaction_id)s,
         %(user_id)s,
         %(subscription_id)s,
+        %(one_time_purchase_id)s,
         %(kind_id)s,
         %(value)s,
         %(starts_at)s,
@@ -103,6 +105,7 @@ async def insert_source_entitlement(execute: ExecuteType, entitlement: SourceEnt
                 "grant_transaction_id": entitlement.grant_transaction_id,
                 "user_id": entitlement.user_id,
                 "subscription_id": entitlement.subscription_id,
+                "one_time_purchase_id": entitlement.one_time_purchase_id,
                 "kind_id": entitlement.kind_id,
                 "value": entitlement.value,
                 "starts_at": entitlement.starts_at,
@@ -190,6 +193,30 @@ async def load_source_entitlements_for_subscription(
         sql,
         {
             "subscription_id": subscription_id,
+            "evaluation_time": evaluation_time,
+        },
+    )
+    return [row_to_source_entitlement(row) for row in rows]
+
+
+async def load_source_entitlements_for_one_time_purchase(
+    execute: ExecuteType,
+    one_time_purchase_id: OneTimePurchaseId,
+    *,
+    evaluation_time: datetime.datetime,
+) -> list[SourceEntitlement]:
+    sql = """
+    SELECT *
+    FROM en_source_entitlements
+    WHERE one_time_purchase_id = %(one_time_purchase_id)s
+      AND %(evaluation_time)s < expires_at
+      AND revoked_at IS NULL
+    ORDER BY user_id, kind_id, source_id, grant_transaction_id
+    """
+    rows = await execute(
+        sql,
+        {
+            "one_time_purchase_id": one_time_purchase_id,
             "evaluation_time": evaluation_time,
         },
     )
