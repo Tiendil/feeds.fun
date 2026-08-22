@@ -21,6 +21,7 @@ from ffun.entitlements.entities import (
     EntitlementSourceId,
     MergePolicy,
     SourceEntitlement,
+    SourceEntitlementChange,
 )
 from ffun.locks.domain import Lock
 from ffun.locks.entities import LockKind
@@ -30,23 +31,6 @@ logger = logging.get_module_logger()
 
 def _empty_business_event_callback() -> None:
     pass
-
-
-class SourceEntitlementChange:
-    __slots__ = ("changed", "effective_state", "effective_intervals", "source_state")
-
-    def __init__(
-        self,
-        *,
-        changed: bool,
-        effective_state: EffectiveEntitlementState,
-        effective_intervals: list[EffectiveEntitlementInterval],
-        source_state: SourceEntitlement,
-    ) -> None:
-        self.changed = changed
-        self.effective_state = effective_state
-        self.effective_intervals = effective_intervals
-        self.source_state = source_state
 
 
 def get_entitlement_kind(kind_id: EntitlementKindId) -> EntitlementKind:

@@ -18,12 +18,17 @@ from ffun.core.tests.helpers import (
     capture_logs,
 )
 from ffun.domain.domain import new_user_id
-from ffun.domain.entities import BenefitId, BenefitTransactionId, SerializedId, SubscriptionId
+from ffun.domain.entities import (
+    BenefitId,
+    BenefitTransactionId,
+    ProviderStatus,
+    PurchasedStateSaveOutcome,
+    SerializedId,
+    SubscriptionId,
+)
 from ffun.locks.entities import LockKind
 from ffun.subscriptions import domain, errors, operations
 from ffun.subscriptions.entities import (
-    ProviderStatus,
-    SaveSubscriptionOutcome,
     Subscription,
     SubscriptionSaveResult,
     SubscriptionStatusId,
@@ -66,7 +71,7 @@ class TestDecideSubscriptionSave:
 
         assert domain._decide_subscription_save(None, incoming) == (
             domain._SaveSubscriptionCommand.upsert,
-            SaveSubscriptionOutcome.created,
+            PurchasedStateSaveOutcome.created,
         )
 
     def test_stale_snapshot_is_ignored(self) -> None:
@@ -78,7 +83,7 @@ class TestDecideSubscriptionSave:
 
         assert domain._decide_subscription_save(stored, incoming) == (
             domain._SaveSubscriptionCommand.ignore,
-            SaveSubscriptionOutcome.stale,
+            PurchasedStateSaveOutcome.stale,
         )
 
     def test_identical_snapshot_is_ignored(self) -> None:
@@ -86,7 +91,7 @@ class TestDecideSubscriptionSave:
 
         assert domain._decide_subscription_save(subscription, subscription) == (
             domain._SaveSubscriptionCommand.ignore,
-            SaveSubscriptionOutcome.same,
+            PurchasedStateSaveOutcome.same,
         )
 
     def test_freshness_only_snapshot_is_upserted_and_refreshed(self) -> None:
@@ -95,7 +100,7 @@ class TestDecideSubscriptionSave:
 
         assert domain._decide_subscription_save(stored, incoming) == (
             domain._SaveSubscriptionCommand.upsert,
-            SaveSubscriptionOutcome.refreshed,
+            PurchasedStateSaveOutcome.refreshed,
         )
 
     def test_newer_business_state_is_updated(self) -> None:
@@ -107,7 +112,7 @@ class TestDecideSubscriptionSave:
 
         assert domain._decide_subscription_save(stored, incoming) == (
             domain._SaveSubscriptionCommand.upsert,
-            SaveSubscriptionOutcome.updated,
+            PurchasedStateSaveOutcome.updated,
         )
 
     def test_same_time_different_business_state_is_conflict(self) -> None:
@@ -135,7 +140,7 @@ class TestEmitSubscriptionChangeEvent:
     def test_created_subscription_has_no_previous_status(self) -> None:
         subscription = make_subscription()
         result = SubscriptionSaveResult(
-            outcome=SaveSubscriptionOutcome.created,
+            outcome=PurchasedStateSaveOutcome.created,
             current=subscription,
         )
 
@@ -162,7 +167,7 @@ class TestEmitSubscriptionChangeEvent:
             provider_updated_at=previous.provider_updated_at + datetime.timedelta(seconds=1),
         )
         result = SubscriptionSaveResult(
-            outcome=SaveSubscriptionOutcome.updated,
+            outcome=PurchasedStateSaveOutcome.updated,
             current=current,
             previous=previous,
         )
@@ -244,8 +249,8 @@ class TestSaveSubscription:
             first_result, second_result = await asyncio.gather(first_save, second_save)
 
         assert second_load_entered.is_set()
-        assert first_result.outcome == SaveSubscriptionOutcome.created
-        assert second_result.outcome == SaveSubscriptionOutcome.same
+        assert first_result.outcome == PurchasedStateSaveOutcome.created
+        assert second_result.outcome == PurchasedStateSaveOutcome.same
 
     @pytest.mark.asyncio
     async def test_different_identities_do_not_share_lock(self, mocker: MockerFixture) -> None:
@@ -281,8 +286,8 @@ class TestSaveSubscription:
             release_first_load.set()
             (first_result, _), (second_result, _) = await asyncio.gather(first_save, second_save)
 
-        assert first_result.outcome == SaveSubscriptionOutcome.created
-        assert second_result.outcome == SaveSubscriptionOutcome.created
+        assert first_result.outcome == PurchasedStateSaveOutcome.created
+        assert second_result.outcome == PurchasedStateSaveOutcome.created
 
     @pytest.mark.asyncio
     async def test_creation_persists_audit_and_returns_post_commit_business_event(self) -> None:
@@ -299,7 +304,7 @@ class TestSaveSubscription:
             callback()
 
         assert result == SubscriptionSaveResult(
-            outcome=SaveSubscriptionOutcome.created,
+            outcome=PurchasedStateSaveOutcome.created,
             current=subscription,
         )
         records = await audit_domain.load_records_for_subject(
@@ -347,7 +352,7 @@ class TestSaveSubscription:
             callback()
 
         assert result == SubscriptionSaveResult(
-            outcome=SaveSubscriptionOutcome.stale,
+            outcome=PurchasedStateSaveOutcome.stale,
             current=stored,
         )
         assert await domain.get_subscription(stored.id) == stored
@@ -368,7 +373,7 @@ class TestSaveSubscription:
             callback()
 
         assert result == SubscriptionSaveResult(
-            outcome=SaveSubscriptionOutcome.same,
+            outcome=PurchasedStateSaveOutcome.same,
             current=stored,
         )
         assert await domain.get_subscription(stored.id) == stored
@@ -418,7 +423,7 @@ class TestSaveSubscription:
             callback()
 
         assert result == SubscriptionSaveResult(
-            outcome=SaveSubscriptionOutcome.updated,
+            outcome=PurchasedStateSaveOutcome.updated,
             current=replacement,
             previous=subscription,
         )
@@ -463,7 +468,7 @@ class TestSaveSubscription:
             callback()
 
         assert result == SubscriptionSaveResult(
-            outcome=SaveSubscriptionOutcome.refreshed,
+            outcome=PurchasedStateSaveOutcome.refreshed,
             current=advanced,
         )
         assert await operations.load_subscription(execute, subscription.id) == advanced

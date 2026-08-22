@@ -11,9 +11,9 @@ from pytest_mock import MockerFixture
 from ffun.cli.commands import subscriptions
 from ffun.core import errors as core_errors
 from ffun.domain.domain import new_user_id
-from ffun.domain.entities import UserId
+from ffun.domain.entities import ProviderStatus, UserId
 from ffun.subscriptions import errors as subscription_errors
-from ffun.subscriptions.entities import ProviderStatus, Subscription, SubscriptionStatusId
+from ffun.subscriptions.entities import Subscription, SubscriptionStatusId
 from ffun.subscriptions.tests.make import make_subscription
 
 

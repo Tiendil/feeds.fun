@@ -36,13 +36,12 @@ from ffun.core.tests.helpers import (
     capture_logs,
 )
 from ffun.domain.datetime_intervals import LIFETIME_INTERVAL_END_MARKER
-from ffun.domain.entities import BenefitId, BenefitTransactionId, SerializedId
+from ffun.domain.entities import BenefitId, BenefitTransactionId, PurchasedStateSaveOutcome, SerializedId
 from ffun.entitlements import domain as entitlement_domain
 from ffun.entitlements.entities import EntitlementGuarantee, EntitlementKindId
 from ffun.entitlements.tests import helpers as entitlement_helpers
 from ffun.subscriptions import domain as subscription_domain
 from ffun.subscriptions.entities import (
-    SaveSubscriptionOutcome,
     SubscriptionSaveResult,
     SubscriptionSnapshot,
     SubscriptionStatusId,
@@ -266,7 +265,7 @@ class TestAcceptSubscriptionTransaction:
                 actor_id=_ACTOR_ID,
             )
 
-        assert result.outcome == SaveSubscriptionOutcome.created
+        assert result.outcome == PurchasedStateSaveOutcome.created
         assert callable(callback)
         assert await operations.load_benefit_transaction(execute, benefit_transaction.id) == benefit_transaction
         assert await subscription_domain.get_subscription(
@@ -399,7 +398,7 @@ class TestApplyTransaction:
             "_accept_subscription_transaction",
             return_value=(
                 SubscriptionSaveResult(
-                    outcome=SaveSubscriptionOutcome.created,
+                    outcome=PurchasedStateSaveOutcome.created,
                     current=snapshot.with_identity(
                         subscription_id=subscription_id,
                         state_transaction_id=transaction_id,
@@ -457,7 +456,7 @@ class TestApplyTransaction:
             domain,
             "_accept_subscription_transaction",
             return_value=(
-                SubscriptionSaveResult(outcome=SaveSubscriptionOutcome.stale, current=current),
+                SubscriptionSaveResult(outcome=PurchasedStateSaveOutcome.stale, current=current),
                 mocker.stub(name="subscription_callback"),
             ),
         )

@@ -19,15 +19,17 @@ from ffun.benefits.entities import (
 )
 from ffun.core.entities import NonEmptyString
 from ffun.domain.domain import new_user_id
-from ffun.domain.entities import BenefitId, BenefitTransactionId, SubscriptionId, UserId
+from ffun.domain.entities import (
+    BenefitId,
+    BenefitTransactionId,
+    ProviderObjectReference,
+    ProviderStatus,
+    SubscriptionId,
+    UserId,
+)
 from ffun.entitlements.entities import EntitlementKindId, EntitlementValue
 from ffun.subscriptions.domain import new_subscription_id
-from ffun.subscriptions.entities import (
-    ProviderStatus,
-    ProviderSubscriptionReference,
-    SubscriptionSnapshot,
-    SubscriptionStatusId,
-)
+from ffun.subscriptions.entities import SubscriptionSnapshot, SubscriptionStatusId
 from ffun.subscriptions.tests.make import make_provider_subscription_reference
 
 
@@ -69,13 +71,13 @@ def make_benefit_package_template(
 
 
 def make_external_subscription_target(
-    reference: ProviderSubscriptionReference | None = None,
+    reference: ProviderObjectReference | None = None,
 ) -> ExternalSubscriptionTarget:
     reference = reference or make_provider_subscription_reference()
     return ExternalSubscriptionTarget(
         provider_id=reference.provider_id,
         provider_account_id=reference.provider_account_id,
-        provider_subscription_id=reference.provider_subscription_id,
+        provider_object_id=reference.provider_object_id,
     )
 
 

@@ -5,9 +5,9 @@ from typing import cast
 from pydantic import ValidationError
 
 from ffun.core.postgresql import ExecuteType
-from ffun.domain.entities import SubscriptionId, UserId
+from ffun.domain.entities import ProviderObjectReference, SubscriptionId, UserId
 from ffun.subscriptions import errors
-from ffun.subscriptions.entities import ProviderSubscriptionReference, Subscription, SubscriptionStatusId
+from ffun.subscriptions.entities import Subscription, SubscriptionStatusId
 
 
 def new_subscription_id() -> SubscriptionId:
@@ -44,14 +44,14 @@ WHERE subscriptions.id = %(subscription_id)s
 
 async def load_provider_subscription_reference(
     execute: ExecuteType,
-    reference: ProviderSubscriptionReference,
+    reference: ProviderObjectReference,
 ) -> SubscriptionId | None:
     sql = """
     SELECT subscription_id
     FROM sb_subscription_refs
     WHERE provider_id = %(provider_id)s
       AND provider_account_id = %(provider_account_id)s
-      AND provider_subscription_id = %(provider_subscription_id)s
+      AND provider_object_id = %(provider_object_id)s
     """
     rows = await execute(sql, reference.model_dump())
 
@@ -63,7 +63,7 @@ async def load_provider_subscription_reference(
 
 async def insert_provider_subscription_reference(
     execute: ExecuteType,
-    reference: ProviderSubscriptionReference,
+    reference: ProviderObjectReference,
     *,
     subscription_id: SubscriptionId,
 ) -> None:
@@ -71,13 +71,13 @@ async def insert_provider_subscription_reference(
     INSERT INTO sb_subscription_refs (
         provider_id,
         provider_account_id,
-        provider_subscription_id,
+        provider_object_id,
         subscription_id
     )
     VALUES (
         %(provider_id)s,
         %(provider_account_id)s,
-        %(provider_subscription_id)s,
+        %(provider_object_id)s,
         %(subscription_id)s
     )
     ON CONFLICT DO NOTHING
@@ -99,7 +99,7 @@ async def insert_provider_subscription_reference(
     raise errors.ProviderSubscriptionReferenceConflict(
         provider_id=reference.provider_id,
         provider_account_id=reference.provider_account_id,
-        provider_subscription_id=reference.provider_subscription_id,
+        provider_object_id=reference.provider_object_id,
         stored_subscription_id=(str(stored_subscription_id) if stored_subscription_id is not None else None),
         requested_subscription_id=str(subscription_id),
     )

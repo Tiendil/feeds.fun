@@ -20,7 +20,7 @@ Purchased-subscription lifecycles, payment-service-provider protocols, product p
 - `active source entitlement` - an unrevoked source entitlement whose activation time has arrived and whose expiration time has not arrived at the evaluation time.
 - `effective entitlement interval` - a time interval during which merged source state grants one entitlement kind to one user with one value.
 - `merge policy` - the operation used to combine values from active source entitlements of the same kind.
-- `persistence-safe entitlement value range` - the inclusive integer range from `1` through `9,223,372,036,854,775,807`, which fits positive values stored using signed 64-bit integer persistence.
+- `entitlement value range` - the inclusive integer range from `1` through `9,223,372,036,854,775,807` accepted for entitlement values.
 
 ## Module responsibility
 
@@ -38,7 +38,7 @@ They MUST NOT independently reproduce merge behavior or derive access from sourc
 
 Entitlement kinds MUST form a closed set of stable identifiers.
 Each kind MUST define one merge policy, whether grants of that kind are lifetime grants, and inclusive minimum and maximum accepted source-grant values.
-The accepted bounds MUST be within the persistence-safe entitlement value range, and the minimum MUST NOT exceed the maximum.
+The accepted bounds MUST be within the entitlement value range, and the minimum MUST NOT exceed the maximum.
 
 The supported kinds MUST be:
 
@@ -47,7 +47,7 @@ The supported kinds MUST be:
 - `lifetime_tokens`, stable value `3`, merged using `sum`, and lifetime.
 
 Stable kind values MUST NOT be changed or reused.
-The currently supported entitlement kinds MUST each accept the complete persistence-safe entitlement value range.
+The currently supported entitlement kinds MUST each accept the complete entitlement value range.
 
 The supported merge policies MUST be:
 
@@ -56,7 +56,7 @@ The supported merge policies MUST be:
 - `sum`, which adds all active values.
 
 Merging an empty value collection MUST fail.
-Every merged value MUST remain within the persistence-safe entitlement value range.
+Every merged value MUST remain within the entitlement value range.
 A source change that would produce an out-of-range effective value MUST fail atomically without retaining the source change, effective intervals, audit records, or business events.
 This requirement applies even when every individual source value is valid, such as when `sum` would exceed the upper bound.
 
@@ -176,8 +176,7 @@ After commit, the caller MUST invoke every returned business-event callback; aft
 Post-commit callback invocation is best-effort: callback failure MUST NOT invalidate or roll back the committed source, effective, or audit state, and this module does not guarantee durable callback replay.
 
 `ffun.entitlements.grant_source_entitlement`, `ffun.entitlements.revoke_source_entitlement`, `ffun.entitlements.grant_source_entitlements`, and `ffun.entitlements.revoke_subscription_entitlements` are explicitly approved to participate in the database transaction owned by `ffun.benefits.apply_subscription_transaction`.
-They MAY accept and use that workflow's execute callable for source-entitlement persistence, effective-state persistence, locking, and audit records.
-This exception does not allow benefits to import entitlement operations or access entitlement tables directly, and it does not approve transaction sharing for unrelated workflows.
+This exception does not approve transaction sharing for unrelated workflows.
 
 `get_entitlements` MUST accept collections of user ids and entitlement kind ids.
 Its result MUST map each selected user and kind to the active interval's user id, kind id, value, activation, and expiration, or to no value when the entitlement is not granted.

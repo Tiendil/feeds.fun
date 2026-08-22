@@ -12,7 +12,6 @@ Payment collection, provider APIs and notification protocols, provider objects o
 
 ## Dictionary
 
-- `subscription identifier` - the internally generated UUID that identifies one subscription projection.
 - `provider subscription identity` - the provider identifier, provider account identifier, and provider subscription identifier tuple that identifies one external subscription.
 - `provider subscription reference` - the persistent mapping from one provider subscription identity to one internal subscription identifier.
 - `state transaction identifier` - the internal benefit transaction UUID whose application most recently changed the persisted subscription projection.
@@ -68,7 +67,6 @@ Attempting to map the same provider subscription identity to another internal su
 Attempting to map another provider subscription identity to the same internal subscription identifier MUST fail without changing the stored reference.
 
 Provider subscription references MUST be immutable after creation.
-They MUST record their creation time and MAY omit an update time because normal workflows never change them.
 
 Provider adapters and higher-level workflows MUST use the subscriptions public domain boundary to resolve and persist provider subscription references.
 They MUST NOT maintain provider-specific subscription-identity tables or reproduce mapping behavior.

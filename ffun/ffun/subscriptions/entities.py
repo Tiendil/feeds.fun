@@ -5,30 +5,15 @@ from typing import cast
 import pydantic
 
 from ffun.core import utils
-from ffun.core.entities import BaseEntity, NonEmptyString
-from ffun.domain.entities import BenefitId, BenefitTransactionId, SubscriptionId, UserId
-
-
-class ProviderId(NonEmptyString):
-    __slots__ = ()
-
-
-class ProviderAccountId(NonEmptyString):
-    __slots__ = ()
-
-
-class ProviderSubscriptionId(NonEmptyString):
-    __slots__ = ()
-
-
-class ProviderSubscriptionReference(BaseEntity):
-    provider_id: ProviderId
-    provider_account_id: ProviderAccountId
-    provider_subscription_id: ProviderSubscriptionId
-
-
-class ProviderStatus(NonEmptyString):
-    __slots__ = ()
+from ffun.core.entities import BaseEntity
+from ffun.domain.entities import (
+    BenefitId,
+    BenefitTransactionId,
+    ProviderStatus,
+    PurchasedStateSaveOutcome,
+    SubscriptionId,
+    UserId,
+)
 
 
 class SubscriptionStatusId(enum.IntEnum):
@@ -51,14 +36,6 @@ _BENEFIT_GRANTING_STATUSES = frozenset(
         SubscriptionStatusId.past_due,
     }
 )
-
-
-class SaveSubscriptionOutcome(enum.IntEnum):
-    created = 1
-    updated = 2
-    refreshed = 3
-    same = 4
-    stale = 5
 
 
 class SubscriptionSnapshot(BaseEntity):
@@ -150,6 +127,6 @@ class Subscription(SubscriptionSnapshot):
 
 
 class SubscriptionSaveResult(BaseEntity):
-    outcome: SaveSubscriptionOutcome
+    outcome: PurchasedStateSaveOutcome
     current: Subscription
     previous: Subscription | None = None

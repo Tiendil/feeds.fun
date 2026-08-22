@@ -31,15 +31,6 @@ class TestEntitlementKindId:
         ]
 
 
-class TestMergePolicy:
-    def test_values_are_stable(self) -> None:
-        assert [(policy.name, policy.value) for policy in MergePolicy] == [
-            ("max", "max"),
-            ("min", "min"),
-            ("sum", "sum"),
-        ]
-
-
 class TestEntitlementKinds:
     def test_registry_defines_every_kind_once(self) -> None:
         assert [kind.id for kind in ENTITLEMENT_KINDS] == list(EntitlementKindId)

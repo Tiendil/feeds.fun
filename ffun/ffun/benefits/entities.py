@@ -9,15 +9,18 @@ import pydantic
 from ffun.benefits import errors
 from ffun.core import utils
 from ffun.core.entities import BaseEntity, NonEmptyString
-from ffun.domain.entities import BenefitId, BenefitTransactionId, SubscriptionId, UserId
-from ffun.entitlements import entities as entitlement_entities
-from ffun.entitlements.entities import EntitlementGuarantee, EntitlementKindId, EntitlementValue
-from ffun.subscriptions.entities import (
+from ffun.domain.entities import (
+    BenefitId,
+    BenefitTransactionId,
     ProviderAccountId,
     ProviderId,
-    ProviderSubscriptionId,
-    ProviderSubscriptionReference,
+    ProviderObjectId,
+    ProviderObjectReference,
+    SubscriptionId,
+    UserId,
 )
+from ffun.entitlements import entities as entitlement_entities
+from ffun.entitlements.entities import EntitlementGuarantee, EntitlementKindId, EntitlementValue
 
 BenefitSourceId = NewType("BenefitSourceId", int)
 BenefitSourceTransactionId = NewType("BenefitSourceTransactionId", uuid.UUID)
@@ -233,22 +236,22 @@ class ExternalSubscriptionTarget(BaseEntity):
     kind: Literal["external"] = "external"
     provider_id: ProviderId
     provider_account_id: ProviderAccountId
-    provider_subscription_id: ProviderSubscriptionId
+    provider_object_id: ProviderObjectId
 
     @property
-    def provider_reference(self) -> ProviderSubscriptionReference:
-        return ProviderSubscriptionReference(
+    def provider_reference(self) -> ProviderObjectReference:
+        return ProviderObjectReference(
             provider_id=self.provider_id,
             provider_account_id=self.provider_account_id,
-            provider_subscription_id=self.provider_subscription_id,
+            provider_object_id=self.provider_object_id,
         )
 
     @property
-    def identity(self) -> tuple[ProviderId, ProviderAccountId, ProviderSubscriptionId]:
+    def identity(self) -> tuple[ProviderId, ProviderAccountId, ProviderObjectId]:
         return (
             self.provider_id,
             self.provider_account_id,
-            self.provider_subscription_id,
+            self.provider_object_id,
         )
 
 

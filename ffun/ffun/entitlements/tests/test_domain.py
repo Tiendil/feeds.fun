@@ -50,7 +50,7 @@ async def _grant(
     *,
     evaluation_time: datetime.datetime | None = None,
     emit_event: bool = True,
-) -> tuple[domain.SourceEntitlementChange, Callable[[], None]]:
+) -> tuple[entitlement_entities.SourceEntitlementChange, Callable[[], None]]:
     if evaluation_time is None:
         evaluation_time = datetime.datetime.now(tz=datetime.UTC)
 
@@ -75,7 +75,7 @@ async def _revoke(
     revoked_by_transaction_id: BenefitTransactionId = _REVOKING_TRANSACTION_ID,
     evaluation_time: datetime.datetime | None = None,
     emit_event: bool = True,
-) -> tuple[domain.SourceEntitlementChange, Callable[[], None]]:
+) -> tuple[entitlement_entities.SourceEntitlementChange, Callable[[], None]]:
     if evaluation_time is None:
         evaluation_time = datetime.datetime.now(tz=datetime.UTC)
 
@@ -463,19 +463,24 @@ class TestApplySourceRevocation:
         source_state = make_source_entitlement()
         now = datetime.datetime.now(tz=datetime.UTC)
 
-        with pytest.raises(errors.SourceEntitlementNotFound):
-            async with transaction() as transaction_execute:
-                await domain._apply_source_revocation(
-                    transaction_execute,
-                    kind=domain.get_entitlement_kind(source_state.kind_id),
-                    source_id=source_state.source_id,
-                    grant_transaction_id=source_state.grant_transaction_id,
-                    revoked_by_transaction_id=_REVOKING_TRANSACTION_ID,
-                    user_id=source_state.user_id,
-                    evaluation_time=now,
-                    actor_kind=_ACTOR_KIND,
-                    actor_id=_ACTOR_ID,
-                )
+        async with (
+            TableSizeNotChanged("en_source_entitlements"),
+            TableSizeNotChanged("en_entitlements"),
+            TableSizeNotChanged("a_records"),
+        ):
+            with pytest.raises(errors.SourceEntitlementNotFound):
+                async with transaction() as transaction_execute:
+                    await domain._apply_source_revocation(
+                        transaction_execute,
+                        kind=domain.get_entitlement_kind(source_state.kind_id),
+                        source_id=source_state.source_id,
+                        grant_transaction_id=source_state.grant_transaction_id,
+                        revoked_by_transaction_id=_REVOKING_TRANSACTION_ID,
+                        user_id=source_state.user_id,
+                        evaluation_time=now,
+                        actor_kind=_ACTOR_KIND,
+                        actor_id=_ACTOR_ID,
+                    )
 
     @pytest.mark.asyncio
     async def test_revokes_source_and_rebuilds(self) -> None:
@@ -562,7 +567,7 @@ class TestEmitSourceChangeEvents:
             starts_at=source_state.starts_at,
             expires_at=source_state.expires_at,
         )
-        outcome = domain.SourceEntitlementChange(
+        outcome = entitlement_entities.SourceEntitlementChange(
             changed=True,
             effective_state=(granted, source_state.value if granted else None),
             effective_intervals=[interval] if granted else [],
@@ -675,7 +680,7 @@ class TestGrantSourceEntitlement:
                 grant_transaction_id,
             )
 
-        async def grant_second() -> domain.SourceEntitlementChange:
+        async def grant_second() -> entitlement_entities.SourceEntitlementChange:
             second_grant_attempting.set()
             outcome, _ = await _grant(second, emit_event=False)
             return outcome

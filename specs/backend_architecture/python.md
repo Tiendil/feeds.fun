@@ -30,6 +30,7 @@ Functions and methods that receive the constructed typed value MUST assume those
 ## Temporary implementation code
 
 Production code intentionally introduced as a temporary bridge MUST include an adjacent `TODO` comment.
+Keeping the explanation next to the bridge makes the exception discoverable during maintenance and review and couples its removal to the code it qualifies; a separate tracked work item alone does not preserve that local context.
 The comment MUST explain why the temporary code is currently necessary and identify the concrete condition, milestone, or tracked work item after which it MUST be removed.
 Vague comments such as "remove later" are insufficient.
 The comment MUST be removed together with the temporary code.

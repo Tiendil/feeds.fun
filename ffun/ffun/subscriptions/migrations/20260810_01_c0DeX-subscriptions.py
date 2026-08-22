@@ -44,10 +44,10 @@ sql_create_subscription_refs = """
 CREATE TABLE sb_subscription_refs (
     provider_id TEXT NOT NULL,
     provider_account_id TEXT NOT NULL,
-    provider_subscription_id TEXT NOT NULL,
+    provider_object_id TEXT NOT NULL,
     subscription_id UUID NOT NULL UNIQUE,
     created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    PRIMARY KEY (provider_id, provider_account_id, provider_subscription_id)
+    PRIMARY KEY (provider_id, provider_account_id, provider_object_id)
 )
 """
 

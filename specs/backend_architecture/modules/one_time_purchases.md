@@ -12,7 +12,6 @@ Payment collection, provider APIs and notification protocols, provider objects o
 
 ## Dictionary
 
-- `one-time purchase identifier` - the internally generated UUID that identifies one purchase projection.
 - `provider purchase identity` - the provider identifier, provider account identifier, and provider purchase identifier tuple that identifies one external purchase.
 - `provider purchase reference` - the persistent mapping from one provider purchase identity to one internal one-time purchase identifier.
 - `state transaction identifier` - the internal benefit transaction UUID whose application most recently changed the persisted purchase projection.
@@ -66,7 +65,6 @@ Attempting to map the same provider purchase identity to another internal one-ti
 Attempting to map another provider purchase identity to the same internal one-time purchase identifier MUST fail without changing the stored reference.
 
 Provider purchase references MUST be immutable after creation.
-They MUST record their creation time and MAY omit an update time because normal workflows never change them.
 
 Provider adapters and higher-level workflows MUST use the one-time-purchases public domain boundary to resolve and persist provider purchase references.
 They MUST NOT maintain provider-specific purchase-identity tables or reproduce mapping behavior.

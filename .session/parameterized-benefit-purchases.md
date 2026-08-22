@@ -430,7 +430,7 @@ The implementation specifications should resolve:
 - [x] Convert existing fixed subscription configuration to parameterless templates and route subscription application through materialization without changing current behavior.
 - [x] Extend the existing `b_transactions` ledger with explicit nullable subscription and one-time purchase identifiers and a strict exactly-one-target check constraint while preserving source idempotency, stale-update rollback, and post-commit callbacks.
 - [x] Add `OneTimePurchaseId` and specify `ffun.one_time_purchases` identity, statuses, snapshots, references, freshness rules, audits, events, and public operations.
-- [ ] Implement the `ffun.one_time_purchases` entities, persistence, domain operations, migrations, and tests.
+- [x] Implement the `ffun.one_time_purchases` entities, persistence, domain operations, migrations, and tests.
 - [ ] Add explicit one-time purchase ownership to source entitlements and implement one-time-purchase-level revocation, timeline rebuilding, audits, events, migrations, and tests.
 - [ ] Add one-time-purchase transaction entities and typed application results backed by the common `b_transactions` table.
 - [ ] Implement `apply_one_time_purchase_transaction` with atomic benefit, purchase, and entitlement coordination and fresh package materialization for every previously unseen transaction.

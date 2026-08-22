@@ -364,7 +364,7 @@ class TestExternalSubscriptionTarget:
         assert target.identity == (
             target.provider_id,
             target.provider_account_id,
-            target.provider_subscription_id,
+            target.provider_object_id,
         )
 
 

@@ -154,3 +154,10 @@ class EffectiveEntitlementInterval(BaseEntity):
             raise ValueError("Effective entitlement activation timestamp must be earlier than expiration")
 
         return self
+
+
+class SourceEntitlementChange(BaseEntity):
+    changed: bool
+    effective_state: EffectiveEntitlementState
+    effective_intervals: list[EffectiveEntitlementInterval]
+    source_state: SourceEntitlement

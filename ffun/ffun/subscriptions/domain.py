@@ -7,12 +7,17 @@ from ffun.audit import domain as audit_domain
 from ffun.audit.entities import AuditEntityKind, AuditEventName
 from ffun.core import logging
 from ffun.core.postgresql import ExecuteType, run_in_transaction, transaction
-from ffun.domain.entities import BenefitTransactionId, SerializedId, SubscriptionId, UserId
+from ffun.domain.entities import (
+    BenefitTransactionId,
+    PurchasedStateSaveOutcome,
+    SerializedId,
+    SubscriptionId,
+    UserId,
+)
 from ffun.locks.domain import Lock
 from ffun.locks.entities import LockKind
 from ffun.subscriptions import errors, operations
 from ffun.subscriptions.entities import (
-    SaveSubscriptionOutcome,
     Subscription,
     SubscriptionSaveResult,
     SubscriptionSnapshot,
@@ -47,26 +52,26 @@ def _empty_business_event_callback() -> None:
 def _decide_subscription_save(
     stored: Subscription | None,
     incoming: SubscriptionSnapshot,
-) -> tuple[_SaveSubscriptionCommand, SaveSubscriptionOutcome]:
+) -> tuple[_SaveSubscriptionCommand, PurchasedStateSaveOutcome]:
     if stored is None:
-        return _SaveSubscriptionCommand.upsert, SaveSubscriptionOutcome.created
+        return _SaveSubscriptionCommand.upsert, PurchasedStateSaveOutcome.created
 
     if stored.user_id != incoming.user_id:
         raise errors.SubscriptionConflict(subscription_id=str(stored.id))
 
     if incoming.provider_updated_at < stored.provider_updated_at:
-        return _SaveSubscriptionCommand.ignore, SaveSubscriptionOutcome.stale
+        return _SaveSubscriptionCommand.ignore, PurchasedStateSaveOutcome.stale
 
     if incoming.provider_updated_at == stored.provider_updated_at:
         if not stored.has_same_business_state_as(incoming):
             raise errors.SubscriptionConflict(subscription_id=str(stored.id))
 
-        return _SaveSubscriptionCommand.ignore, SaveSubscriptionOutcome.same
+        return _SaveSubscriptionCommand.ignore, PurchasedStateSaveOutcome.same
 
     if stored.has_same_business_state_as(incoming):
-        return _SaveSubscriptionCommand.upsert, SaveSubscriptionOutcome.refreshed
+        return _SaveSubscriptionCommand.upsert, PurchasedStateSaveOutcome.refreshed
 
-    return _SaveSubscriptionCommand.upsert, SaveSubscriptionOutcome.updated
+    return _SaveSubscriptionCommand.upsert, PurchasedStateSaveOutcome.updated
 
 
 async def save_subscription(  # noqa: CCR001
@@ -94,9 +99,9 @@ async def save_subscription(  # noqa: CCR001
             assert stored is not None
             current = stored
 
-        previous = stored if outcome == SaveSubscriptionOutcome.updated else None
+        previous = stored if outcome == PurchasedStateSaveOutcome.updated else None
 
-        if outcome in (SaveSubscriptionOutcome.created, SaveSubscriptionOutcome.updated):
+        if outcome in (PurchasedStateSaveOutcome.created, PurchasedStateSaveOutcome.updated):
             await audit_domain.record(
                 execute,
                 event=AuditEventName("subscription_changed"),
@@ -115,7 +120,7 @@ async def save_subscription(  # noqa: CCR001
     result = SubscriptionSaveResult(outcome=outcome, current=current, previous=previous)
     event_callback: Callable[[], None]
 
-    if outcome in (SaveSubscriptionOutcome.created, SaveSubscriptionOutcome.updated):
+    if outcome in (PurchasedStateSaveOutcome.created, PurchasedStateSaveOutcome.updated):
         event_callback = partial(_emit_subscription_change_event, result)
     else:
         event_callback = _empty_business_event_callback

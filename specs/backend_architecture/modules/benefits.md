@@ -20,8 +20,6 @@ Payment-service-provider communication, product and price catalogs, checkout, in
 - `transaction source identity` - the `source_id` and `source_transaction_id` tuple that identifies one durable operation at its origin.
 - `transaction effective time` - the source-reported timestamp associated with the management operation recorded by a benefit transaction; it is retained as ledger provenance and does not schedule entitlement revocation.
 - `entitlement action` - the provider-independent grant or revoke decision derived from the normalized purchased-state status and persisted by the benefit transaction.
-- `internal subscription identifier` - the generated UUID that identifies one provider-independent subscription projection.
-- `internal one-time purchase identifier` - the generated UUID that identifies one provider-independent one-time-purchase projection.
 
 ## Module responsibility
 
@@ -61,7 +59,7 @@ An existing fixed package MUST be represented as a parameterless template whose 
 
 ### Integer value constraints
 
-Each parameter minimum and maximum MUST be a strict integer within the `ffun.entitlements` persistence-safe entitlement value range, and the minimum MUST NOT exceed the maximum.
+Each parameter minimum and maximum MUST be a strict integer within the `ffun.entitlements` entitlement value range, and the minimum MUST NOT exceed the maximum.
 Boolean, floating-point, string, and implicitly coerced constraint values MUST be invalid.
 The complete declared parameter range MUST fit within the accepted source-grant bounds of every entitlement kind that references that parameter.
 
@@ -71,7 +69,7 @@ Runtime parameter values and materialized guarantees MUST use the same kind-owne
 
 ### Package materialization and configuration evolution
 
-Package materialization MUST resolve the configured template by benefit identifier and validate the complete supplied parameter collection before resolving any entitlement value.
+Package materialization MUST resolve the configured template by benefit identifier and validate the complete supplied parameter collection.
 The collection MUST supply each declared parameter exactly once and MUST contain no undeclared parameter.
 An input representation capable of carrying duplicate parameter names MUST reject duplicates rather than selecting one value.
 Each supplied value MUST be a strict integer within its declared inclusive bounds.
@@ -246,9 +244,7 @@ Changes for the same transaction source identity, internal purchased-state ident
 
 The `ffun.benefits.apply_subscription_transaction` workflow is explicitly approved as the owner of one database transaction that includes benefit-transaction persistence, subscription persistence through `ffun.subscriptions`, and entitlement persistence through `ffun.entitlements`.
 The `ffun.benefits.apply_one_time_purchase_transaction` workflow is explicitly approved as the owner of one database transaction that includes benefit-transaction persistence, purchase persistence through `ffun.one_time_purchases`, and entitlement persistence through `ffun.entitlements`.
-Within each transaction, the benefits workflow MAY pass its execute callable to the target-reference and target-save operations exposed by the corresponding purchased-state module and to the matching grant and owner-scoped revocation operations exposed by `ffun.entitlements`.
 These exceptions apply only to the two named benefits application workflows.
-Each workflow MUST call participating modules through their public domain boundaries and MUST NOT import their operation modules or access their tables directly.
 
 Business events from participating modules MUST be emitted only after the shared transaction commits.
 The workflow MUST collect the callbacks returned by transaction-participating purchased-state and entitlement operations and begin invoking them only after that commit.

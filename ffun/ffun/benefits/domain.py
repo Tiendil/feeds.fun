@@ -19,12 +19,11 @@ from ffun.benefits.entities import (
 )
 from ffun.benefits.settings import settings
 from ffun.core.postgresql import ExecuteType, run_in_transaction, transaction
-from ffun.domain.entities import BenefitId, SerializedId, SubscriptionId
+from ffun.domain.entities import BenefitId, PurchasedStateSaveOutcome, SerializedId, SubscriptionId
 from ffun.entitlements import domain as entitlement_domain
 from ffun.entitlements.entities import EntitlementSourceId
 from ffun.subscriptions import domain as subscription_domain
 from ffun.subscriptions.entities import (
-    SaveSubscriptionOutcome,
     SubscriptionSaveResult,
     SubscriptionSnapshot,
 )
@@ -228,7 +227,7 @@ async def _apply_transaction(  # noqa: CFQ002
         actor_kind=actor_kind,
         actor_id=actor_id,
     )
-    if subscription_save.outcome == SaveSubscriptionOutcome.stale:
+    if subscription_save.outcome == PurchasedStateSaveOutcome.stale:
         raise errors.StaleBenefitTransaction(
             subscription_id=str(benefit_transaction.subscription_id),
             incoming_provider_updated_at=subscription.provider_updated_at.isoformat(),
