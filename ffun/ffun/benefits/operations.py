@@ -27,7 +27,7 @@ def row_to_benefit_transaction(row: Mapping[str, object]) -> BenefitTransaction:
         raise errors.InvalidStoredBenefitTransaction() from exception
 
 
-async def save_benefit_transaction(execute: ExecuteType, transaction: BenefitTransaction) -> bool:
+async def save_benefit_transaction(execute: ExecuteType, transaction: BenefitTransaction) -> None:
     sql = """
     INSERT INTO b_transactions (
         id,
@@ -60,7 +60,13 @@ async def save_benefit_transaction(execute: ExecuteType, transaction: BenefitTra
     RETURNING id
     """
     rows = await execute(sql, transaction.model_dump())
-    return bool(rows)
+    if rows:
+        return
+
+    raise errors.ConcurrentBenefitTransaction(
+        source_id=int(transaction.source_id),
+        source_transaction_id=str(transaction.source_transaction_id),
+    )
 
 
 async def load_benefit_transaction(

@@ -65,9 +65,8 @@ class TestSaveBenefitTransaction:
     )
     async def test_inserts_complete_transaction(self, transaction: BenefitTransaction) -> None:
         async with TableSizeDelta("b_transactions", delta=1):
-            created = await operations.save_benefit_transaction(execute, transaction)
+            await operations.save_benefit_transaction(execute, transaction)
 
-        assert created
         assert await operations.load_benefit_transaction(execute, transaction.id) == transaction
         query_parameters: dict[str, object] = {"transaction_id": transaction.id}
         rows = cast(
@@ -88,18 +87,18 @@ class TestSaveBenefitTransaction:
         assert rows == [expected_targets]
 
     @pytest.mark.asyncio
-    async def test_duplicate_source_identity_is_no_op(self) -> None:
+    async def test_duplicate_source_identity_raises_concurrency_error(self) -> None:
         first = make_benefit_transaction()
         duplicate = make_benefit_transaction(
             source_id=first.source_id,
             source_transaction_id=first.source_transaction_id,
         )
-        assert await operations.save_benefit_transaction(execute, first)
+        await operations.save_benefit_transaction(execute, first)
 
         async with TableSizeNotChanged("b_transactions"):
-            created = await operations.save_benefit_transaction(execute, duplicate)
+            with pytest.raises(errors.ConcurrentBenefitTransaction):
+                await operations.save_benefit_transaction(execute, duplicate)
 
-        assert not created
         assert (
             await operations.load_benefit_transaction_by_source(
                 execute,

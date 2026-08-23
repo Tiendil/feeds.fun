@@ -1,9 +1,9 @@
 import datetime
-from collections.abc import Callable, Mapping
-from functools import singledispatch
+from collections.abc import Awaitable, Callable, Mapping
+from typing import Never, assert_never, cast
 
 from ffun.audit.entities import AuditEntityKind
-from ffun.benefits import errors, operations
+from ffun.benefits import errors, operations, target_resolution
 from ffun.benefits.entities import (
     BenefitEntitlementAction,
     BenefitPackage,
@@ -12,24 +12,30 @@ from ffun.benefits.entities import (
     BenefitTransaction,
     BenefitTransactionApplicationResult,
     BenefitTransactionCommand,
-    ExternalTarget,
-    InternalTarget,
-    NewTarget,
-    SubscriptionTarget,
     TargetIdT,
 )
 from ffun.benefits.settings import settings
 from ffun.core.postgresql import ExecuteType, run_in_transaction, transaction
-from ffun.domain.entities import BenefitId, PurchasedStateSaveOutcome, SerializedId, SubscriptionId
+from ffun.domain.entities import (
+    BenefitId,
+    OneTimePurchaseId,
+    PurchasedStateSaveOutcome,
+    SerializedId,
+    SubscriptionId,
+)
 from ffun.entitlements import domain as entitlement_domain
 from ffun.entitlements.entities import EntitlementSourceId
+from ffun.one_time_purchases import domain as purchase_domain
+from ffun.one_time_purchases.entities import PurchaseSnapshot
 from ffun.subscriptions import domain as subscription_domain
-from ffun.subscriptions.entities import (
-    SubscriptionSaveResult,
-    SubscriptionSnapshot,
-)
+from ffun.subscriptions.entities import SubscriptionSnapshot
 
 BENEFITS_ENTITLEMENT_SOURCE_ID = EntitlementSourceId("benefits")
+
+_ActualizeTransaction = Callable[
+    [ExecuteType, datetime.datetime],
+    Awaitable[tuple[BenefitTransaction, list[Callable[[], None]]]],
+]
 
 get_benefit_transaction = run_in_transaction(operations.load_benefit_transaction)
 
@@ -62,60 +68,6 @@ def materialize_benefit_package(
     return get_benefit(benefit_id).materialize(parameters)
 
 
-@singledispatch  # type: ignore[misc]
-async def _resolve_subscription_target(
-    target: object,
-    execute: ExecuteType,
-) -> SubscriptionId | None:
-    raise NotImplementedError(f"Unsupported subscription target: {target!r}")
-
-
-@_resolve_subscription_target.register(InternalTarget)
-async def _resolve_internal_subscription_target(
-    target: InternalTarget[SubscriptionId],
-    _execute: ExecuteType,
-) -> SubscriptionId:
-    return target.internal_id
-
-
-@_resolve_subscription_target.register  # type: ignore[misc]
-async def _resolve_external_subscription_target(
-    target: ExternalTarget,
-    execute: ExecuteType,
-) -> SubscriptionId | None:
-    return await subscription_domain.load_provider_subscription_reference(
-        execute,
-        target.provider_reference,
-    )
-
-
-@_resolve_subscription_target.register  # type: ignore[misc]
-async def _resolve_new_subscription_target(
-    _target: NewTarget,
-    _execute: ExecuteType,
-) -> None:
-    return None
-
-
-async def _resolve_regular_subscription_target(
-    execute: ExecuteType,
-    target: SubscriptionTarget,
-) -> SubscriptionId:
-    subscription_id = await _resolve_subscription_target(target, execute)
-
-    if subscription_id is None:
-        subscription_id = subscription_domain.new_subscription_id()
-
-    if target.provider_reference is not None:
-        await subscription_domain.insert_provider_subscription_reference(
-            execute,
-            target.provider_reference,
-            subscription_id=subscription_id,
-        )
-
-    return subscription_id
-
-
 def _application_result(
     benefit_transaction: BenefitTransaction,
     target_id: TargetIdT,
@@ -129,48 +81,63 @@ def _application_result(
     )
 
 
-async def _accept_subscription_transaction(
-    execute: ExecuteType,
-    benefit_transaction: BenefitTransaction,
-    subscription: SubscriptionSnapshot,
-    *,
-    actor_kind: AuditEntityKind,
-    actor_id: SerializedId,
-) -> tuple[SubscriptionSaveResult, Callable[[], None]]:
-    subscription_id = benefit_transaction.get_subscription_id_or_raise()
+def _validate_one_time_purchase_package(package: BenefitPackage) -> None:
+    for guarantee in package.guarantees:
+        if entitlement_domain.get_entitlement_kind(guarantee.kind_id).is_lifetime:
+            continue
 
-    if not await operations.save_benefit_transaction(execute, benefit_transaction):
-        raise errors.ConcurrentBenefitTransaction(
-            source_id=int(benefit_transaction.source_id),
-            source_transaction_id=str(benefit_transaction.source_transaction_id),
+        raise errors.InvalidBenefitEntitlement(
+            benefit_id=package.id,
+            entitlement_kind_id=int(guarantee.kind_id),
+            reason="one-time purchase packages require lifetime entitlement kinds",
         )
 
-    return await subscription_domain.save_subscription(
-        execute,
-        subscription_id,
-        benefit_transaction.id,
-        subscription,
-        actor_kind=actor_kind,
-        actor_id=actor_id,
-    )
+
+async def _revoke_owned_entitlements(  # noqa: CFQ002
+    execute: ExecuteType,
+    benefit_transaction: BenefitTransaction,
+    *,
+    evaluation_time: datetime.datetime,
+    actor_kind: AuditEntityKind,
+    actor_id: SerializedId,
+) -> list[Callable[[], None]]:
+    if benefit_transaction.subscription_id is not None:
+        _, callbacks = await entitlement_domain.revoke_subscription_entitlements(
+            execute,
+            subscription_id=benefit_transaction.subscription_id,
+            revoked_by_transaction_id=benefit_transaction.id,
+            evaluation_time=evaluation_time,
+            actor_kind=actor_kind,
+            actor_id=actor_id,
+        )
+        return callbacks
+
+    if benefit_transaction.one_time_purchase_id is not None:
+        _, callbacks = await entitlement_domain.revoke_one_time_purchase_entitlements(
+            execute,
+            one_time_purchase_id=benefit_transaction.one_time_purchase_id,
+            revoked_by_transaction_id=benefit_transaction.id,
+            evaluation_time=evaluation_time,
+            actor_kind=actor_kind,
+            actor_id=actor_id,
+        )
+        return callbacks
+
+    assert_never(cast(Never, benefit_transaction))
 
 
 async def _replace_benefit(  # noqa: CFQ002
     execute: ExecuteType,
     benefit_transaction: BenefitTransaction,
     package: BenefitPackage,
-    subscription: SubscriptionSnapshot,
     *,
     evaluation_time: datetime.datetime,
     actor_kind: AuditEntityKind,
     actor_id: SerializedId,
 ) -> list[Callable[[], None]]:
-    subscription_id = benefit_transaction.get_subscription_id_or_raise()
-
-    _, callbacks = await entitlement_domain.revoke_subscription_entitlements(
+    callbacks = await _revoke_owned_entitlements(
         execute,
-        subscription_id=subscription_id,
-        revoked_by_transaction_id=benefit_transaction.id,
+        benefit_transaction,
         evaluation_time=evaluation_time,
         actor_kind=actor_kind,
         actor_id=actor_id,
@@ -184,11 +151,11 @@ async def _replace_benefit(  # noqa: CFQ002
         source_id=BENEFITS_ENTITLEMENT_SOURCE_ID,
         grant_transaction_id=benefit_transaction.id,
         user_id=benefit_transaction.user_id,
-        subscription_id=subscription_id,
-        one_time_purchase_id=None,
+        subscription_id=benefit_transaction.subscription_id,
+        one_time_purchase_id=benefit_transaction.one_time_purchase_id,
         guarantees=package.guarantees,
-        starts_at=subscription.period_starts_at,
-        expires_at=subscription.period_ends_at,
+        starts_at=benefit_transaction.period_starts_at,
+        expires_at=benefit_transaction.period_ends_at,
         evaluation_time=evaluation_time,
         actor_kind=actor_kind,
         actor_id=actor_id,
@@ -198,7 +165,7 @@ async def _replace_benefit(  # noqa: CFQ002
     return callbacks
 
 
-async def _apply_transaction(  # noqa: CFQ002
+async def _actualize_subscription_transaction(  # noqa: CFQ002
     command: BenefitTransactionCommand[SubscriptionId],
     execute: ExecuteType,
     subscription: SubscriptionSnapshot,
@@ -209,7 +176,7 @@ async def _apply_transaction(  # noqa: CFQ002
     actor_id: SerializedId,
 ) -> tuple[BenefitTransaction, list[Callable[[], None]]]:
     package = materialize_benefit_package(subscription.benefit_id, parameters)
-    subscription_id = await _resolve_regular_subscription_target(
+    subscription_id = await target_resolution.resolve_subscription_target(
         execute,
         command.target,
     )
@@ -227,9 +194,11 @@ async def _apply_transaction(  # noqa: CFQ002
         period_starts_at=subscription.period_starts_at,
         period_ends_at=subscription.period_ends_at,
     )
-    subscription_save, subscription_callback = await _accept_subscription_transaction(
+    await operations.save_benefit_transaction(execute, benefit_transaction)
+    subscription_save, subscription_callback = await subscription_domain.save_subscription(
         execute,
-        benefit_transaction,
+        subscription_id,
+        benefit_transaction.id,
         subscription,
         actor_kind=actor_kind,
         actor_id=actor_id,
@@ -245,7 +214,6 @@ async def _apply_transaction(  # noqa: CFQ002
         execute,
         benefit_transaction,
         package,
-        subscription,
         evaluation_time=evaluation_time,
         actor_kind=actor_kind,
         actor_id=actor_id,
@@ -253,17 +221,70 @@ async def _apply_transaction(  # noqa: CFQ002
     return benefit_transaction, [subscription_callback, *callbacks]
 
 
-async def apply_subscription_transaction(
-    subscription: SubscriptionSnapshot,
+async def _actualize_one_time_purchase_transaction(  # noqa: CFQ002
+    command: BenefitTransactionCommand[OneTimePurchaseId],
+    execute: ExecuteType,
+    purchase: PurchaseSnapshot,
     parameters: Mapping[BenefitParameterId, object],
-    command: BenefitTransactionCommand[SubscriptionId],
     *,
+    evaluation_time: datetime.datetime,
     actor_kind: AuditEntityKind,
     actor_id: SerializedId,
-) -> BenefitTransactionApplicationResult[SubscriptionId]:
-    """Atomically apply one benefit transaction to subscription and entitlement state."""
+) -> tuple[BenefitTransaction, list[Callable[[], None]]]:
+    package = materialize_benefit_package(purchase.benefit_id, parameters)
+    _validate_one_time_purchase_package(package)
+    one_time_purchase_id = await target_resolution.resolve_one_time_purchase_target(
+        execute,
+        command.target,
+    )
+    benefit_transaction = BenefitTransaction(
+        id=operations.new_benefit_transaction_id(),
+        source_id=command.source_id,
+        source_transaction_id=command.source_transaction_id,
+        entitlement_action=(
+            BenefitEntitlementAction.grant if purchase.status.grants_benefits else BenefitEntitlementAction.revoke
+        ),
+        user_id=purchase.user_id,
+        benefit_id=package.id,
+        one_time_purchase_id=one_time_purchase_id,
+        effective_at=command.effective_at,
+        period_starts_at=purchase.period_starts_at,
+        period_ends_at=purchase.period_ends_at,
+    )
+    await operations.save_benefit_transaction(execute, benefit_transaction)
+    purchase_save, purchase_callback = await purchase_domain.save_purchase(
+        execute,
+        one_time_purchase_id,
+        benefit_transaction.id,
+        purchase,
+        actor_kind=actor_kind,
+        actor_id=actor_id,
+    )
+    if purchase_save.outcome == PurchasedStateSaveOutcome.stale:
+        raise errors.StaleBenefitTransaction(
+            one_time_purchase_id=str(one_time_purchase_id),
+            incoming_provider_updated_at=purchase.provider_updated_at.isoformat(),
+            current_provider_updated_at=purchase_save.current.provider_updated_at.isoformat(),
+        )
+
+    callbacks = await _replace_benefit(
+        execute,
+        benefit_transaction,
+        package,
+        evaluation_time=evaluation_time,
+        actor_kind=actor_kind,
+        actor_id=actor_id,
+    )
+    return benefit_transaction, [purchase_callback, *callbacks]
+
+
+async def _apply_benefit_transaction(
+    command: BenefitTransactionCommand[TargetIdT],
+    *,
+    actualize: _ActualizeTransaction,
+    get_target_id: Callable[[BenefitTransaction], TargetIdT],
+) -> BenefitTransactionApplicationResult[TargetIdT]:
     evaluation_time = datetime.datetime.now(tz=datetime.UTC)
-    business_event_callbacks: list[Callable[[], None]] = []
 
     async with transaction() as execute:
         source_id, source_transaction_id = command.source_identity
@@ -275,13 +296,38 @@ async def apply_subscription_transaction(
 
         if stored is not None:
             # Trusted callers never reuse a source identity; the stored transaction is authoritative.
-            subscription_id = stored.get_subscription_id_or_raise()
-            return _application_result(stored, subscription_id, created=False)
+            return _application_result(stored, get_target_id(stored), created=False)
 
         # Source identity uniqueness prevents duplicated operations. If concurrent first
-        # operations for one external subscription become likely, lock its provider identity
+        # operations for one external target become likely, lock its provider identity
         # from target resolution through provider reference creation.
-        benefit_transaction, business_event_callbacks = await _apply_transaction(
+        benefit_transaction, business_event_callbacks = await actualize(
+            execute,
+            evaluation_time,
+        )
+
+    for callback in business_event_callbacks:
+        callback()
+
+    return _application_result(
+        benefit_transaction,
+        get_target_id(benefit_transaction),
+        created=True,
+    )
+
+
+async def apply_subscription_transaction(
+    subscription: SubscriptionSnapshot,
+    parameters: Mapping[BenefitParameterId, object],
+    command: BenefitTransactionCommand[SubscriptionId],
+    *,
+    actor_kind: AuditEntityKind,
+    actor_id: SerializedId,
+) -> BenefitTransactionApplicationResult[SubscriptionId]:
+    """Atomically apply one benefit transaction to subscription and entitlement state."""
+    return await _apply_benefit_transaction(
+        command,
+        actualize=lambda execute, evaluation_time: _actualize_subscription_transaction(
             command,
             execute,
             subscription,
@@ -289,10 +335,30 @@ async def apply_subscription_transaction(
             evaluation_time=evaluation_time,
             actor_kind=actor_kind,
             actor_id=actor_id,
-        )
+        ),
+        get_target_id=BenefitTransaction.get_subscription_id_or_raise,
+    )
 
-    for callback in business_event_callbacks:
-        callback()
 
-    subscription_id = benefit_transaction.get_subscription_id_or_raise()
-    return _application_result(benefit_transaction, subscription_id, created=True)
+async def apply_one_time_purchase_transaction(
+    purchase: PurchaseSnapshot,
+    parameters: Mapping[BenefitParameterId, object],
+    command: BenefitTransactionCommand[OneTimePurchaseId],
+    *,
+    actor_kind: AuditEntityKind,
+    actor_id: SerializedId,
+) -> BenefitTransactionApplicationResult[OneTimePurchaseId]:
+    """Atomically apply one benefit transaction to one-time-purchase and entitlement state."""
+    return await _apply_benefit_transaction(
+        command,
+        actualize=lambda execute, evaluation_time: _actualize_one_time_purchase_transaction(
+            command,
+            execute,
+            purchase,
+            parameters,
+            evaluation_time=evaluation_time,
+            actor_kind=actor_kind,
+            actor_id=actor_id,
+        ),
+        get_target_id=BenefitTransaction.get_one_time_purchase_id_or_raise,
+    )
