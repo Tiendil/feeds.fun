@@ -1,3 +1,4 @@
+import asyncio
 import datetime
 import uuid
 from collections.abc import Callable
@@ -12,6 +13,8 @@ from ffun.benefits.entities import (
     BenefitPackageTemplate,
     BenefitParameterDefinition,
     BenefitParameterId,
+    BenefitSourceId,
+    BenefitSourceTransactionId,
     BenefitTransaction,
     BenefitTransactionApplicationResult,
     BenefitTransactionCommand,
@@ -25,6 +28,7 @@ from ffun.benefits.tests.make import (
     make_benefit_transaction,
     make_external_target,
     make_one_time_purchase_benefit_transaction,
+    make_one_time_purchase_transaction_command,
     make_subscription_snapshot,
     make_transaction_command,
 )
@@ -34,12 +38,15 @@ from ffun.core.tests.helpers import (
     TableSizeNotChanged,
     assert_logs_has_business_event,
     assert_logs_has_no_business_event,
+    assert_pool_capacity_at_least,
     capture_logs,
 )
 from ffun.domain.datetime_intervals import LIFETIME_INTERVAL_END_MARKER
 from ffun.domain.entities import (
     BenefitId,
     BenefitTransactionId,
+    OneTimePurchaseId,
+    ProviderStatus,
     PurchasedStateSaveOutcome,
     SerializedId,
     SubscriptionId,
@@ -47,6 +54,9 @@ from ffun.domain.entities import (
 from ffun.entitlements import domain as entitlement_domain
 from ffun.entitlements.entities import EntitlementGuarantee, EntitlementKindId
 from ffun.entitlements.tests import helpers as entitlement_helpers
+from ffun.one_time_purchases import domain as purchase_domain
+from ffun.one_time_purchases.entities import PurchaseSnapshot, PurchaseStatus
+from ffun.one_time_purchases.tests.make import make_provider_purchase_reference, make_purchase_snapshot
 from ffun.subscriptions import domain as subscription_domain
 from ffun.subscriptions.entities import (
     SubscriptionSaveResult,
@@ -57,11 +67,30 @@ from ffun.subscriptions.tests.make import make_provider_subscription_reference
 
 _ACTOR_KIND = AuditEntityKind.psp
 _ACTOR_ID = SerializedId("provider-hook")
+_QUANTITY_PARAMETER_ID = BenefitParameterId("quantity")
 
 
 @pytest.fixture  # type: ignore[misc]
 def package(mocker: MockerFixture) -> BenefitPackageTemplate:
     configured = make_benefit_package_template()
+    mocker.patch.object(domain.settings, "package_templates", (configured,))
+    return configured
+
+
+@pytest.fixture  # type: ignore[misc]
+def purchase_package(mocker: MockerFixture) -> BenefitPackageTemplate:
+    configured = make_benefit_package_template(
+        parameters=(
+            BenefitParameterDefinition(
+                id=_QUANTITY_PARAMETER_ID,
+                minimum=1,
+                maximum=1_000_000,
+            ),
+        ),
+        entitlements={
+            EntitlementKindId.lifetime_tokens: ParameterReference(parameter_id=_QUANTITY_PARAMETER_ID),
+        },
+    )
     mocker.patch.object(domain.settings, "package_templates", (configured,))
     return configured
 
@@ -73,6 +102,20 @@ async def _apply(
     return await domain.apply_subscription_transaction(
         subscription,
         {},
+        command,
+        actor_kind=_ACTOR_KIND,
+        actor_id=_ACTOR_ID,
+    )
+
+
+async def _apply_purchase(
+    purchase: PurchaseSnapshot,
+    parameters: dict[BenefitParameterId, object],
+    command: BenefitTransactionCommand[OneTimePurchaseId],
+) -> BenefitTransactionApplicationResult[OneTimePurchaseId]:
+    return await domain.apply_one_time_purchase_transaction(
+        purchase,
+        parameters,
         command,
         actor_kind=_ACTOR_KIND,
         actor_id=_ACTOR_ID,
@@ -617,7 +660,7 @@ class TestApplySubscriptionTransaction:
         assert_logs_has_business_event(logs, "entitlement_changed", user_id=snapshot.user_id)
 
     @pytest.mark.asyncio
-    async def test_materializes_parameterized_template(self, mocker: MockerFixture) -> None:
+    async def test_materializes_arbitrary_quantity_in_composite_package(self, mocker: MockerFixture) -> None:
         quantity = BenefitParameterDefinition(
             id=BenefitParameterId("quantity"),
             minimum=1,
@@ -626,6 +669,7 @@ class TestApplySubscriptionTransaction:
         package = make_benefit_package_template(
             parameters=(quantity,),
             entitlements={
+                EntitlementKindId.day_tokens: ParameterConstant(value=10),
                 EntitlementKindId.lifetime_tokens: ParameterReference(parameter_id=quantity.id),
             },
         )
@@ -636,9 +680,9 @@ class TestApplySubscriptionTransaction:
         async with (
             TableSizeDelta("b_transactions", delta=1),
             TableSizeDelta("sb_subscriptions", delta=1),
-            TableSizeDelta("en_source_entitlements", delta=1),
-            TableSizeDelta("en_entitlements", delta=1),
-            TableSizeDelta("a_records", delta=2),
+            TableSizeDelta("en_source_entitlements", delta=2),
+            TableSizeDelta("en_entitlements", delta=2),
+            TableSizeDelta("a_records", delta=3),
         ):
             result = await domain.apply_subscription_transaction(
                 snapshot,
@@ -648,15 +692,24 @@ class TestApplySubscriptionTransaction:
                 actor_id=_ACTOR_ID,
             )
 
-        source = await entitlement_helpers.load_source_entitlement(
+        day_source = await entitlement_helpers.load_source_entitlement(
+            execute,
+            snapshot.user_id,
+            EntitlementKindId.day_tokens,
+            domain.BENEFITS_ENTITLEMENT_SOURCE_ID,
+            result.transaction_id,
+        )
+        lifetime_source = await entitlement_helpers.load_source_entitlement(
             execute,
             snapshot.user_id,
             EntitlementKindId.lifetime_tokens,
             domain.BENEFITS_ENTITLEMENT_SOURCE_ID,
             result.transaction_id,
         )
-        assert source is not None
-        assert source.value == 25
+        assert day_source is not None
+        assert day_source.value == 10
+        assert lifetime_source is not None
+        assert lifetime_source.value == 25
 
     @pytest.mark.asyncio
     async def test_revoke_is_inferred_from_status_and_replaces_complete_state(
@@ -1045,5 +1098,486 @@ class TestApplySubscriptionTransaction:
         assert source is not None
         assert source.revoked_at is None
         assert_logs_has_no_business_event(logs, "subscription_changed")
+        assert_logs_has_no_business_event(logs, "source_entitlement_changed")
+        assert_logs_has_no_business_event(logs, "entitlement_changed")
+
+
+class TestApplyOneTimePurchaseTransaction:
+    @pytest.mark.asyncio
+    async def test_materializes_arbitrary_quantity_and_emits_events(
+        self,
+        purchase_package: BenefitPackageTemplate,
+    ) -> None:
+        purchase = make_purchase_snapshot(benefit_id=purchase_package.id)
+        command = make_one_time_purchase_transaction_command()
+
+        with capture_logs() as logs:
+            async with (
+                TableSizeDelta("b_transactions", delta=1),
+                TableSizeDelta("otp_purchases", delta=1),
+                TableSizeDelta("en_source_entitlements", delta=1),
+                TableSizeDelta("en_entitlements", delta=1),
+                TableSizeDelta("a_records", delta=2),
+            ):
+                result = await _apply_purchase(
+                    purchase,
+                    {_QUANTITY_PARAMETER_ID: 137},
+                    command,
+                )
+
+        assert result.transaction_created
+        stored_transaction = await domain.get_benefit_transaction(result.transaction_id)
+        assert stored_transaction is not None
+        assert stored_transaction.source_identity == command.source_identity
+        assert stored_transaction.entitlement_action == BenefitEntitlementAction.grant
+        assert stored_transaction.benefit_id == purchase_package.id
+        assert stored_transaction.period_starts_at == purchase.purchased_at
+        assert stored_transaction.period_ends_at == LIFETIME_INTERVAL_END_MARKER
+        assert await purchase_domain.get_purchase(result.target_id) == purchase.with_identity(
+            one_time_purchase_id=result.target_id,
+            state_transaction_id=result.transaction_id,
+        )
+
+        source = await entitlement_helpers.load_source_entitlement(
+            execute,
+            purchase.user_id,
+            EntitlementKindId.lifetime_tokens,
+            domain.BENEFITS_ENTITLEMENT_SOURCE_ID,
+            result.transaction_id,
+        )
+        assert source is not None
+        assert source.one_time_purchase_id == result.target_id
+        assert source.subscription_id is None
+        assert source.value == 137
+        assert source.starts_at == purchase.purchased_at
+        assert source.expires_at == LIFETIME_INTERVAL_END_MARKER
+
+        assert_logs_has_business_event(
+            logs,
+            "one_time_purchase_changed",
+            user_id=purchase.user_id,
+            one_time_purchase_id=str(result.target_id),
+            state_transaction_id=str(result.transaction_id),
+        )
+        assert_logs_has_business_event(
+            logs,
+            "source_entitlement_changed",
+            user_id=purchase.user_id,
+            one_time_purchase_id=str(result.target_id),
+            grant_transaction_id=str(result.transaction_id),
+        )
+        assert_logs_has_business_event(logs, "entitlement_changed", user_id=purchase.user_id)
+
+    @pytest.mark.asyncio
+    async def test_independent_additive_purchases_and_refund_only_selected_purchase(
+        self,
+        purchase_package: BenefitPackageTemplate,
+    ) -> None:
+        first_purchase = make_purchase_snapshot(benefit_id=purchase_package.id)
+        second_purchase = make_purchase_snapshot(
+            user_id=first_purchase.user_id,
+            benefit_id=purchase_package.id,
+        )
+        first = await _apply_purchase(
+            first_purchase,
+            {_QUANTITY_PARAMETER_ID: 100},
+            make_one_time_purchase_transaction_command(),
+        )
+        second = await _apply_purchase(
+            second_purchase,
+            {_QUANTITY_PARAMETER_ID: 250},
+            make_one_time_purchase_transaction_command(),
+        )
+
+        effective = (
+            await entitlement_domain.get_entitlements(
+                [first_purchase.user_id],
+                [EntitlementKindId.lifetime_tokens],
+            )
+        )[first_purchase.user_id][EntitlementKindId.lifetime_tokens]
+        assert effective is not None
+        assert effective.value == 350
+        assert first.target_id != second.target_id
+
+        refund_snapshot = first_purchase.replace(
+            status=PurchaseStatus.refunded,
+            provider_status=ProviderStatus("refunded"),
+            provider_updated_at=first_purchase.provider_updated_at + datetime.timedelta(seconds=1),
+        )
+        refund = await _apply_purchase(
+            refund_snapshot,
+            {_QUANTITY_PARAMETER_ID: 100},
+            make_one_time_purchase_transaction_command(
+                target=InternalTarget(internal_id=first.target_id),
+            ),
+        )
+
+        first_source = await entitlement_helpers.load_source_entitlement(
+            execute,
+            first_purchase.user_id,
+            EntitlementKindId.lifetime_tokens,
+            domain.BENEFITS_ENTITLEMENT_SOURCE_ID,
+            first.transaction_id,
+        )
+        second_source = await entitlement_helpers.load_source_entitlement(
+            execute,
+            second_purchase.user_id,
+            EntitlementKindId.lifetime_tokens,
+            domain.BENEFITS_ENTITLEMENT_SOURCE_ID,
+            second.transaction_id,
+        )
+        assert first_source is not None
+        assert first_source.revoked_at is not None
+        assert first_source.revoked_by_transaction_id == refund.transaction_id
+        assert second_source is not None
+        assert second_source.revoked_at is None
+
+        effective = (
+            await entitlement_domain.get_entitlements(
+                [first_purchase.user_id],
+                [EntitlementKindId.lifetime_tokens],
+            )
+        )[first_purchase.user_id][EntitlementKindId.lifetime_tokens]
+        assert effective is not None
+        assert effective.value == 250
+        assert await purchase_domain.get_purchase(first.target_id) == refund_snapshot.with_identity(
+            one_time_purchase_id=first.target_id,
+            state_transaction_id=refund.transaction_id,
+        )
+        assert await purchase_domain.get_purchase(second.target_id) == second_purchase.with_identity(
+            one_time_purchase_id=second.target_id,
+            state_transaction_id=second.transaction_id,
+        )
+
+    @pytest.mark.asyncio
+    async def test_source_retry_returns_first_result_without_rematerializing(
+        self,
+        purchase_package: BenefitPackageTemplate,
+    ) -> None:
+        first_purchase = make_purchase_snapshot(benefit_id=purchase_package.id)
+        command = make_one_time_purchase_transaction_command()
+        first = await _apply_purchase(
+            first_purchase,
+            {_QUANTITY_PARAMETER_ID: 100},
+            command,
+        )
+        retry_purchase = make_purchase_snapshot(
+            benefit_id=BenefitId("unknown"),
+            status=PurchaseStatus.refunded,
+        )
+        retry_command = make_one_time_purchase_transaction_command(
+            source_id=command.source_id,
+            source_transaction_id=command.source_transaction_id,
+            target=InternalTarget(internal_id=purchase_domain.new_purchase_id()),
+        )
+
+        with capture_logs() as logs:
+            async with (
+                TableSizeNotChanged("b_transactions"),
+                TableSizeNotChanged("otp_purchases"),
+                TableSizeNotChanged("en_source_entitlements"),
+                TableSizeNotChanged("en_entitlements"),
+                TableSizeNotChanged("a_records"),
+            ):
+                retry = await _apply_purchase(retry_purchase, {}, retry_command)
+
+        assert retry == first.replace(transaction_created=False)
+        assert await purchase_domain.get_purchase(first.target_id) == first_purchase.with_identity(
+            one_time_purchase_id=first.target_id,
+            state_transaction_id=first.transaction_id,
+        )
+        assert_logs_has_no_business_event(logs, "one_time_purchase_changed")
+        assert_logs_has_no_business_event(logs, "source_entitlement_changed")
+        assert_logs_has_no_business_event(logs, "entitlement_changed")
+
+    @pytest.mark.asyncio
+    async def test_concurrent_source_attempt_has_one_winner(
+        self,
+        purchase_package: BenefitPackageTemplate,
+        mocker: MockerFixture,
+    ) -> None:
+        assert_pool_capacity_at_least(2)
+        purchase = make_purchase_snapshot(benefit_id=purchase_package.id)
+        command = make_one_time_purchase_transaction_command()
+        original_load = operations.load_benefit_transaction_by_source
+        both_initial_loads_finished = asyncio.Event()
+        initial_load_count = 0
+
+        async def synchronized_load(
+            load_execute: ExecuteType,
+            *,
+            source_id: BenefitSourceId,
+            source_transaction_id: BenefitSourceTransactionId,
+        ) -> BenefitTransaction | None:
+            nonlocal initial_load_count
+            stored = await original_load(
+                load_execute,
+                source_id=source_id,
+                source_transaction_id=source_transaction_id,
+            )
+            initial_load_count += 1
+            if initial_load_count == 2:
+                both_initial_loads_finished.set()
+            await both_initial_loads_finished.wait()
+            return stored
+
+        mocker.patch.object(
+            operations,
+            "load_benefit_transaction_by_source",
+            side_effect=synchronized_load,
+        )
+
+        with capture_logs() as logs:
+            async with (
+                TableSizeDelta("b_transactions", delta=1),
+                TableSizeDelta("otp_purchases", delta=1),
+                TableSizeDelta("en_source_entitlements", delta=1),
+                TableSizeDelta("en_entitlements", delta=1),
+                TableSizeDelta("a_records", delta=2),
+            ):
+                outcomes = await asyncio.gather(
+                    _apply_purchase(purchase, {_QUANTITY_PARAMETER_ID: 100}, command),
+                    _apply_purchase(purchase, {_QUANTITY_PARAMETER_ID: 100}, command),
+                    return_exceptions=True,
+                )
+
+        successful = [outcome for outcome in outcomes if isinstance(outcome, BenefitTransactionApplicationResult)]
+        failed = [outcome for outcome in outcomes if isinstance(outcome, Exception)]
+        assert len(successful) == 1
+        assert len(failed) == 1
+        assert isinstance(failed[0], errors.ConcurrentBenefitTransaction)
+        assert successful[0].transaction_created
+        assert await purchase_domain.get_purchase(successful[0].target_id) == purchase.with_identity(
+            one_time_purchase_id=successful[0].target_id,
+            state_transaction_id=successful[0].transaction_id,
+        )
+        assert_logs_has_business_event(logs, "one_time_purchase_changed", user_id=purchase.user_id)
+        assert_logs_has_business_event(logs, "source_entitlement_changed", user_id=purchase.user_id)
+        assert_logs_has_business_event(logs, "entitlement_changed", user_id=purchase.user_id)
+
+    @pytest.mark.asyncio
+    async def test_stale_refund_rolls_back_and_preserves_current_entitlement(
+        self,
+        purchase_package: BenefitPackageTemplate,
+    ) -> None:
+        current_purchase = make_purchase_snapshot(benefit_id=purchase_package.id)
+        current = await _apply_purchase(
+            current_purchase,
+            {_QUANTITY_PARAMETER_ID: 100},
+            make_one_time_purchase_transaction_command(),
+        )
+        stale_purchase = current_purchase.replace(
+            status=PurchaseStatus.refunded,
+            provider_status=ProviderStatus("refunded"),
+            provider_updated_at=current_purchase.provider_updated_at - datetime.timedelta(seconds=1),
+        )
+        stale_command = make_one_time_purchase_transaction_command(
+            target=InternalTarget(internal_id=current.target_id),
+        )
+
+        with capture_logs() as logs:
+            async with (
+                TableSizeNotChanged("b_transactions"),
+                TableSizeNotChanged("otp_purchases"),
+                TableSizeNotChanged("en_source_entitlements"),
+                TableSizeNotChanged("en_entitlements"),
+                TableSizeNotChanged("a_records"),
+            ):
+                with pytest.raises(errors.StaleBenefitTransaction):
+                    await _apply_purchase(
+                        stale_purchase,
+                        {_QUANTITY_PARAMETER_ID: 100},
+                        stale_command,
+                    )
+
+        assert await purchase_domain.get_purchase(current.target_id) == current_purchase.with_identity(
+            one_time_purchase_id=current.target_id,
+            state_transaction_id=current.transaction_id,
+        )
+        source = await entitlement_helpers.load_source_entitlement(
+            execute,
+            current_purchase.user_id,
+            EntitlementKindId.lifetime_tokens,
+            domain.BENEFITS_ENTITLEMENT_SOURCE_ID,
+            current.transaction_id,
+        )
+        assert source is not None
+        assert source.revoked_at is None
+        assert (
+            await operations.load_benefit_transaction_by_source(
+                execute,
+                source_id=stale_command.source_id,
+                source_transaction_id=stale_command.source_transaction_id,
+            )
+            is None
+        )
+        assert_logs_has_no_business_event(logs, "one_time_purchase_changed")
+        assert_logs_has_no_business_event(logs, "source_entitlement_changed")
+        assert_logs_has_no_business_event(logs, "entitlement_changed")
+
+    @pytest.mark.asyncio
+    async def test_correction_replaces_only_purchase_owned_value(
+        self,
+        purchase_package: BenefitPackageTemplate,
+    ) -> None:
+        purchase = make_purchase_snapshot(benefit_id=purchase_package.id)
+        original = await _apply_purchase(
+            purchase,
+            {_QUANTITY_PARAMETER_ID: 500},
+            make_one_time_purchase_transaction_command(),
+        )
+        correction_snapshot = purchase.replace(
+            provider_status=ProviderStatus("paid-corrected"),
+            provider_updated_at=purchase.provider_updated_at + datetime.timedelta(seconds=1),
+        )
+        correction_command = make_one_time_purchase_transaction_command(
+            target=InternalTarget(internal_id=original.target_id),
+        )
+
+        application_started_at = datetime.datetime.now(tz=datetime.UTC)
+        async with (
+            TableSizeDelta("b_transactions", delta=1),
+            TableSizeNotChanged("otp_purchases"),
+            TableSizeDelta("en_source_entitlements", delta=1),
+            TableSizeNotChanged("en_entitlements"),
+            TableSizeDelta("a_records", delta=3),
+        ):
+            correction = await _apply_purchase(
+                correction_snapshot,
+                {_QUANTITY_PARAMETER_ID: 200},
+                correction_command,
+            )
+        application_finished_at = datetime.datetime.now(tz=datetime.UTC)
+
+        original_source = await entitlement_helpers.load_source_entitlement(
+            execute,
+            purchase.user_id,
+            EntitlementKindId.lifetime_tokens,
+            domain.BENEFITS_ENTITLEMENT_SOURCE_ID,
+            original.transaction_id,
+        )
+        corrected_source = await entitlement_helpers.load_source_entitlement(
+            execute,
+            purchase.user_id,
+            EntitlementKindId.lifetime_tokens,
+            domain.BENEFITS_ENTITLEMENT_SOURCE_ID,
+            correction.transaction_id,
+        )
+        assert original_source is not None
+        assert original_source.revoked_at is not None
+        assert application_started_at <= original_source.revoked_at <= application_finished_at
+        assert original_source.revoked_by_transaction_id == correction.transaction_id
+        assert corrected_source is not None
+        assert corrected_source.value == 200
+        assert corrected_source.revoked_at is None
+
+        effective = (
+            await entitlement_domain.get_entitlements(
+                [purchase.user_id],
+                [EntitlementKindId.lifetime_tokens],
+            )
+        )[purchase.user_id][EntitlementKindId.lifetime_tokens]
+        assert effective is not None
+        assert effective.value == 200
+        assert await purchase_domain.get_purchase(original.target_id) == correction_snapshot.with_identity(
+            one_time_purchase_id=original.target_id,
+            state_transaction_id=correction.transaction_id,
+        )
+
+    @pytest.mark.asyncio
+    async def test_entitlement_failure_rolls_back_transaction_purchase_reference_and_audit(
+        self,
+        purchase_package: BenefitPackageTemplate,
+        mocker: MockerFixture,
+    ) -> None:
+        reference = make_provider_purchase_reference()
+        target = make_external_target(reference)
+        purchase = make_purchase_snapshot(benefit_id=purchase_package.id)
+        command = make_one_time_purchase_transaction_command(target=target)
+        mocker.patch.object(
+            entitlement_domain,
+            "grant_source_entitlements",
+            side_effect=RuntimeError("entitlement write failed"),
+        )
+
+        with capture_logs() as logs:
+            async with (
+                TableSizeNotChanged("b_transactions"),
+                TableSizeNotChanged("otp_purchase_refs"),
+                TableSizeNotChanged("otp_purchases"),
+                TableSizeNotChanged("en_source_entitlements"),
+                TableSizeNotChanged("en_entitlements"),
+                TableSizeNotChanged("a_records"),
+            ):
+                with pytest.raises(RuntimeError, match="entitlement write failed"):
+                    await _apply_purchase(
+                        purchase,
+                        {_QUANTITY_PARAMETER_ID: 100},
+                        command,
+                    )
+
+        assert await purchase_domain.load_provider_purchase_reference(execute, reference) is None
+        assert (
+            await operations.load_benefit_transaction_by_source(
+                execute,
+                source_id=command.source_id,
+                source_transaction_id=command.source_transaction_id,
+            )
+            is None
+        )
+        assert_logs_has_no_business_event(logs, "one_time_purchase_changed")
+        assert_logs_has_no_business_event(logs, "source_entitlement_changed")
+        assert_logs_has_no_business_event(logs, "entitlement_changed")
+
+    @pytest.mark.asyncio
+    async def test_callback_failure_happens_after_commit(
+        self,
+        purchase_package: BenefitPackageTemplate,
+        mocker: MockerFixture,
+    ) -> None:
+        purchase = make_purchase_snapshot(benefit_id=purchase_package.id)
+        command = make_one_time_purchase_transaction_command()
+        mocker.patch.object(
+            purchase_domain,
+            "_emit_purchase_change_event",
+            side_effect=RuntimeError("event delivery failed"),
+        )
+
+        with capture_logs() as logs:
+            async with (
+                TableSizeDelta("b_transactions", delta=1),
+                TableSizeDelta("otp_purchases", delta=1),
+                TableSizeDelta("en_source_entitlements", delta=1),
+                TableSizeDelta("en_entitlements", delta=1),
+                TableSizeDelta("a_records", delta=2),
+            ):
+                with pytest.raises(RuntimeError, match="event delivery failed"):
+                    await _apply_purchase(
+                        purchase,
+                        {_QUANTITY_PARAMETER_ID: 100},
+                        command,
+                    )
+
+        stored_transaction = await operations.load_benefit_transaction_by_source(
+            execute,
+            source_id=command.source_id,
+            source_transaction_id=command.source_transaction_id,
+        )
+        assert stored_transaction is not None
+        one_time_purchase_id = stored_transaction.get_one_time_purchase_id_or_raise()
+        assert await purchase_domain.get_purchase(one_time_purchase_id) == purchase.with_identity(
+            one_time_purchase_id=one_time_purchase_id,
+            state_transaction_id=stored_transaction.id,
+        )
+        source = await entitlement_helpers.load_source_entitlement(
+            execute,
+            purchase.user_id,
+            EntitlementKindId.lifetime_tokens,
+            domain.BENEFITS_ENTITLEMENT_SOURCE_ID,
+            stored_transaction.id,
+        )
+        assert source is not None
+        assert source.one_time_purchase_id == one_time_purchase_id
+        assert_logs_has_no_business_event(logs, "one_time_purchase_changed")
         assert_logs_has_no_business_event(logs, "source_entitlement_changed")
         assert_logs_has_no_business_event(logs, "entitlement_changed")
