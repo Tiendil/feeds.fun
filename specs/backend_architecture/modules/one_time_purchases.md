@@ -8,7 +8,7 @@ This document describes the public contract and observable behavior of the `ffun
 
 This specification applies to provider-independent current-state projections and provider-to-local identity references for one-time purchases owned by `ffun.one_time_purchases`.
 
-Payment collection, provider APIs and notification protocols, provider objects other than purchase identities, checkout workflows, invoices and payment attempts, product catalogs and pricing, benefit-package configuration and parameters, benefit-transaction history and intervals, entitlement derivation, resource accounting, and frontend presentation are out of scope.
+Payment collection, provider APIs and notification protocols, provider objects other than purchase identities, checkout workflows, invoices and payment attempts, product catalogs and pricing, benefit-package configuration and parameters, benefit-transaction history, caller-defined entitlement intervals, entitlement derivation, resource accounting, and frontend presentation are out of scope.
 
 ## Dictionary
 
@@ -26,7 +26,7 @@ Payment collection, provider APIs and notification protocols, provider objects o
 
 ## Module responsibility
 
-The module MUST own internal one-time purchase identifiers, provider-purchase references, current purchase snapshots, their causal state-transaction references, benefit identifiers, normalized statuses and their benefit-granting semantics, provider statuses, purchase timestamps, durable state replacement, current-state queries, audit records, and business events.
+The module MUST own internal one-time purchase identifiers, provider-purchase references, current purchase snapshots, their causal state-transaction references, benefit identifiers, normalized statuses and their benefit-granting semantics, provider statuses, purchase timestamps, the lifetime interval derived from each purchase timestamp, durable state replacement, current-state queries, audit records, and business events.
 
 The external purchase provider remains authoritative for commercial purchase state.
 The module MUST represent the latest accepted state locally and MUST NOT independently infer provider-side state transitions.
@@ -34,7 +34,7 @@ The module MUST represent the latest accepted state locally and MUST NOT indepen
 Callers MUST read and change locally persisted purchase state through the public module boundary.
 They MUST NOT reproduce validation, freshness, ownership, or replacement behavior.
 
-The module MUST NOT own payment-provider communication, provider objects beyond the provider purchase identity tuple, product catalogs or pricing, provider-product-to-benefit resolution, benefit-package configuration, benefit parameters, benefit-transaction history or applicable intervals, payment or invoice state, application of entitlement grants, resource limits, or access decisions.
+The module MUST NOT own payment-provider communication, provider objects beyond the provider purchase identity tuple, product catalogs or pricing, provider-product-to-benefit resolution, benefit-package configuration, benefit parameters, benefit-transaction history, caller-defined applicable intervals, payment or invoice state, application of entitlement grants, resource limits, or access decisions.
 The module MUST NOT persist benefit titles, descriptions, parameters, or entitlement guarantees.
 Callers MUST resolve benefit details and apply guarantees through the benefits domain boundary.
 
@@ -104,6 +104,11 @@ Queries MUST NOT mutate purchase state.
 Every purchase snapshot MUST contain timezone-aware purchase and provider-update timestamps.
 The purchase timestamp MUST identify when the provider reports that the purchase originated.
 The provider-update timestamp MUST identify the freshness of the complete snapshot.
+The purchase timestamp MUST be earlier than the project's stable lifetime interval-end marker.
+
+Each purchase snapshot MUST expose an applicable interval whose start is its purchase timestamp and whose end is the project's stable lifetime interval-end marker.
+The interval boundaries MUST be derived and MUST NOT be accepted or persisted as additional purchase state.
+Transaction effective time MUST NOT replace the purchase timestamp as the interval start.
 
 ### Benefit references
 
@@ -111,7 +116,7 @@ A purchase snapshot MUST contain the local benefit identifier resolved from trus
 
 The one-time-purchases module MUST store and return that reference without independently inferring a benefit.
 It MUST NOT persist provider product or other provider object identifiers; the causal benefit transaction owns that provenance.
-It MUST NOT copy benefit display details, benefit parameters, applicable entitlement intervals, or entitlement guarantees into purchase persistence, query a payment provider for benefit details, or directly change entitlement state.
+It MUST NOT copy benefit display details, benefit parameters, separately supplied entitlement intervals, or entitlement guarantees into purchase persistence, query a payment provider for benefit details, or directly change entitlement state.
 
 ### Snapshot validation and replacement
 

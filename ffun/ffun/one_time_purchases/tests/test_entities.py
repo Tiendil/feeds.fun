@@ -4,6 +4,7 @@ from typing import cast
 import pydantic
 import pytest
 
+from ffun.domain.datetime_intervals import LIFETIME_INTERVAL_END_MARKER
 from ffun.domain.entities import BenefitId, BenefitTransactionId
 from ffun.one_time_purchases.entities import PurchaseSnapshot, PurchaseStatus
 from ffun.one_time_purchases.operations import new_purchase_id
@@ -41,6 +42,18 @@ class TestPurchaseSnapshot:
 
         with pytest.raises(pydantic.ValidationError, match=f"{field_name} must have a UTC offset"):
             make_purchase(**arguments)  # type: ignore[arg-type]
+
+    def test_period_starts_at__uses_purchase_time(self) -> None:
+        purchase = make_purchase()
+
+        assert purchase.period_starts_at == purchase.purchased_at
+
+    def test_period_ends_at__uses_lifetime_marker(self) -> None:
+        assert make_purchase().period_ends_at == LIFETIME_INTERVAL_END_MARKER
+
+    def test_init__purchase_time_must_precede_lifetime_end(self) -> None:
+        with pytest.raises(pydantic.ValidationError, match="earlier than the lifetime interval end"):
+            make_purchase(purchased_at=LIFETIME_INTERVAL_END_MARKER)
 
     def test_has_same_business_state_as__ignores_only_provider_update_time(self) -> None:
         purchase = make_purchase()

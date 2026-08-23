@@ -237,6 +237,7 @@ Introduce `ffun.one_time_purchases`, analogous to but smaller than `ffun.subscri
 - Provider-purchase references and their uniqueness rules.
 - Current provider-independent purchase snapshots.
 - Normalized purchase statuses and whether each status grants benefits.
+- The lifetime benefit interval derived from each purchase timestamp.
 - Snapshot freshness and conflict handling.
 - Purchase queries, audit records, and business events.
 
@@ -257,7 +258,9 @@ PurchaseSnapshot(
 
 The snapshot retains `benefit_id`, consistently with `SubscriptionSnapshot`, but does not contain benefit parameters. Benefit parameters are supplied separately to each newly initiated `ffun.benefits.apply_one_time_purchase_transaction`, used for package materialization, and not persisted.
 
-When one-time purchases can grant non-lifetime entitlements, the snapshot or package context must also provide the applicable benefit interval. Lifetime entitlement kinds continue to use the stable lifetime interval marker.
+Each purchase snapshot exposes a derived lifetime benefit interval. Its start is `purchased_at`, matching the subscription workflow's use of purchased-state lifecycle time rather than transaction effective time. Its end is the stable lifetime interval-end marker. These boundaries are not separate caller inputs or persisted purchase fields, so they cannot contradict the authoritative purchase timestamp.
+
+Supporting time-limited one-time-purchase entitlements would require a concrete new interval source and is outside the current requirements.
 
 Purchase statuses should expose a `grants_benefits` semantic, just as subscription statuses do. `ffun.benefits` derives grant or revoke behavior from that semantic; PSP integrations must not directly select an entitlement action.
 
@@ -342,13 +345,9 @@ The benefit identifier identifies the source `BenefitPackageTemplate`. Both inpu
 
 For granting transactions, `ffun.entitlements` persists each concrete kind, value, and interval in `en_source_entitlements`, linked to the benefit transaction by `grant_transaction_id`. Revocations remain traceable through `revoked_by_transaction_id`. These source-entitlement records are the authoritative persistence of what was actually granted or revoked.
 
-The concrete entitlement interval is also common transaction data. Lifetime purchases use the stable lifetime interval marker; time-limited purchases and subscriptions store their applicable interval directly.
+The concrete entitlement interval is also common transaction data. One-time purchases copy their snapshot's purchase-time-to-lifetime interval, while subscriptions copy their snapshot's provider-reported period.
 
-Transaction application results should remain typed:
-
-- Subscription results contain the internal subscription identifier.
-- One-time purchase results contain the internal purchase identifier.
-- Both contain the benefit transaction identifier and whether the transaction was newly created.
+Transaction application commands and results use generic structures parameterized by the internal target identifier type. A command contains one non-optional `target` plus common source identity and effective-time fields. A result contains `target_id`, the benefit transaction identifier, and whether the transaction was newly created. Subscription workflows specialize them with `SubscriptionId`; one-time-purchase workflows specialize them with `OneTimePurchaseId`.
 
 ## Configuration evolution
 
@@ -422,7 +421,7 @@ The implementation specifications should resolve:
 
 ## Refactoring plan
 
-- [x] Update the benefits architecture specification with the `BenefitPackageTemplate` and concrete `BenefitPackage` distinction, materialization, typed transaction details, and purchase application semantics.
+- [x] Update the benefits architecture specification with the `BenefitPackageTemplate` and concrete `BenefitPackage` distinction, materialization, plain common transaction targets, and purchase application semantics.
 - [x] Define validation constraints and persistence bounds for integer package parameters and entitlement values.
 - [x] Add `BenefitPackageTemplate`, integer parameter definitions, kind-keyed entitlement mappings, uniform `ParameterConstant | ParameterReference` value templates, normalized integer parameters, and concrete `BenefitPackage` to `ffun.benefits`.
 - [x] Change benefits settings to store `package_templates`, validate them during configuration loading, and add focused template-validation tests.
@@ -432,7 +431,7 @@ The implementation specifications should resolve:
 - [x] Add `OneTimePurchaseId` and specify `ffun.one_time_purchases` identity, statuses, snapshots, references, freshness rules, audits, events, and public operations.
 - [x] Implement the `ffun.one_time_purchases` entities, persistence, domain operations, migrations, and tests.
 - [x] Add explicit one-time purchase ownership to source entitlements and implement one-time-purchase-level revocation, timeline rebuilding, audits, events, migrations, and tests.
-- [ ] Add one-time-purchase transaction entities and typed application results backed by the common `b_transactions` table.
+- [x] Add shared subscription and one-time-purchase target entities, a generic target-id transaction command and application result, and back both workflows with the common `b_transactions` table.
 - [ ] Implement `apply_one_time_purchase_transaction` with atomic benefit, purchase, and entitlement coordination and fresh package materialization for every previously unseen transaction.
 - [ ] Add workflow tests for arbitrary quantities, composite packages, independent additive purchases, retries, concurrent attempts, stale updates, corrections, refunds, rollback, and post-commit event behavior.
 - [ ] Update PSP and administrator entry points to submit benefit identifiers and normalized parameters through the new workflow.

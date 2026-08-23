@@ -12,8 +12,8 @@ from ffun.benefits.entities import (
     BenefitParameterDefinition,
     BenefitParameterId,
     BenefitTransaction,
-    InternalSubscriptionTarget,
-    NewSubscriptionTarget,
+    InternalTarget,
+    NewTarget,
     ParameterConstant,
     ParameterReference,
 )
@@ -21,13 +21,16 @@ from ffun.benefits.tests.make import (
     make_benefit_package,
     make_benefit_package_template,
     make_benefit_transaction,
-    make_external_subscription_target,
+    make_external_target,
+    make_one_time_purchase_benefit_transaction,
+    make_one_time_purchase_transaction_command,
     make_transaction_command,
 )
 from ffun.core.entities import NonEmptyString
 from ffun.domain.entities import BenefitId
 from ffun.entitlements import entities as entitlement_entities
 from ffun.entitlements.entities import MAX_ENTITLEMENT_VALUE, EntitlementGuarantee, EntitlementKindId
+from ffun.one_time_purchases.domain import new_purchase_id
 from ffun.subscriptions.domain import new_subscription_id
 from ffun.subscriptions.tests.make import make_provider_subscription_reference
 
@@ -344,22 +347,22 @@ class TestBenefitPackageTemplate:
         assert isinstance(exception_info.value.__cause__, ValueError)
 
 
-class TestInternalSubscriptionTarget:
+class TestInternalTarget:
     def test_provider_reference__is_missing(self) -> None:
-        target = InternalSubscriptionTarget(subscription_id=new_subscription_id())
+        target = InternalTarget(internal_id=new_subscription_id())
 
         assert target.provider_reference is None
 
 
-class TestExternalSubscriptionTarget:
+class TestExternalTarget:
     def test_provider_reference__contains_external_identity(self) -> None:
         reference = make_provider_subscription_reference()
-        target = make_external_subscription_target(reference)
+        target = make_external_target(reference)
 
         assert target.provider_reference == reference
 
     def test_identity__returns_ordered_external_identity(self) -> None:
-        target = make_external_subscription_target()
+        target = make_external_target()
 
         assert target.identity == (
             target.provider_id,
@@ -368,9 +371,9 @@ class TestExternalSubscriptionTarget:
         )
 
 
-class TestNewSubscriptionTarget:
+class TestNewTarget:
     def test_provider_reference__is_missing(self) -> None:
-        assert NewSubscriptionTarget().provider_reference is None
+        assert NewTarget().provider_reference is None
 
 
 class TestBenefitTransactionCommand:
@@ -383,12 +386,53 @@ class TestBenefitTransactionCommand:
         with pytest.raises(pydantic.ValidationError, match="effective timestamp must have a UTC offset"):
             make_transaction_command(effective_at=datetime.datetime.now())
 
+    def test_target__supports_one_time_purchase_id(self) -> None:
+        purchase_id = new_purchase_id()
+        command = make_one_time_purchase_transaction_command(
+            target=InternalTarget(internal_id=purchase_id),
+        )
+
+        assert isinstance(command.target, InternalTarget)
+        assert command.target.internal_id == purchase_id
+
 
 class TestBenefitTransaction:
     def test_source_identity__returns_source_tuple(self) -> None:
         transaction = make_benefit_transaction()
 
         assert transaction.source_identity == (transaction.source_id, transaction.source_transaction_id)
+
+    def test_get_subscription_id_or_raise__returns_subscription_id(self) -> None:
+        transaction = make_benefit_transaction()
+
+        assert transaction.get_subscription_id_or_raise() == transaction.subscription_id
+
+    def test_get_subscription_id_or_raise__rejects_purchase(self) -> None:
+        transaction = make_one_time_purchase_benefit_transaction()
+
+        with pytest.raises(errors.InvalidBenefitTransactionTarget) as exception_info:
+            transaction.get_subscription_id_or_raise()
+
+        message = str(exception_info.value)
+        assert f"transaction_id={transaction.id}" in message
+        assert "expected_target=subscription" in message
+        assert "actual_target=one_time_purchase" in message
+
+    def test_get_one_time_purchase_id_or_raise__returns_purchase_id(self) -> None:
+        transaction = make_one_time_purchase_benefit_transaction()
+
+        assert transaction.get_one_time_purchase_id_or_raise() == transaction.one_time_purchase_id
+
+    def test_get_one_time_purchase_id_or_raise__rejects_subscription(self) -> None:
+        transaction = make_benefit_transaction()
+
+        with pytest.raises(errors.InvalidBenefitTransactionTarget) as exception_info:
+            transaction.get_one_time_purchase_id_or_raise()
+
+        message = str(exception_info.value)
+        assert f"transaction_id={transaction.id}" in message
+        assert "expected_target=one_time_purchase" in message
+        assert "actual_target=subscription" in message
 
     @pytest.mark.parametrize("field_name", ["effective_at", "period_starts_at", "period_ends_at"])
     def test_timestamp_must_have_timezone__rejects_naive_timestamp(self, field_name: str) -> None:
@@ -406,4 +450,14 @@ class TestBenefitTransaction:
         data["period_starts_at"] = data["period_ends_at"]
 
         with pytest.raises(pydantic.ValidationError, match="period start must be earlier than period end"):
+            BenefitTransaction.model_validate(data)
+
+    @pytest.mark.parametrize("with_both_targets", [False, True])
+    def test_validate_target__requires_exactly_one_target(self, with_both_targets: bool) -> None:
+        transaction = make_benefit_transaction()
+        data = cast(dict[str, object], transaction.model_dump())
+        data["subscription_id"] = transaction.subscription_id if with_both_targets else None
+        data["one_time_purchase_id"] = new_purchase_id() if with_both_targets else None
+
+        with pytest.raises(pydantic.ValidationError, match="must have exactly one target"):
             BenefitTransaction.model_validate(data)

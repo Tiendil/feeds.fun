@@ -20,8 +20,6 @@ def new_benefit_transaction_id() -> BenefitTransactionId:
 def row_to_benefit_transaction(row: Mapping[str, object]) -> BenefitTransaction:
     data = dict(row)
     data.pop("created_at", None)
-    # TODO: BenefitTransaction cannot validate purchase targets yet; preserve this field when those entities exist.
-    data.pop("one_time_purchase_id", None)
 
     try:
         return BenefitTransaction.model_validate(data)
@@ -52,7 +50,7 @@ async def save_benefit_transaction(execute: ExecuteType, transaction: BenefitTra
         %(user_id)s,
         %(benefit_id)s,
         %(subscription_id)s,
-        NULL,
+        %(one_time_purchase_id)s,
         %(effective_at)s,
         %(period_starts_at)s,
         %(period_ends_at)s

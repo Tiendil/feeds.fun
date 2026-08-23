@@ -7,10 +7,16 @@ from psycopg.errors import CheckViolation
 from pydantic import ValidationError
 
 from ffun.benefits import errors, operations
-from ffun.benefits.entities import BenefitSourceId, BenefitSourceTransactionId
-from ffun.benefits.tests.make import make_benefit_transaction
+from ffun.benefits.entities import BenefitSourceId, BenefitSourceTransactionId, BenefitTransaction
+from ffun.benefits.tests.make import make_benefit_transaction, make_one_time_purchase_benefit_transaction
 from ffun.core.postgresql import execute
 from ffun.core.tests.helpers import TableSizeDelta, TableSizeNotChanged
+
+
+def _stored_row(transaction: BenefitTransaction) -> dict[str, object]:
+    row = cast(dict[str, object], transaction.model_dump())
+    row["created_at"] = datetime.datetime.now(tz=datetime.UTC)
+    return row
 
 
 class TestNewBenefitTransactionId:
@@ -24,17 +30,19 @@ class TestNewBenefitTransactionId:
 
 
 class TestRowToBenefitTransaction:
-    def test_converts_row_and_removes_persistence_timestamp(self) -> None:
+    def test_converts_subscription_row_and_removes_persistence_timestamp(self) -> None:
         transaction = make_benefit_transaction()
-        row = cast(dict[str, object], transaction.model_dump())
-        row["created_at"] = datetime.datetime.now(tz=datetime.UTC)
-        row["one_time_purchase_id"] = None
 
-        assert operations.row_to_benefit_transaction(row) == transaction
+        assert operations.row_to_benefit_transaction(_stored_row(transaction)) == transaction
+
+    def test_converts_one_time_purchase_row_and_removes_persistence_timestamp(self) -> None:
+        transaction = make_one_time_purchase_benefit_transaction()
+
+        assert operations.row_to_benefit_transaction(_stored_row(transaction)) == transaction
 
     def test_unexpected_field_raises_module_error(self) -> None:
         transaction = make_benefit_transaction()
-        row = cast(dict[str, object], transaction.model_dump())
+        row = _stored_row(transaction)
         row["unexpected"] = "value"
 
         with pytest.raises(errors.InvalidStoredBenefitTransaction) as exception_info:
@@ -51,9 +59,11 @@ class TestRowToBenefitTransaction:
 
 class TestSaveBenefitTransaction:
     @pytest.mark.asyncio
-    async def test_inserts_complete_transaction(self) -> None:
-        transaction = make_benefit_transaction()
-
+    @pytest.mark.parametrize(
+        "transaction",
+        [make_benefit_transaction(), make_one_time_purchase_benefit_transaction()],
+    )
+    async def test_inserts_complete_transaction(self, transaction: BenefitTransaction) -> None:
         async with TableSizeDelta("b_transactions", delta=1):
             created = await operations.save_benefit_transaction(execute, transaction)
 
@@ -71,12 +81,11 @@ class TestSaveBenefitTransaction:
                 query_parameters,
             ),
         )
-        assert rows == [
-            {
-                "subscription_id": transaction.subscription_id,
-                "one_time_purchase_id": None,
-            }
-        ]
+        expected_targets: dict[str, object] = {
+            "subscription_id": transaction.subscription_id,
+            "one_time_purchase_id": transaction.one_time_purchase_id,
+        }
+        assert rows == [expected_targets]
 
     @pytest.mark.asyncio
     async def test_duplicate_source_identity_is_no_op(self) -> None:
@@ -116,7 +125,8 @@ class TestBenefitTransactionTargetConstraint:
         one_time_purchase_id: uuid.UUID | None,
     ) -> None:
         transaction = make_benefit_transaction()
-        arguments = cast(dict[str, object], transaction.model_dump())
+        arguments = _stored_row(transaction)
+        arguments.pop("created_at")
         arguments.update(
             {
                 "subscription_id": subscription_id,

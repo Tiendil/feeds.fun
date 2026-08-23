@@ -6,6 +6,7 @@ import pydantic
 
 from ffun.core import utils
 from ffun.core.entities import BaseEntity
+from ffun.domain.datetime_intervals import LIFETIME_INTERVAL_END_MARKER
 from ffun.domain.entities import (
     BenefitId,
     BenefitTransactionId,
@@ -36,6 +37,14 @@ class PurchaseSnapshot(BaseEntity):
     purchased_at: datetime.datetime
     provider_updated_at: datetime.datetime
 
+    @property
+    def period_starts_at(self) -> datetime.datetime:
+        return self.purchased_at
+
+    @property
+    def period_ends_at(self) -> datetime.datetime:
+        return LIFETIME_INTERVAL_END_MARKER
+
     @pydantic.model_validator(mode="after")
     def validate_timestamp_timezones(self) -> "PurchaseSnapshot":
         for field_name, timestamp in (
@@ -44,6 +53,9 @@ class PurchaseSnapshot(BaseEntity):
         ):
             if not utils.has_timezone(timestamp):
                 raise ValueError(f"Purchase timestamp {field_name} must have a UTC offset")
+
+        if self.purchased_at >= self.period_ends_at:
+            raise ValueError("Purchase time must be earlier than the lifetime interval end")
 
         return self
 

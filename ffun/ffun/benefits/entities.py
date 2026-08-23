@@ -2,7 +2,7 @@ import datetime
 import enum
 import uuid
 from collections.abc import Mapping
-from typing import Annotated, Literal, NewType, TypeAlias, cast
+from typing import Annotated, Generic, Literal, NewType, TypeAlias, TypeVar, cast
 
 import pydantic
 
@@ -12,6 +12,7 @@ from ffun.core.entities import BaseEntity, NonEmptyString
 from ffun.domain.entities import (
     BenefitId,
     BenefitTransactionId,
+    OneTimePurchaseId,
     ProviderAccountId,
     ProviderId,
     ProviderObjectId,
@@ -223,16 +224,19 @@ class BenefitPackageTemplate(BaseEntity):
         )
 
 
-class InternalSubscriptionTarget(BaseEntity):
+TargetIdT = TypeVar("TargetIdT", SubscriptionId, OneTimePurchaseId)
+
+
+class InternalTarget(BaseEntity, Generic[TargetIdT]):
     kind: Literal["internal"] = "internal"
-    subscription_id: SubscriptionId
+    internal_id: TargetIdT
 
     @property
     def provider_reference(self) -> None:
         return None
 
 
-class ExternalSubscriptionTarget(BaseEntity):
+class ExternalTarget(BaseEntity):
     kind: Literal["external"] = "external"
     provider_id: ProviderId
     provider_account_id: ProviderAccountId
@@ -255,7 +259,7 @@ class ExternalSubscriptionTarget(BaseEntity):
         )
 
 
-class NewSubscriptionTarget(BaseEntity):
+class NewTarget(BaseEntity):
     kind: Literal["new"] = "new"
 
     @property
@@ -264,15 +268,24 @@ class NewSubscriptionTarget(BaseEntity):
 
 
 SubscriptionTarget: TypeAlias = Annotated[
-    InternalSubscriptionTarget | ExternalSubscriptionTarget | NewSubscriptionTarget,
+    InternalTarget[SubscriptionId] | ExternalTarget | NewTarget,
     pydantic.Field(discriminator="kind"),
 ]
 
 
-class BenefitTransactionCommand(BaseEntity):
+OneTimePurchaseTarget: TypeAlias = Annotated[
+    InternalTarget[OneTimePurchaseId] | ExternalTarget | NewTarget,
+    pydantic.Field(discriminator="kind"),
+]
+
+
+class BenefitTransactionCommand(BaseEntity, Generic[TargetIdT]):
     source_id: BenefitSourceId
     source_transaction_id: BenefitSourceTransactionId
-    subscription_target: SubscriptionTarget
+    target: Annotated[
+        InternalTarget[TargetIdT] | ExternalTarget | NewTarget,
+        pydantic.Field(discriminator="kind"),
+    ]
     effective_at: datetime.datetime
 
     @property
@@ -297,7 +310,8 @@ class BenefitTransaction(BaseEntity):
     entitlement_action: BenefitEntitlementAction
     user_id: UserId
     benefit_id: BenefitId
-    subscription_id: SubscriptionId
+    subscription_id: SubscriptionId | None = None
+    one_time_purchase_id: OneTimePurchaseId | None = None
     effective_at: datetime.datetime
     period_starts_at: datetime.datetime
     period_ends_at: datetime.datetime
@@ -307,6 +321,26 @@ class BenefitTransaction(BaseEntity):
         self,
     ) -> tuple[BenefitSourceId, BenefitSourceTransactionId]:
         return self.source_id, self.source_transaction_id
+
+    def get_subscription_id_or_raise(self) -> SubscriptionId:
+        if self.subscription_id is None:
+            raise errors.InvalidBenefitTransactionTarget(
+                transaction_id=str(self.id),
+                expected_target="subscription",
+                actual_target="one_time_purchase",
+            )
+
+        return self.subscription_id
+
+    def get_one_time_purchase_id_or_raise(self) -> OneTimePurchaseId:
+        if self.one_time_purchase_id is None:
+            raise errors.InvalidBenefitTransactionTarget(
+                transaction_id=str(self.id),
+                expected_target="one_time_purchase",
+                actual_target="subscription",
+            )
+
+        return self.one_time_purchase_id
 
     @pydantic.field_validator("effective_at", "period_starts_at", "period_ends_at")
     @classmethod
@@ -327,8 +361,15 @@ class BenefitTransaction(BaseEntity):
 
         return self
 
+    @pydantic.model_validator(mode="after")
+    def validate_target(self) -> "BenefitTransaction":
+        if (self.subscription_id is None) == (self.one_time_purchase_id is None):
+            raise ValueError("Benefit transaction must have exactly one target")
 
-class BenefitTransactionApplicationResult(BaseEntity):
+        return self
+
+
+class BenefitTransactionApplicationResult(BaseEntity, Generic[TargetIdT]):
     transaction_id: BenefitTransactionId
     transaction_created: bool
-    subscription_id: SubscriptionId
+    target_id: TargetIdT

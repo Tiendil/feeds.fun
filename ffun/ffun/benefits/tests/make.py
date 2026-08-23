@@ -11,8 +11,9 @@ from ffun.benefits.entities import (
     BenefitSourceTransactionId,
     BenefitTransaction,
     BenefitTransactionCommand,
-    ExternalSubscriptionTarget,
-    NewSubscriptionTarget,
+    ExternalTarget,
+    NewTarget,
+    OneTimePurchaseTarget,
     ParameterConstant,
     ParameterReference,
     SubscriptionTarget,
@@ -22,12 +23,14 @@ from ffun.domain.domain import new_user_id
 from ffun.domain.entities import (
     BenefitId,
     BenefitTransactionId,
+    OneTimePurchaseId,
     ProviderObjectReference,
     ProviderStatus,
     SubscriptionId,
     UserId,
 )
 from ffun.entitlements.entities import EntitlementKindId, EntitlementValue
+from ffun.one_time_purchases.domain import new_purchase_id
 from ffun.subscriptions.domain import new_subscription_id
 from ffun.subscriptions.entities import SubscriptionSnapshot, SubscriptionStatusId
 from ffun.subscriptions.tests.make import make_provider_subscription_reference
@@ -70,11 +73,11 @@ def make_benefit_package_template(
     )
 
 
-def make_external_subscription_target(
+def make_external_target(
     reference: ProviderObjectReference | None = None,
-) -> ExternalSubscriptionTarget:
+) -> ExternalTarget:
     reference = reference or make_provider_subscription_reference()
-    return ExternalSubscriptionTarget(
+    return ExternalTarget(
         provider_id=reference.provider_id,
         provider_account_id=reference.provider_account_id,
         provider_object_id=reference.provider_object_id,
@@ -112,17 +115,63 @@ def make_benefit_transaction(  # noqa: CFQ002
     )
 
 
+def make_one_time_purchase_benefit_transaction(  # noqa: CFQ002
+    *,
+    transaction_id: BenefitTransactionId | None = None,
+    source_id: BenefitSourceId = BenefitSourceId(17),
+    source_transaction_id: BenefitSourceTransactionId | None = None,
+    entitlement_action: BenefitEntitlementAction = BenefitEntitlementAction.grant,
+    user_id: UserId | None = None,
+    benefit_id: BenefitId = BenefitId("test-benefit"),
+    one_time_purchase_id: OneTimePurchaseId | None = None,
+    effective_at: datetime.datetime | None = None,
+    period_starts_at: datetime.datetime | None = None,
+    period_ends_at: datetime.datetime | None = None,
+) -> BenefitTransaction:
+    now = effective_at or datetime.datetime.now(tz=datetime.UTC)
+    period_starts_at = period_starts_at or now
+    period_ends_at = period_ends_at or now + datetime.timedelta(days=1)
+
+    return BenefitTransaction(
+        id=transaction_id or BenefitTransactionId(uuid.uuid4()),
+        source_id=source_id,
+        source_transaction_id=source_transaction_id or BenefitSourceTransactionId(uuid.uuid4()),
+        entitlement_action=entitlement_action,
+        user_id=user_id or new_user_id(),
+        benefit_id=benefit_id,
+        one_time_purchase_id=one_time_purchase_id or new_purchase_id(),
+        effective_at=now,
+        period_starts_at=period_starts_at,
+        period_ends_at=period_ends_at,
+    )
+
+
 def make_transaction_command(
     *,
     source_id: BenefitSourceId = BenefitSourceId(17),
     source_transaction_id: BenefitSourceTransactionId | None = None,
-    subscription_target: SubscriptionTarget | None = None,
+    target: SubscriptionTarget | None = None,
     effective_at: datetime.datetime | None = None,
-) -> BenefitTransactionCommand:
-    return BenefitTransactionCommand(
+) -> BenefitTransactionCommand[SubscriptionId]:
+    return BenefitTransactionCommand[SubscriptionId](
         source_id=source_id,
         source_transaction_id=source_transaction_id or BenefitSourceTransactionId(uuid.uuid4()),
-        subscription_target=subscription_target or NewSubscriptionTarget(),
+        target=target or NewTarget(),
+        effective_at=effective_at or datetime.datetime.now(tz=datetime.UTC),
+    )
+
+
+def make_one_time_purchase_transaction_command(
+    *,
+    source_id: BenefitSourceId = BenefitSourceId(17),
+    source_transaction_id: BenefitSourceTransactionId | None = None,
+    target: OneTimePurchaseTarget | None = None,
+    effective_at: datetime.datetime | None = None,
+) -> BenefitTransactionCommand[OneTimePurchaseId]:
+    return BenefitTransactionCommand[OneTimePurchaseId](
+        source_id=source_id,
+        source_transaction_id=source_transaction_id or BenefitSourceTransactionId(uuid.uuid4()),
+        target=target or NewTarget(),
         effective_at=effective_at or datetime.datetime.now(tz=datetime.UTC),
     )
 

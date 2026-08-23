@@ -39,3 +39,7 @@ class InvalidBenefitSubscription(Error):
 
 class InvalidStoredBenefitTransaction(Error):
     pass
+
+
+class InvalidBenefitTransactionTarget(Error):
+    pass

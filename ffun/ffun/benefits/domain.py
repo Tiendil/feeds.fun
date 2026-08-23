@@ -12,10 +12,11 @@ from ffun.benefits.entities import (
     BenefitTransaction,
     BenefitTransactionApplicationResult,
     BenefitTransactionCommand,
-    ExternalSubscriptionTarget,
-    InternalSubscriptionTarget,
-    NewSubscriptionTarget,
+    ExternalTarget,
+    InternalTarget,
+    NewTarget,
     SubscriptionTarget,
+    TargetIdT,
 )
 from ffun.benefits.settings import settings
 from ffun.core.postgresql import ExecuteType, run_in_transaction, transaction
@@ -69,17 +70,17 @@ async def _resolve_subscription_target(
     raise NotImplementedError(f"Unsupported subscription target: {target!r}")
 
 
-@_resolve_subscription_target.register  # type: ignore[misc]
+@_resolve_subscription_target.register(InternalTarget)
 async def _resolve_internal_subscription_target(
-    target: InternalSubscriptionTarget,
+    target: InternalTarget[SubscriptionId],
     _execute: ExecuteType,
 ) -> SubscriptionId:
-    return target.subscription_id
+    return target.internal_id
 
 
 @_resolve_subscription_target.register  # type: ignore[misc]
 async def _resolve_external_subscription_target(
-    target: ExternalSubscriptionTarget,
+    target: ExternalTarget,
     execute: ExecuteType,
 ) -> SubscriptionId | None:
     return await subscription_domain.load_provider_subscription_reference(
@@ -90,7 +91,7 @@ async def _resolve_external_subscription_target(
 
 @_resolve_subscription_target.register  # type: ignore[misc]
 async def _resolve_new_subscription_target(
-    _target: NewSubscriptionTarget,
+    _target: NewTarget,
     _execute: ExecuteType,
 ) -> None:
     return None
@@ -117,13 +118,14 @@ async def _resolve_regular_subscription_target(
 
 def _application_result(
     benefit_transaction: BenefitTransaction,
+    target_id: TargetIdT,
     *,
     created: bool,
-) -> BenefitTransactionApplicationResult:
+) -> BenefitTransactionApplicationResult[TargetIdT]:
     return BenefitTransactionApplicationResult(
         transaction_id=benefit_transaction.id,
         transaction_created=created,
-        subscription_id=benefit_transaction.subscription_id,
+        target_id=target_id,
     )
 
 
@@ -135,6 +137,8 @@ async def _accept_subscription_transaction(
     actor_kind: AuditEntityKind,
     actor_id: SerializedId,
 ) -> tuple[SubscriptionSaveResult, Callable[[], None]]:
+    subscription_id = benefit_transaction.get_subscription_id_or_raise()
+
     if not await operations.save_benefit_transaction(execute, benefit_transaction):
         raise errors.ConcurrentBenefitTransaction(
             source_id=int(benefit_transaction.source_id),
@@ -143,7 +147,7 @@ async def _accept_subscription_transaction(
 
     return await subscription_domain.save_subscription(
         execute,
-        benefit_transaction.subscription_id,
+        subscription_id,
         benefit_transaction.id,
         subscription,
         actor_kind=actor_kind,
@@ -161,9 +165,11 @@ async def _replace_benefit(  # noqa: CFQ002
     actor_kind: AuditEntityKind,
     actor_id: SerializedId,
 ) -> list[Callable[[], None]]:
+    subscription_id = benefit_transaction.get_subscription_id_or_raise()
+
     _, callbacks = await entitlement_domain.revoke_subscription_entitlements(
         execute,
-        subscription_id=benefit_transaction.subscription_id,
+        subscription_id=subscription_id,
         revoked_by_transaction_id=benefit_transaction.id,
         evaluation_time=evaluation_time,
         actor_kind=actor_kind,
@@ -178,7 +184,7 @@ async def _replace_benefit(  # noqa: CFQ002
         source_id=BENEFITS_ENTITLEMENT_SOURCE_ID,
         grant_transaction_id=benefit_transaction.id,
         user_id=benefit_transaction.user_id,
-        subscription_id=benefit_transaction.subscription_id,
+        subscription_id=subscription_id,
         one_time_purchase_id=None,
         guarantees=package.guarantees,
         starts_at=subscription.period_starts_at,
@@ -193,7 +199,7 @@ async def _replace_benefit(  # noqa: CFQ002
 
 
 async def _apply_transaction(  # noqa: CFQ002
-    command: BenefitTransactionCommand,
+    command: BenefitTransactionCommand[SubscriptionId],
     execute: ExecuteType,
     subscription: SubscriptionSnapshot,
     parameters: Mapping[BenefitParameterId, object],
@@ -205,7 +211,7 @@ async def _apply_transaction(  # noqa: CFQ002
     package = materialize_benefit_package(subscription.benefit_id, parameters)
     subscription_id = await _resolve_regular_subscription_target(
         execute,
-        command.subscription_target,
+        command.target,
     )
     benefit_transaction = BenefitTransaction(
         id=operations.new_benefit_transaction_id(),
@@ -230,7 +236,7 @@ async def _apply_transaction(  # noqa: CFQ002
     )
     if subscription_save.outcome == PurchasedStateSaveOutcome.stale:
         raise errors.StaleBenefitTransaction(
-            subscription_id=str(benefit_transaction.subscription_id),
+            subscription_id=str(subscription_id),
             incoming_provider_updated_at=subscription.provider_updated_at.isoformat(),
             current_provider_updated_at=subscription_save.current.provider_updated_at.isoformat(),
         )
@@ -250,11 +256,11 @@ async def _apply_transaction(  # noqa: CFQ002
 async def apply_subscription_transaction(
     subscription: SubscriptionSnapshot,
     parameters: Mapping[BenefitParameterId, object],
-    command: BenefitTransactionCommand,
+    command: BenefitTransactionCommand[SubscriptionId],
     *,
     actor_kind: AuditEntityKind,
     actor_id: SerializedId,
-) -> BenefitTransactionApplicationResult:
+) -> BenefitTransactionApplicationResult[SubscriptionId]:
     """Atomically apply one benefit transaction to subscription and entitlement state."""
     evaluation_time = datetime.datetime.now(tz=datetime.UTC)
     business_event_callbacks: list[Callable[[], None]] = []
@@ -269,7 +275,8 @@ async def apply_subscription_transaction(
 
         if stored is not None:
             # Trusted callers never reuse a source identity; the stored transaction is authoritative.
-            return _application_result(stored, created=False)
+            subscription_id = stored.get_subscription_id_or_raise()
+            return _application_result(stored, subscription_id, created=False)
 
         # Source identity uniqueness prevents duplicated operations. If concurrent first
         # operations for one external subscription become likely, lock its provider identity
@@ -287,4 +294,5 @@ async def apply_subscription_transaction(
     for callback in business_event_callbacks:
         callback()
 
-    return _application_result(benefit_transaction, created=True)
+    subscription_id = benefit_transaction.get_subscription_id_or_raise()
+    return _application_result(benefit_transaction, subscription_id, created=True)
