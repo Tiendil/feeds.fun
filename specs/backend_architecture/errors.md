@@ -167,6 +167,11 @@ Modules SHOULD NOT catch broad low-level exception classes only to satisfy a mod
 
 Unexpected low-level failures MAY propagate unchanged until the developer explicitly requests handling for that class of failure.
 
+An external boundary MAY catch an exception to report it and translate it into the boundary's standard failure behavior.
+This translation does not change whether the exception is expected or unexpected.
+
+Translation of an unexpected exception MUST leave the operation failed and MUST NOT recover with a successful, empty, or fallback result.
+
 Code that handles expected user, provider, source, storage, or environment failures MUST convert them into Feeds Fun-specific errors or states.
 
 For PostgreSQL operations, modules SHOULD catch and convert specific database exceptions only when the exception represents an expected business or consistency condition.
@@ -176,8 +181,6 @@ For example, a `ForeignKeyViolation` MAY be converted to an operation-specific s
 Modules SHOULD NOT wrap unexpected PostgreSQL infrastructure failures such as connection errors, pool failures, timeouts, SQL syntax errors, or unexpected constraint violations unless the developer explicitly decides that the module should handle them.
 
 A failure to validate or reconstruct persisted application state according to its owning domain model MUST be treated as an unexpected stored-state integrity failure.
-API, CLI, and worker boundaries MUST NOT convert stored-state integrity failures into expected errors, user-actionable error codes, warnings, empty results, or fallback values.
-Stored-state integrity failures MUST propagate with their original cause preserved so normal exception reporting and monitoring can capture them.
 
 For HTTP, feed-source, LLM provider, and other third-party service calls, modules MUST convert expected service outcomes into module-specific errors or persisted states when those outcomes are part of normal operation.
 
