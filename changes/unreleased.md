@@ -10,9 +10,13 @@ Run migrations `ffun migrate`.
 - ff-639 — Implemented `ffun.locks` module as a universal distributed lock manager for backend modules.
 - ff-639 — Implemented `ffun.audit` module to record and query important operations in the backend.
 - ff-639 — Implemented `ffun.entitlements` module to manage user entitlements.
-  - Two entitlement types are introduced: `day_tokens`, `month_tokens`, `lifetime_tokens`.
+  - Three entitlement types are introduced: `day_tokens`, `month_tokens`, `lifetime_tokens`.
   - Implemented CLI `ffun entitlements` to manage user entitlements.
   - `FFUN_DISPATCHER_DISPATCH_CHUNK` setting is replaced with `FFUN_DISPATCHER_DISPATCH_BATCH_SIZE` and `FFUN_DISPATCHER_DISPATCH_CONCURRENCY`.
+- ff-639 — Implemented `ffun.subscriptions`, `ffun.one_time_purchases`, and `ffun.benefits` modules to manage token one-time grants and subscriptions.
+  - Implemented CLI `ffun benefits` to grant and revoke benefit packages to users.
+  - Implemented CLI `ffun subscriptions` to list subscriptions.
+  - Implemented CLI `ffun one-time-purchases` to list one-time purchases.
 - ff-639 — tokens now could be spend to tag a single news entry:
   - tagging one news entry will take a one token;
   - tokens are spent per user; i.e. if multiple users want to see tags to the same entry, each of them will spend 1 token.
