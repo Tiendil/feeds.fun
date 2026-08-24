@@ -18,6 +18,7 @@ from ffun.benefits.entities import (
     NewTarget,
     ParameterConstant,
     ParameterReference,
+    TargetKind,
 )
 from ffun.benefits.tests.make import (
     make_benefit_package,
@@ -47,6 +48,15 @@ class TestBenefitEntitlementAction:
         assert [(action.name, action.value) for action in BenefitEntitlementAction] == [
             ("grant", 1),
             ("revoke", 2),
+        ]
+
+
+class TestTargetKind:
+    def test_values_are_stable(self) -> None:
+        assert [(kind.name, kind.value) for kind in TargetKind] == [
+            ("internal", "internal"),
+            ("external", "external"),
+            ("new", "new"),
         ]
 
 
@@ -355,6 +365,12 @@ class TestBenefitPackageTemplate:
 
 
 class TestInternalTarget:
+    def test_kind__uses_enum_and_preserves_serialized_value(self) -> None:
+        target = InternalTarget(internal_id=new_subscription_id())
+
+        assert target.kind == TargetKind.internal
+        assert cast(dict[str, object], target.model_dump(mode="json"))["kind"] == "internal"
+
     def test_provider_reference__is_missing(self) -> None:
         target = InternalTarget(internal_id=new_subscription_id())
 
@@ -362,6 +378,12 @@ class TestInternalTarget:
 
 
 class TestExternalTarget:
+    def test_kind__uses_enum_and_preserves_serialized_value(self) -> None:
+        target = make_external_target()
+
+        assert target.kind == TargetKind.external
+        assert cast(dict[str, object], target.model_dump(mode="json"))["kind"] == "external"
+
     def test_provider_reference__contains_external_identity(self) -> None:
         reference = make_provider_subscription_reference()
         target = make_external_target(reference)
@@ -379,6 +401,12 @@ class TestExternalTarget:
 
 
 class TestNewTarget:
+    def test_kind__uses_enum_and_preserves_serialized_value(self) -> None:
+        target = NewTarget()
+
+        assert target.kind == TargetKind.new
+        assert cast(dict[str, object], target.model_dump(mode="json"))["kind"] == "new"
+
     def test_provider_reference__is_missing(self) -> None:
         assert NewTarget().provider_reference is None
 

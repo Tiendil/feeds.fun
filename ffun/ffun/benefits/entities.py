@@ -226,11 +226,17 @@ class BenefitPackageTemplate(BaseEntity):
         )
 
 
+class TargetKind(enum.StrEnum):
+    internal = "internal"
+    external = "external"
+    new = "new"
+
+
 TargetIdT = TypeVar("TargetIdT", SubscriptionId, OneTimePurchaseId)
 
 
 class InternalTarget(BaseEntity, Generic[TargetIdT]):
-    kind: Literal["internal"] = "internal"
+    kind: Literal[TargetKind.internal] = TargetKind.internal
     internal_id: TargetIdT
 
     @property
@@ -239,7 +245,7 @@ class InternalTarget(BaseEntity, Generic[TargetIdT]):
 
 
 class ExternalTarget(BaseEntity):
-    kind: Literal["external"] = "external"
+    kind: Literal[TargetKind.external] = TargetKind.external
     provider_id: ProviderId
     provider_account_id: ProviderAccountId
     provider_object_id: ProviderObjectId
@@ -262,7 +268,7 @@ class ExternalTarget(BaseEntity):
 
 
 class NewTarget(BaseEntity):
-    kind: Literal["new"] = "new"
+    kind: Literal[TargetKind.new] = TargetKind.new
 
     @property
     def provider_reference(self) -> None:
