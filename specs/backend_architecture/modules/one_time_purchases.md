@@ -157,7 +157,7 @@ The public interface MUST provide these operations:
 
 - `new_purchase_id` generates one internal one-time purchase identifier.
 - `load_provider_purchase_reference` returns the internal one-time purchase identifier mapped from one exact provider purchase identity, or no value when it is unknown.
-- `insert_provider_purchase_reference` creates or retries one exact provider-to-internal purchase mapping inside a caller-owned transaction.
+- `save_provider_purchase_reference` creates or retries one exact provider-to-internal purchase mapping inside a caller-owned transaction.
 - `save_purchase` creates, retries, or replaces one complete purchase snapshot inside a caller-owned transaction and returns the resulting current and previous purchases together with the save outcome.
 - `get_purchase` returns the current purchase for one exact internal one-time purchase identifier.
 - `get_purchases_for_user` returns current purchases for one requested user.
@@ -170,7 +170,7 @@ The resulting purchase state and required audit record MUST participate in the s
 `load_provider_purchase_reference` MUST accept a caller-owned transaction and one complete provider purchase identity.
 It MUST return the mapped internal one-time purchase identifier or no value without changing state.
 
-`insert_provider_purchase_reference` MUST accept a caller-owned transaction, one complete provider purchase identity, and one internal one-time purchase identifier.
+`save_provider_purchase_reference` MUST accept a caller-owned transaction, one complete provider purchase identity, and one internal one-time purchase identifier.
 It MUST create a missing mapping, treat the same existing mapping as a no-op, and fail when either the provider purchase identity or internal one-time purchase identifier already participates in another mapping.
 
 `get_purchase` MUST accept the internal one-time purchase identifier.
@@ -184,7 +184,7 @@ Each current-state or provider-reference query operation that does not explicitl
 After a successful commit, that caller MUST invoke the returned business-event callback; after rollback, it MUST discard the callback without invoking it.
 Post-commit callback invocation is best-effort: callback failure MUST NOT invalidate or roll back the committed purchase and audit state, and this module does not guarantee durable callback replay.
 
-`ffun.one_time_purchases.load_provider_purchase_reference`, `ffun.one_time_purchases.insert_provider_purchase_reference`, and `ffun.one_time_purchases.save_purchase` are explicitly approved to participate in the database transaction owned by `ffun.benefits.apply_one_time_purchase_transaction`.
+`ffun.one_time_purchases.load_provider_purchase_reference`, `ffun.one_time_purchases.save_provider_purchase_reference`, and `ffun.one_time_purchases.save_purchase` are explicitly approved to participate in the database transaction owned by `ffun.benefits.apply_one_time_purchase_transaction`.
 Their provider-reference, purchase-state, and required audit effects MAY participate in that workflow's transaction.
 This exception does not allow benefits to import one-time-purchase operations or access one-time-purchase tables directly, and it does not approve transaction sharing for unrelated workflows.
 

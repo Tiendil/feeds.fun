@@ -112,7 +112,7 @@ async def resolve_one_time_purchase_target(
         one_time_purchase_id = purchase_domain.new_purchase_id()
 
     if target.provider_reference is not None:
-        await purchase_domain.insert_provider_purchase_reference(
+        await purchase_domain.save_provider_purchase_reference(
             execute,
             target.provider_reference,
             one_time_purchase_id=one_time_purchase_id,

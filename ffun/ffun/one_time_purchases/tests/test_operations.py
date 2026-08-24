@@ -77,7 +77,7 @@ class TestLoadProviderPurchaseReference:
     async def test_loads_exact_external_identity(self) -> None:
         reference = make_provider_purchase_reference()
         one_time_purchase_id = operations.new_purchase_id()
-        await operations.insert_provider_purchase_reference(
+        await operations.save_provider_purchase_reference(
             execute,
             reference,
             one_time_purchase_id=one_time_purchase_id,
@@ -86,14 +86,14 @@ class TestLoadProviderPurchaseReference:
         assert await operations.load_provider_purchase_reference(execute, reference) == one_time_purchase_id
 
 
-class TestInsertProviderPurchaseReference:
+class TestSaveProviderPurchaseReference:
     @pytest.mark.asyncio
-    async def test_inserts_reference(self) -> None:
+    async def test_saves_reference(self) -> None:
         reference = make_provider_purchase_reference()
         one_time_purchase_id = operations.new_purchase_id()
 
         async with TableSizeDelta("otp_purchase_refs", delta=1):
-            await operations.insert_provider_purchase_reference(
+            await operations.save_provider_purchase_reference(
                 execute,
                 reference,
                 one_time_purchase_id=one_time_purchase_id,
@@ -105,14 +105,14 @@ class TestInsertProviderPurchaseReference:
     async def test_same_mapping_is_no_op(self) -> None:
         reference = make_provider_purchase_reference()
         one_time_purchase_id = operations.new_purchase_id()
-        await operations.insert_provider_purchase_reference(
+        await operations.save_provider_purchase_reference(
             execute,
             reference,
             one_time_purchase_id=one_time_purchase_id,
         )
 
         async with TableSizeNotChanged("otp_purchase_refs"):
-            await operations.insert_provider_purchase_reference(
+            await operations.save_provider_purchase_reference(
                 execute,
                 reference,
                 one_time_purchase_id=one_time_purchase_id,
@@ -124,7 +124,7 @@ class TestInsertProviderPurchaseReference:
     async def test_different_mapping_fails_without_changing_reference(self) -> None:
         reference = make_provider_purchase_reference()
         stored_purchase_id = operations.new_purchase_id()
-        await operations.insert_provider_purchase_reference(
+        await operations.save_provider_purchase_reference(
             execute,
             reference,
             one_time_purchase_id=stored_purchase_id,
@@ -132,7 +132,7 @@ class TestInsertProviderPurchaseReference:
 
         async with TableSizeNotChanged("otp_purchase_refs"):
             with pytest.raises(errors.ProviderPurchaseReferenceConflict):
-                await operations.insert_provider_purchase_reference(
+                await operations.save_provider_purchase_reference(
                     execute,
                     reference,
                     one_time_purchase_id=operations.new_purchase_id(),
@@ -145,7 +145,7 @@ class TestInsertProviderPurchaseReference:
         one_time_purchase_id = operations.new_purchase_id()
         stored_reference = make_provider_purchase_reference()
         requested_reference = make_provider_purchase_reference()
-        await operations.insert_provider_purchase_reference(
+        await operations.save_provider_purchase_reference(
             execute,
             stored_reference,
             one_time_purchase_id=one_time_purchase_id,
@@ -153,7 +153,7 @@ class TestInsertProviderPurchaseReference:
 
         async with TableSizeNotChanged("otp_purchase_refs"):
             with pytest.raises(errors.ProviderPurchaseReferenceConflict):
-                await operations.insert_provider_purchase_reference(
+                await operations.save_provider_purchase_reference(
                     execute,
                     requested_reference,
                     one_time_purchase_id=one_time_purchase_id,

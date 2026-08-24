@@ -562,9 +562,9 @@ class TestLoadProviderPurchaseReference:
         assert domain.load_provider_purchase_reference is operations.load_provider_purchase_reference
 
 
-class TestInsertProviderPurchaseReference:
+class TestSaveProviderPurchaseReference:
     def test_reexports_operation(self) -> None:
-        assert domain.insert_provider_purchase_reference is operations.insert_provider_purchase_reference
+        assert domain.save_provider_purchase_reference is operations.save_provider_purchase_reference
 
 
 class TestGetPurchase:

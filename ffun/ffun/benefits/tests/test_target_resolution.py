@@ -125,7 +125,7 @@ class TestLoadExternalOneTimePurchaseTarget:
     async def test_returns_stored_identity(self) -> None:
         target = make_external_target(make_provider_purchase_reference())
         one_time_purchase_id = purchase_domain.new_purchase_id()
-        await purchase_domain.insert_provider_purchase_reference(
+        await purchase_domain.save_provider_purchase_reference(
             execute,
             target.provider_reference,
             one_time_purchase_id=one_time_purchase_id,

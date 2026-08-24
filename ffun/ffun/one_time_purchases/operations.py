@@ -61,7 +61,7 @@ async def load_provider_purchase_reference(
     return cast(OneTimePurchaseId, rows[0]["one_time_purchase_id"])
 
 
-async def insert_provider_purchase_reference(
+async def save_provider_purchase_reference(
     execute: ExecuteType,
     reference: ProviderObjectReference,
     *,
