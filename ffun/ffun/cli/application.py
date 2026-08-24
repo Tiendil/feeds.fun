@@ -1,5 +1,6 @@
 import typer
 
+from ffun.cli.commands import benefits  # noqa: F401
 from ffun.cli.commands import cleaner  # noqa: F401
 from ffun.cli.commands import debug  # noqa: F401
 from ffun.cli.commands import entitlements  # noqa: F401
@@ -33,6 +34,7 @@ app.add_typer(feeds.cli_app, name="feeds")
 app.add_typer(users.cli_app, name="users")
 app.add_typer(queues.cli_app, name="queues")
 app.add_typer(debug.cli_app, name="debug")
+app.add_typer(benefits.cli_app, name="benefits")
 app.add_typer(entitlements.cli_app, name="entitlements")
 app.add_typer(subscriptions.cli_app, name="subscriptions")
 

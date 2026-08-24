@@ -26,6 +26,8 @@ from ffun.entitlements.entities import EntitlementGuarantee, EntitlementKindId, 
 BenefitSourceId = NewType("BenefitSourceId", int)
 BenefitSourceTransactionId = NewType("BenefitSourceTransactionId", uuid.UUID)
 
+ADMIN_BENEFIT_SOURCE_ID = BenefitSourceId(1)
+
 
 class BenefitParameterId(NonEmptyString):
     __slots__ = ()

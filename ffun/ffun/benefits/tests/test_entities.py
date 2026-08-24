@@ -7,10 +7,12 @@ from pytest_mock import MockerFixture
 
 from ffun.benefits import errors
 from ffun.benefits.entities import (
+    ADMIN_BENEFIT_SOURCE_ID,
     BenefitEntitlementAction,
     BenefitPackageTemplate,
     BenefitParameterDefinition,
     BenefitParameterId,
+    BenefitSourceId,
     BenefitTransaction,
     InternalTarget,
     NewTarget,
@@ -33,6 +35,11 @@ from ffun.entitlements.entities import MAX_ENTITLEMENT_VALUE, EntitlementGuarant
 from ffun.one_time_purchases.domain import new_purchase_id
 from ffun.subscriptions.domain import new_subscription_id
 from ffun.subscriptions.tests.make import make_provider_subscription_reference
+
+
+class TestBenefitSourceId:
+    def test_admin_stable_value(self) -> None:
+        assert ADMIN_BENEFIT_SOURCE_ID == BenefitSourceId(1)
 
 
 class TestBenefitEntitlementAction:
