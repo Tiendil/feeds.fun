@@ -1,7 +1,6 @@
 import asyncio
 import datetime
 import uuid
-from collections.abc import Callable
 from typing import cast
 
 import pytest
@@ -30,7 +29,14 @@ from ffun.entitlements.entities import (
     MergePolicy,
     SourceEntitlement,
 )
-from ffun.entitlements.tests.helpers import clear_effective_intervals
+from ffun.entitlements.tests.helpers import (
+    _ACTOR_ID,
+    _ACTOR_KIND,
+    _REVOKING_TRANSACTION_ID,
+    _grant,
+    _revoke,
+    clear_effective_intervals,
+)
 from ffun.entitlements.tests.make import make_effective_entitlement_interval, make_source_entitlement
 from ffun.locks.entities import LockKind
 from ffun.one_time_purchases.domain import new_purchase_id
@@ -41,62 +47,6 @@ _MONTH_TOKENS = EntitlementKindId.month_tokens
 _LIFETIME_TOKENS = EntitlementKindId.lifetime_tokens
 _SOURCE_ID = EntitlementSourceId("test")
 _GRANT_TRANSACTION_ID = BenefitTransactionId(uuid.UUID(int=1))
-_REVOKING_TRANSACTION_ID = BenefitTransactionId(uuid.UUID(int=2))
-_ACTOR_KIND = AuditEntityKind.admin
-_ACTOR_ID = SerializedId("test-admin")
-
-
-async def _grant(
-    source_entitlement: SourceEntitlement,
-    *,
-    evaluation_time: datetime.datetime | None = None,
-    emit_event: bool = True,
-) -> tuple[entitlement_entities.SourceEntitlementChange, Callable[[], None]]:
-    if evaluation_time is None:
-        evaluation_time = datetime.datetime.now(tz=datetime.UTC)
-
-    async with transaction() as transaction_execute:
-        outcome, callback = await domain.grant_source_entitlement(
-            transaction_execute,
-            source_entitlement,
-            evaluation_time=evaluation_time,
-            actor_kind=_ACTOR_KIND,
-            actor_id=_ACTOR_ID,
-        )
-
-    if emit_event:
-        callback()
-
-    return outcome, callback
-
-
-async def _revoke(
-    source_entitlement: SourceEntitlement,
-    *,
-    revoked_by_transaction_id: BenefitTransactionId = _REVOKING_TRANSACTION_ID,
-    evaluation_time: datetime.datetime | None = None,
-    emit_event: bool = True,
-) -> tuple[entitlement_entities.SourceEntitlementChange, Callable[[], None]]:
-    if evaluation_time is None:
-        evaluation_time = datetime.datetime.now(tz=datetime.UTC)
-
-    async with transaction() as transaction_execute:
-        outcome, callback = await domain.revoke_source_entitlement(
-            transaction_execute,
-            source_id=source_entitlement.source_id,
-            grant_transaction_id=source_entitlement.grant_transaction_id,
-            revoked_by_transaction_id=revoked_by_transaction_id,
-            user_id=source_entitlement.user_id,
-            kind_id=source_entitlement.kind_id,
-            evaluation_time=evaluation_time,
-            actor_kind=_ACTOR_KIND,
-            actor_id=_ACTOR_ID,
-        )
-
-    if emit_event:
-        callback()
-
-    return outcome, callback
 
 
 class TestEmptyBusinessEventCallback:
