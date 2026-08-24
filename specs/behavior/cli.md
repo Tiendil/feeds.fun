@@ -22,6 +22,7 @@ Command names, arguments, options, output, and errors defined by command-family 
 
 The root command MUST expose the following command groups:
 
+- [`benefits`](cli/benefits.md) — Applies administrator-authorized benefit transactions to subscriptions and one-time purchases.
 - `cleaner` — Cleans orphaned data and expired effective entitlements, and runs tag and feed normalization operations.
 - `debug` — Loads and inspects feeds through the available parsing paths.
 - [`entitlements`](cli/entitlements.md) — Lists effective entitlements.

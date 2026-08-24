@@ -435,5 +435,5 @@ The implementation specifications should resolve:
 - [x] Implement `apply_one_time_purchase_transaction` with atomic benefit, purchase, and entitlement coordination and fresh package materialization for every previously unseen transaction.
 - [x] Add workflow tests for arbitrary quantities, composite packages, independent additive purchases, retries, concurrent attempts, stale updates, corrections, refunds, rollback, and post-commit event behavior.
 - [x] Update PSP and administrator entry points to submit benefit identifiers and normalized parameters through the new workflow.
-- [ ] Update related architecture, behavior, database, entity, audit, event, and CLI specifications.
+- [x] Update related architecture, behavior, database, entity, audit, event, and CLI specifications.
 - [ ] Run the project polish workflow and the required dependency-consistency workflow, resolving all affected relations before completion.

@@ -8,7 +8,7 @@ This document describes the public contract and observable behavior of the `ffun
 
 This specification covers entitlement kinds, source-owned grants, effective entitlement intervals, grant and revocation behavior, effective-state queries, cleanup, audit records, and business events.
 
-Purchased-subscription lifecycles, payment-service-provider protocols, product pricing, frontend behavior, token consumption, and the concrete set of entitlement sources are out of scope.
+Purchased-state lifecycles, payment-service-provider protocols, product pricing, frontend behavior, token consumption, and the concrete set of entitlement sources are out of scope.
 
 ## Dictionary
 
@@ -17,6 +17,7 @@ Purchased-subscription lifecycles, payment-service-provider protocols, product p
 - `grant transaction identifier` - the internal benefit transaction UUID for the causal operation that created one grant.
 - `revoking transaction identifier` - the internal benefit transaction UUID for the causal operation that revoked one grant.
 - `source entitlement` - one durable grant recorded by one source and grant transaction identifier for one user and entitlement kind.
+- `purchased-state owner` - the optional subscription or one-time purchase whose complete entitlement state includes one source entitlement.
 - `active source entitlement` - an unrevoked source entitlement whose activation time has arrived and whose expiration time has not arrived at the evaluation time.
 - `effective entitlement interval` - a time interval during which merged source state grants one entitlement kind to one user with one value.
 - `merge policy` - the operation used to combine values from active source entitlements of the same kind.
@@ -68,6 +69,11 @@ The marker represents an unbounded interval and MUST NOT be interpreted as a sem
 
 One source entitlement MUST be identified by the exact tuple of source, grant transaction identifier, user id, and entitlement kind.
 
+A source entitlement MAY have one subscription owner, one one-time-purchase owner, or no purchased-state owner.
+A source entitlement MUST NOT have both owner kinds.
+An ownerless source entitlement remains valid for explicitly supported administrative or system grants.
+Ownership MUST be treated as immutable grant data for idempotency and conflict detection.
+
 Source identifiers MUST be non-empty, and transaction identifiers MUST be UUIDs issued by the benefits transaction ledger.
 A grant MUST contain a strict integer value within its entitlement kind's accepted source-grant bounds and timezone-aware activation and expiration times, with activation earlier than expiration.
 Boolean, floating-point, string, and implicitly coerced values MUST NOT satisfy the integer contract.
@@ -92,8 +98,10 @@ Revoking an already revoked grant MUST be a no-op and preserve its original revo
 Revoking a missing grant MUST fail.
 
 A subscription-owned revocation MUST revoke every source entitlement associated with one internal subscription that is active at the evaluation time or can become active afterward.
+A one-time-purchase-owned revocation MUST apply the same rule within one internal one-time purchase's ownership scope.
+Either owner-scoped revocation MUST leave entitlements owned by every other subscription or one-time purchase unchanged.
 The returned source-change results and callbacks MUST be ordered deterministically by user, entitlement kind, source, and grant transaction.
-When the subscription has no current or future source entitlements, the operation MUST return an empty result.
+When the selected owner has no current or future source entitlements, the operation MUST return an empty result.
 
 Future-dated and multiple same-source grants MUST coexist.
 The `lifetime_tokens` effective value MUST be the sum of all active lifetime grants.
@@ -152,31 +160,37 @@ The public interface MUST provide these operations:
 
 - `get_entitlement_kind` returns the stable metadata for one entitlement kind and fails for an unknown kind.
 - `grant_source_entitlement` creates or retries one source-owned grant.
-- `grant_source_entitlements` creates or retries one ordered collection of guarantees for a transaction and optional subscription owner.
+- `grant_source_entitlements` creates or retries one ordered collection of guarantees for a transaction and optional purchased-state owner.
 - `revoke_source_entitlement` revokes or retries revocation of one source-owned grant.
 - `revoke_subscription_entitlements` revokes every current or future source entitlement owned by one subscription.
+- `revoke_one_time_purchase_entitlements` revokes every current or future source entitlement owned by one one-time purchase.
 - `get_entitlements` returns current effective intervals for requested users and kinds.
 - `cleanup_expired_entitlements` removes expired effective intervals and returns the number removed.
 
-`grant_source_entitlement` MUST accept a caller-owned transaction, one source entitlement containing `source_id`, grant transaction identifier, user id, kind id, value, activation, expiration, and no revocation state, the caller-captured evaluation time, and the audit actor.
+`grant_source_entitlement` MUST accept a caller-owned transaction, one source entitlement containing `source_id`, grant transaction identifier, user id, optional subscription and one-time-purchase owner identifiers, kind id, value, activation, expiration, and no revocation state, the caller-captured evaluation time, and the audit actor.
 It MUST return a source-change result describing whether state changed and the resulting effective state together with a zero-argument callback that emits the corresponding business events after commit.
 
 `revoke_source_entitlement` MUST accept a caller-owned transaction, identify the grant by `source_id`, grant transaction identifier, user id, and kind id, and accept the revoking transaction identifier, caller-captured evaluation time, and audit actor.
 It MUST return a source-change result and corresponding zero-argument business-event callback, and fail when the identified grant is missing.
 
-`grant_source_entitlements` MUST accept a caller-owned transaction, one source identifier, one grant transaction identifier, one user, an optional subscription identifier, an ordered collection of guarantees, one activation and expiration interval, the caller-captured evaluation time, and the audit actor.
+`grant_source_entitlements` MUST accept a caller-owned transaction, one source identifier, one grant transaction identifier, one user, optional subscription and one-time-purchase identifiers, an ordered collection of guarantees, one activation and expiration interval, the caller-captured evaluation time, and the audit actor.
+At most one purchased-state owner identifier MAY be supplied.
 It MUST apply guarantees in deterministic entitlement-kind order and return the ordered source-change results and corresponding callbacks.
 
 `revoke_subscription_entitlements` MUST accept a caller-owned transaction, one subscription identifier, one revoking transaction identifier, the caller-captured evaluation time, and the audit actor.
 It MUST return the ordered source-change results and corresponding callbacks for every current or future source entitlement owned by the subscription, or empty collections when none exist.
+
+`revoke_one_time_purchase_entitlements` MUST accept a caller-owned transaction, one one-time purchase identifier, one revoking transaction identifier, the caller-captured evaluation time, and the audit actor.
+It MUST return the ordered source-change results and corresponding callbacks for every current or future source entitlement owned by the one-time purchase, or empty collections when none exist.
 
 These change operations MUST use the supplied transaction for source state, effective state, locking, and audit records and MUST NOT emit business events before commit.
 When a change operation is a no-op, its returned business-event callback MUST also be a no-op.
 After commit, the caller MUST invoke every returned business-event callback; after rollback, it MUST discard the callbacks without invoking them.
 Post-commit callback invocation is best-effort: callback failure MUST NOT invalidate or roll back the committed source, effective, or audit state, and this module does not guarantee durable callback replay.
 
-`ffun.entitlements.grant_source_entitlement`, `ffun.entitlements.revoke_source_entitlement`, `ffun.entitlements.grant_source_entitlements`, and `ffun.entitlements.revoke_subscription_entitlements` are explicitly approved to participate in the database transaction owned by `ffun.benefits.apply_subscription_transaction`.
-This exception does not approve transaction sharing for unrelated workflows.
+`ffun.entitlements.grant_source_entitlements` and `ffun.entitlements.revoke_subscription_entitlements` are explicitly approved to participate in the database transaction owned by `ffun.benefits.apply_subscription_transaction`.
+`ffun.entitlements.grant_source_entitlements` and `ffun.entitlements.revoke_one_time_purchase_entitlements` are explicitly approved to participate in the database transaction owned by `ffun.benefits.apply_one_time_purchase_transaction`.
+These exceptions do not approve transaction sharing for unrelated workflows.
 
 `get_entitlements` MUST accept collections of user ids and entitlement kind ids.
 Its result MUST map each selected user and kind to the active interval's user id, kind id, value, activation, and expiration, or to no value when the entitlement is not granted.
@@ -192,12 +206,14 @@ The subject MUST be the affected user.
 
 The record attributes MUST include:
 
-- `source_id`, identifying the owner of the changed grant.
+- `source_id`, identifying the source subsystem that recorded the changed grant.
+- `subscription_id`, identifying the owning subscription or `null` when the grant is not subscription-owned.
+- `one_time_purchase_id`, identifying the owning one-time purchase or `null` when the grant is not one-time-purchase-owned.
 - `grant_transaction_id`, identifying the transaction that created the grant.
 - `revoked_by_transaction_id`, identifying the transaction that revoked the grant or `null` while it remains unrevoked.
 - `kind_id`, identifying the entitlement kind.
-- `previous_source_state`, containing the previous `source_id`, grant transaction identifier, user id, kind id, value, activation, expiration, revocation time, and revoking transaction identifier, or `null` for a new grant.
-- `new_source_state`, containing the resulting `source_id`, grant transaction identifier, user id, kind id, value, activation, expiration, revocation time, and revoking transaction identifier.
+- `previous_source_state`, containing the previous `source_id`, grant transaction identifier, user id, optional subscription and one-time-purchase owner identifiers, kind id, value, activation, expiration, revocation time, and revoking transaction identifier, or `null` for a new grant.
+- `new_source_state`, containing the resulting `source_id`, grant transaction identifier, user id, optional subscription and one-time-purchase owner identifiers, kind id, value, activation, expiration, revocation time, and revoking transaction identifier.
 - `previous_effective_intervals`, containing every previous current or future effective interval ordered by activation.
 - `new_effective_intervals`, containing every resulting current or future effective interval ordered by activation.
 
@@ -215,7 +231,8 @@ Failure while delivering an event after commit MUST NOT change durable entitleme
 ### `source_entitlement_changed`
 
 The event MUST describe the resulting source-owned grant.
-It MUST use the affected user as the business-event user and include `source_id`, `grant_transaction_id`, `revoked_by_transaction_id`, `kind_id`, `granted`, `value`, `starts_at`, `expires_at`, and `revoked_at`.
+It MUST use the affected user as the business-event user and include `source_id`, `subscription_id`, `one_time_purchase_id`, `grant_transaction_id`, `revoked_by_transaction_id`, `kind_id`, `granted`, `value`, `starts_at`, `expires_at`, and `revoked_at`.
+Each owner identifier MUST be `null` when that owner kind does not apply.
 
 ### `entitlement_changed`
 
