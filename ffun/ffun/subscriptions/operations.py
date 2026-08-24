@@ -61,7 +61,7 @@ async def load_provider_subscription_reference(
     return cast(SubscriptionId, rows[0]["subscription_id"])
 
 
-async def insert_provider_subscription_reference(
+async def save_provider_subscription_reference(
     execute: ExecuteType,
     reference: ProviderObjectReference,
     *,

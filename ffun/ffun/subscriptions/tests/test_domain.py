@@ -555,7 +555,7 @@ class TestLoadProviderSubscriptionReference:
 
 class TestInsertProviderSubscriptionReference:
     def test_reexports_operation(self) -> None:
-        assert domain.insert_provider_subscription_reference is operations.insert_provider_subscription_reference
+        assert domain.insert_provider_subscription_reference is operations.save_provider_subscription_reference
 
 
 class TestGetSubscription:
