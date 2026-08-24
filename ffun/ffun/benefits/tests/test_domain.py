@@ -2,6 +2,7 @@ import asyncio
 import datetime
 import uuid
 from collections.abc import Callable
+from typing import cast
 
 import pytest
 from pytest_mock import MockerFixture
@@ -214,6 +215,28 @@ class TestApplicationResult:
             transaction_created=False,
             target_id=one_time_purchase_id,
         )
+
+
+class TestValidateOneTimePurchasePackage:
+    def test_lifetime_entitlement(self) -> None:
+        package = make_benefit_package(
+            entitlements={EntitlementKindId.lifetime_tokens: 10},
+        )
+
+        domain._validate_one_time_purchase_package(package)
+
+    def test_non_lifetime_entitlement(self) -> None:
+        package = make_benefit_package(
+            entitlements={EntitlementKindId.day_tokens: 10},
+        )
+
+        with pytest.raises(errors.InvalidBenefitEntitlement) as exception_info:
+            domain._validate_one_time_purchase_package(package)
+
+        attributes = cast(dict[str, object], vars(exception_info.value))
+        assert attributes["benefit_id"] == package.id
+        assert attributes["entitlement_kind_id"] == EntitlementKindId.day_tokens
+        assert attributes["reason"] == "one-time purchase packages require lifetime entitlement kinds"
 
 
 class TestApplyBenefitTransaction:
