@@ -935,8 +935,10 @@ class TestApplySubscriptionTransaction:
             is None
         )
         assert_logs_has_business_event(logs, "subscription_changed", user_id=original_snapshot.user_id)
+        assert sum(record.get("event") == "subscription_changed" for record in logs) == 1
         assert sum(record.get("event") == "source_entitlement_changed" for record in logs) == 2
         assert sum(record.get("event") == "entitlement_changed" for record in logs) == 2
+        assert_logs_has_no_business_event(logs, "one_time_purchase_changed")
 
     @pytest.mark.asyncio
     async def test_external_target_creates_and_reuses_reference(self, mocker: MockerFixture) -> None:
@@ -1316,6 +1318,10 @@ class TestApplyOneTimePurchaseTransaction:
             grant_transaction_id=str(result.transaction_id),
         )
         assert_logs_has_business_event(logs, "entitlement_changed", user_id=purchase.user_id)
+        assert sum(record.get("event") == "one_time_purchase_changed" for record in logs) == 1
+        assert sum(record.get("event") == "source_entitlement_changed" for record in logs) == 1
+        assert sum(record.get("event") == "entitlement_changed" for record in logs) == 1
+        assert_logs_has_no_business_event(logs, "subscription_changed")
 
     @pytest.mark.asyncio
     async def test_independent_additive_purchases_and_refund_only_selected_purchase(
@@ -1503,6 +1509,10 @@ class TestApplyOneTimePurchaseTransaction:
         assert_logs_has_business_event(logs, "one_time_purchase_changed", user_id=purchase.user_id)
         assert_logs_has_business_event(logs, "source_entitlement_changed", user_id=purchase.user_id)
         assert_logs_has_business_event(logs, "entitlement_changed", user_id=purchase.user_id)
+        assert sum(record.get("event") == "one_time_purchase_changed" for record in logs) == 1
+        assert sum(record.get("event") == "source_entitlement_changed" for record in logs) == 1
+        assert sum(record.get("event") == "entitlement_changed" for record in logs) == 1
+        assert_logs_has_no_business_event(logs, "subscription_changed")
 
     @pytest.mark.asyncio
     async def test_stale_refund_rolls_back_and_preserves_current_entitlement(

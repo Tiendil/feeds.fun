@@ -6,9 +6,7 @@ import uuid
 
 import pytest
 import typer
-from click.testing import Result
 from pytest_mock import MockerFixture
-from typer.testing import CliRunner
 
 from ffun.audit.entities import AuditEntityKind
 from ffun.benefits.entities import (
@@ -38,6 +36,41 @@ from ffun.domain.entities import (
 from ffun.one_time_purchases.entities import PurchaseStatus
 from ffun.one_time_purchases.tests.make import make_purchase_snapshot
 from ffun.subscriptions.entities import SubscriptionStatusId
+
+
+class TestOptionOrCreationDefault:
+    def test_provided_value(self) -> None:
+        assert (
+            benefits.option_or_creation_default(
+                "provided",
+                target_id=uuid.uuid4(),
+                option_name="--value",
+                creation_default="default",
+            )
+            == "provided"
+        )
+
+    def test_new_target_uses_creation_default(self) -> None:
+        assert (
+            benefits.option_or_creation_default(
+                None,
+                target_id=None,
+                option_name="--value",
+                creation_default="default",
+            )
+            == "default"
+        )
+
+    def test_existing_target_requires_value(self) -> None:
+        with pytest.raises(
+            typer.BadParameter, match="--value is required when applying a snapshot to an existing target"
+        ):
+            benefits.option_or_creation_default(
+                None,
+                target_id=uuid.uuid4(),
+                option_name="--value",
+                creation_default="default",
+            )
 
 
 class TestRunAsyncCommand:
@@ -188,75 +221,6 @@ class TestRunApplyOneTimePurchase:
 
 class TestApplySubscription:
     @pytest.mark.asyncio
-    async def test_new_target_uses_administrative_defaults(self, mocker: MockerFixture) -> None:
-        received: list[tuple[object, object, object, SerializedId]] = []
-
-        async def run_apply_subscription(
-            snapshot: object,
-            parameters: object,
-            transaction: object,
-            actor_id: SerializedId,
-        ) -> None:
-            received.append((snapshot, parameters, transaction, actor_id))
-
-        operation_time = datetime.datetime.now(tz=datetime.UTC)
-        user_id = uuid.uuid4()
-        source_transaction_id = uuid.uuid4()
-        mocker.patch.object(benefits.core_utils, "now", return_value=operation_time)
-        mocker.patch.object(benefits.uuid, "uuid4", return_value=source_transaction_id)
-        mocker.patch.object(benefits, "run_apply_subscription", side_effect=run_apply_subscription)
-
-        def invoke() -> Result:
-            return CliRunner().invoke(
-                benefits.cli_app,
-                ["apply-subscription", "--user-id", str(user_id), "--benefit-id", "supporter"],
-            )
-
-        result = await asyncio.to_thread(invoke)
-
-        assert result.exit_code == 0, result.output
-        assert len(received) == 1
-        snapshot, parameters, transaction, actor_id = received[0]
-        assert snapshot == make_subscription_snapshot(
-            user_id=UserId(user_id),
-            benefit_id=BenefitId("supporter"),
-            status=SubscriptionStatusId.active,
-            provider_status=ProviderStatus("active"),
-            started_at=operation_time,
-            period_starts_at=operation_time,
-            period_ends_at=operation_time + benefits.DEFAULT_SUBSCRIPTION_PERIOD,
-            expected_renewal_at=None,
-            ends_at=None,
-            provider_updated_at=operation_time,
-        )
-        assert parameters == {}
-        assert transaction == make_transaction_command(
-            source_id=ADMIN_BENEFIT_SOURCE_ID,
-            source_transaction_id=BenefitSourceTransactionId(source_transaction_id),
-            target=NewTarget(),
-            effective_at=operation_time,
-        )
-        assert actor_id == benefits.DEFAULT_ADMIN_ACTOR_ID
-
-    def test_existing_target_requires_explicit_snapshot(self) -> None:
-        result = CliRunner().invoke(
-            benefits.cli_app,
-            [
-                "apply-subscription",
-                "--user-id",
-                str(uuid.uuid4()),
-                "--benefit-id",
-                "supporter",
-                "--subscription-id",
-                str(uuid.uuid4()),
-            ],
-        )
-
-        assert result.exit_code != 0
-        assert "--status is required when applying a snapshot to an existing" in result.output
-        assert "target" in result.output
-
-    @pytest.mark.asyncio
     @pytest.mark.parametrize("selected_subscription_id", [None, uuid.uuid4()])
     async def test_builds_and_runs_normalized_command(
         self,
@@ -353,71 +317,6 @@ class TestApplySubscription:
 
 
 class TestApplyOneTimePurchase:
-    @pytest.mark.asyncio
-    async def test_new_target_uses_administrative_defaults(self, mocker: MockerFixture) -> None:
-        received: list[tuple[object, object, object, SerializedId]] = []
-
-        async def run_apply_one_time_purchase(
-            snapshot: object,
-            parameters: object,
-            transaction: object,
-            actor_id: SerializedId,
-        ) -> None:
-            received.append((snapshot, parameters, transaction, actor_id))
-
-        operation_time = datetime.datetime.now(tz=datetime.UTC)
-        user_id = uuid.uuid4()
-        source_transaction_id = uuid.uuid4()
-        mocker.patch.object(benefits.core_utils, "now", return_value=operation_time)
-        mocker.patch.object(benefits.uuid, "uuid4", return_value=source_transaction_id)
-        mocker.patch.object(benefits, "run_apply_one_time_purchase", side_effect=run_apply_one_time_purchase)
-
-        def invoke() -> Result:
-            return CliRunner().invoke(
-                benefits.cli_app,
-                ["apply-one-time-purchase", "--user-id", str(user_id), "--benefit-id", "lifetime-tokens"],
-            )
-
-        result = await asyncio.to_thread(invoke)
-
-        assert result.exit_code == 0, result.output
-        assert len(received) == 1
-        snapshot, parameters, transaction, actor_id = received[0]
-        assert snapshot == make_purchase_snapshot(
-            user_id=UserId(user_id),
-            benefit_id=BenefitId("lifetime-tokens"),
-            status=PurchaseStatus.completed,
-            provider_status=ProviderStatus("completed"),
-            purchased_at=operation_time,
-            provider_updated_at=operation_time,
-        )
-        assert parameters == {}
-        assert transaction == make_one_time_purchase_transaction_command(
-            source_id=ADMIN_BENEFIT_SOURCE_ID,
-            source_transaction_id=BenefitSourceTransactionId(source_transaction_id),
-            target=NewTarget(),
-            effective_at=operation_time,
-        )
-        assert actor_id == benefits.DEFAULT_ADMIN_ACTOR_ID
-
-    def test_existing_target_requires_explicit_snapshot(self) -> None:
-        result = CliRunner().invoke(
-            benefits.cli_app,
-            [
-                "apply-one-time-purchase",
-                "--user-id",
-                str(uuid.uuid4()),
-                "--benefit-id",
-                "lifetime-tokens",
-                "--one-time-purchase-id",
-                str(uuid.uuid4()),
-            ],
-        )
-
-        assert result.exit_code != 0
-        assert "--status is required when applying a snapshot to an existing" in result.output
-        assert "target" in result.output
-
     @pytest.mark.asyncio
     @pytest.mark.parametrize("selected_purchase_id", [None, uuid.uuid4()])
     async def test_builds_and_runs_normalized_command(

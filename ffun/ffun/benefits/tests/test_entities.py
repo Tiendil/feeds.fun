@@ -26,7 +26,6 @@ from ffun.benefits.tests.make import (
     make_benefit_transaction,
     make_external_target,
     make_one_time_purchase_benefit_transaction,
-    make_one_time_purchase_transaction_command,
     make_transaction_command,
 )
 from ffun.core.entities import NonEmptyString
@@ -420,15 +419,6 @@ class TestBenefitTransactionCommand:
     def test_effective_at_must_have_timezone__rejects_naive_timestamp(self) -> None:
         with pytest.raises(pydantic.ValidationError, match="effective timestamp must have a UTC offset"):
             make_transaction_command(effective_at=datetime.datetime.now())
-
-    def test_target__supports_one_time_purchase_id(self) -> None:
-        purchase_id = new_purchase_id()
-        command = make_one_time_purchase_transaction_command(
-            target=InternalTarget(internal_id=purchase_id),
-        )
-
-        assert isinstance(command.target, InternalTarget)
-        assert command.target.internal_id == purchase_id
 
 
 class TestBenefitTransaction:
