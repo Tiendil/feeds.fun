@@ -21,10 +21,13 @@ Terms defined in this section are stable project vocabulary. Project artifacts M
 - `collection` - curated feed collection configuration.
 - `integration` - external source-specific behavior, such as YouTube or Reddit support.
 - `entitlement guarantee` - one entitlement kind and integer value promised by a benefit package or another entitlement-granting product concept.
+- `benefit identifier` - a stable local non-empty identifier that selects one configured benefit package template.
 - `subscription identifier` - the internally generated UUID that identifies one provider-independent subscription projection.
 - `one-time purchase identifier` - the internally generated UUID that identifies one provider-independent one-time-purchase projection.
 - `benefit transaction` - one immutable accepted operation that records and atomically applies one complete purchased state.
 - `benefit transaction identifier` - the internally generated UUID that canonically identifies one benefit transaction.
+- `business state` - every field of a current-state snapshot except its provider update time.
+- `save outcome` - the high-level result of comparing and saving one current-state snapshot: `created`, `updated`, `refreshed`, `same`, or `stale`.
 - `audit record` - append-only durable record of a business change or event, including its actor and subject entities.
 - `backend` - Python application in `ffun/ffun`.
 - `frontend` - Vue application in `site/src`.

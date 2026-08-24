@@ -8,7 +8,20 @@ This document describes the public contract and observable behavior of the `ffun
 
 This specification applies to provider-independent current-state projections and provider-to-local identity references for one-time purchases owned by `ffun.one_time_purchases`.
 
-Payment collection, provider APIs and notification protocols, provider objects other than purchase identities, checkout workflows, invoices and payment attempts, product catalogs and pricing, benefit-package configuration and parameters, benefit-transaction history, caller-defined entitlement intervals, entitlement derivation, resource accounting, and frontend presentation are out of scope.
+The following concerns are out of scope:
+
+- payment collection.
+- provider APIs and notification protocols.
+- provider objects other than purchase identities.
+- checkout workflows.
+- invoices and payment attempts.
+- product catalogs and pricing.
+- benefit-package configuration and parameters.
+- benefit-transaction history.
+- caller-defined entitlement intervals.
+- entitlement derivation.
+- resource accounting.
+- frontend presentation.
 
 ## Dictionary
 
@@ -18,11 +31,8 @@ Payment collection, provider APIs and notification protocols, provider objects o
 - `purchase status` - the normalized provider-neutral lifecycle state stored for a purchase.
 - `provider status` - the open-ended status value supplied by the external purchase authority.
 - `purchase snapshot` - the complete provider-independent caller-supplied state of one purchase at one provider update time.
-- `benefit identifier` - the stable local identifier of the configured benefit package associated with a purchase.
-- `business state` - every purchase snapshot field except the provider update time.
 - `audit state` - every purchase snapshot field except the Feeds Fun user identifier represented separately by the audit record.
 - `business event attributes` - the one-time purchase identifier, state transaction identifier, and every purchase snapshot field except the Feeds Fun user identifier represented separately by the business event.
-- `save outcome` - the high-level result of comparing and saving one purchase snapshot: `created`, `updated`, `refreshed`, `same`, or `stale`.
 
 ## Module responsibility
 

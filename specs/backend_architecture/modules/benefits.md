@@ -12,7 +12,6 @@ Payment-service-provider communication, product and price catalogs, checkout, in
 
 ## Dictionary
 
-- `benefit identifier` - a stable local non-empty identifier that provider metadata or another trusted caller uses to select one configured benefit package template.
 - `benefit parameter` - one named normalized integer value accepted by a benefit package template at materialization time.
 - `benefit package template` - configured user-facing title and description, accepted benefit-parameter definitions, and the locally controlled mapping from entitlement kinds to constant or parameter-referenced values.
 - `benefit package` - one concrete result of materializing a benefit package template with normalized benefit parameters; it contains only resolved entitlement guarantees.

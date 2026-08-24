@@ -19,13 +19,10 @@ Payment collection, provider APIs and notification protocols, provider objects o
 - `alive subscription` - a subscription whose latest stored status and end time indicate that it has not ended at the evaluation time.
 - `provider status` - the open-ended status value supplied by the external subscription authority.
 - `subscription snapshot` - the complete provider-independent caller-supplied state of one subscription at one provider update time.
-- `benefit identifier` - the stable local identifier of the configured benefit package associated with a subscription.
 - `subscription period` - the required start and end timestamps of the current benefit-bearing subscription period.
 - `expected renewal` - the optional externally reported time at which the subscription is expected to renew; it is an observation, not a renewal scheduled or managed by this module.
-- `business state` - every subscription snapshot field except the provider update time.
 - `audit state` - every subscription snapshot field except the Feeds Fun user identifier represented separately by the audit record.
 - `business event attributes` - the subscription identifier, state transaction identifier, and every subscription snapshot field except the Feeds Fun user identifier represented separately by the business event.
-- `save outcome` - the high-level result of comparing and saving one subscription snapshot: `created`, `updated`, `refreshed`, `same`, or `stale`.
 
 ## Module responsibility
 
