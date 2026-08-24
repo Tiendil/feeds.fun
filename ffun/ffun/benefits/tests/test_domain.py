@@ -803,6 +803,10 @@ class TestApplySubscriptionTransaction:
             grant_transaction_id=str(result.transaction_id),
         )
         assert_logs_has_business_event(logs, "entitlement_changed", user_id=snapshot.user_id)
+        assert sum(record.get("event") == "subscription_changed" for record in logs) == 1
+        assert sum(record.get("event") == "source_entitlement_changed" for record in logs) == 2
+        assert sum(record.get("event") == "entitlement_changed" for record in logs) == 2
+        assert_logs_has_no_business_event(logs, "one_time_purchase_changed")
 
     @pytest.mark.asyncio
     async def test_materializes_arbitrary_quantity_in_composite_package(self, mocker: MockerFixture) -> None:
