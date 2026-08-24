@@ -162,10 +162,8 @@ Its start MUST be the snapshot's purchase time and its end MUST be the project's
 Every lifetime entitlement MUST use the project's stable lifetime interval-end marker regardless of target type.
 
 The transaction MUST NOT contain benefit parameters or a materialized package.
-The corresponding application command MUST be one generic structure parameterized by the internal target identifier type.
-It MUST expose one non-optional `target` and MUST NOT duplicate target-specific command structures or optional target fields.
-The corresponding application result MUST be one generic structure parameterized by the internal target identifier type.
-It MUST expose one `target_id` and MUST NOT duplicate target-specific result structures or unrelated optional identifiers.
+The corresponding application command MUST select exactly one target.
+The corresponding application result MUST identify the applied transaction and selected internal target and report whether the transaction was newly created.
 
 The supported entitlement actions and stable values MUST be:
 
@@ -269,18 +267,18 @@ The public interface MUST provide these operations:
 - `apply_subscription_transaction` atomically records one subscription-related benefit transaction and applies one complete subscription snapshot.
 - `apply_one_time_purchase_transaction` atomically records one purchase-related benefit transaction and applies one complete one-time-purchase snapshot.
 
-`apply_subscription_transaction` MUST accept one complete provider-neutral subscription snapshot, one complete benefit-parameter collection, one generic benefit transaction command specialized by the internal subscription identifier type, and the audit actor.
+`apply_subscription_transaction` MUST accept one complete provider-neutral subscription snapshot, one complete benefit-parameter collection, one benefit transaction command, and the audit actor.
 The command MUST contain the `source_id` and `source_transaction_id` transaction identity, subscription selection, and effective time.
 It MUST NOT contain a caller-selected entitlement action or a historical transaction to revoke.
 A stale subscription snapshot MUST raise a benefits-owned stale-benefit-transaction error containing the subscription identifier and the incoming and current provider update times.
 
-`apply_one_time_purchase_transaction` MUST accept one complete provider-neutral purchase snapshot, one complete benefit-parameter collection, the same generic benefit transaction command specialized by the internal one-time-purchase identifier type, and the audit actor.
+`apply_one_time_purchase_transaction` MUST accept one complete provider-neutral purchase snapshot, one complete benefit-parameter collection, one benefit transaction command, and the audit actor.
 The command MUST contain the `source_id` and `source_transaction_id` transaction identity, one-time-purchase selection, and effective time.
 It MUST NOT contain a caller-selected entitlement action, arbitrary entitlement guarantees, or a historical transaction to revoke.
 A stale purchase snapshot MUST raise a benefits-owned stale-benefit-transaction error containing the one-time-purchase identifier and the incoming and current provider update times.
 
-Both application workflows MUST return the same generic result containing the internal benefit transaction identifier, one `target_id`, and whether the transaction was newly created.
-The subscription workflow MUST specialize `target_id` as the internal subscription identifier type, while the one-time-purchase workflow MUST specialize it as the internal one-time-purchase identifier type.
+Each application workflow MUST return an application result containing the internal benefit transaction identifier, the selected target's internal identifier, and whether the transaction was newly created.
+The subscription workflow MUST return the internal subscription identifier as the target identifier, while the one-time-purchase workflow MUST return the internal one-time-purchase identifier as the target identifier.
 An idempotent retry of either transaction type MUST report that the transaction was not created because its original atomic effects already committed.
 
 ## Audit records
