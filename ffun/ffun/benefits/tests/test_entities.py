@@ -496,3 +496,11 @@ class TestBenefitTransaction:
 
         with pytest.raises(pydantic.ValidationError, match="must have exactly one target"):
             BenefitTransaction.model_validate(data)
+
+    def test_validate_one_time_purchase_period_end__requires_lifetime_marker(self) -> None:
+        transaction = make_one_time_purchase_benefit_transaction()
+        data = cast(dict[str, object], transaction.model_dump())
+        data["period_ends_at"] = transaction.period_starts_at + datetime.timedelta(days=1)
+
+        with pytest.raises(pydantic.ValidationError, match="period end must equal lifetime interval end marker"):
+            BenefitTransaction.model_validate(data)

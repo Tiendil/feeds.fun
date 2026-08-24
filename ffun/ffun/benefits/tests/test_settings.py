@@ -17,6 +17,13 @@ from ffun.entitlements.entities import EntitlementKindId
 
 
 class TestSettings:
+    def test_package_templates__defaults_to_empty(self, mocker: MockerFixture) -> None:
+        mocker.patch.dict("os.environ", {}, clear=True)
+
+        settings = Settings(_env_file=None)
+
+        assert settings.package_templates == ()
+
     def test_package_template_ids_must_be_unique__accepts_distinct_templates(self) -> None:
         settings = Settings(
             _env_file=None,

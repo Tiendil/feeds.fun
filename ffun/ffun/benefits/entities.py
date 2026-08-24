@@ -9,6 +9,7 @@ import pydantic
 from ffun.benefits import errors
 from ffun.core import utils
 from ffun.core.entities import BaseEntity, NonEmptyString
+from ffun.domain.datetime_intervals import LIFETIME_INTERVAL_END_MARKER
 from ffun.domain.entities import (
     BenefitId,
     BenefitTransactionId,
@@ -373,6 +374,15 @@ class BenefitTransaction(BaseEntity):
     def validate_target(self) -> "BenefitTransaction":
         if (self.subscription_id is None) == (self.one_time_purchase_id is None):
             raise ValueError("Benefit transaction must have exactly one target")
+
+        return self
+
+    @pydantic.model_validator(mode="after")
+    def validate_one_time_purchase_period_end(self) -> "BenefitTransaction":
+        if self.one_time_purchase_id is not None and self.period_ends_at != LIFETIME_INTERVAL_END_MARKER:
+            raise ValueError(
+                "One-time-purchase benefit transaction period end must equal lifetime interval end marker"
+            )
 
         return self
 

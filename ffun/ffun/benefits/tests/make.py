@@ -19,6 +19,7 @@ from ffun.benefits.entities import (
     SubscriptionTarget,
 )
 from ffun.core.entities import NonEmptyString
+from ffun.domain.datetime_intervals import LIFETIME_INTERVAL_END_MARKER
 from ffun.domain.domain import new_user_id
 from ffun.domain.entities import (
     BenefitId,
@@ -130,7 +131,7 @@ def make_one_time_purchase_benefit_transaction(  # noqa: CFQ002
 ) -> BenefitTransaction:
     now = effective_at or datetime.datetime.now(tz=datetime.UTC)
     period_starts_at = period_starts_at or now
-    period_ends_at = period_ends_at or now + datetime.timedelta(days=1)
+    period_ends_at = period_ends_at or LIFETIME_INTERVAL_END_MARKER
 
     return BenefitTransaction(
         id=transaction_id or BenefitTransactionId(uuid.uuid4()),

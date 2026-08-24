@@ -56,7 +56,7 @@ from ffun.entitlements import domain as entitlement_domain
 from ffun.entitlements.entities import EntitlementGuarantee, EntitlementKindId
 from ffun.entitlements.tests import helpers as entitlement_helpers
 from ffun.one_time_purchases import domain as purchase_domain
-from ffun.one_time_purchases.entities import PurchaseSnapshot, PurchaseStatus
+from ffun.one_time_purchases.entities import PurchaseSaveResult, PurchaseSnapshot, PurchaseStatus
 from ffun.one_time_purchases.tests.make import make_provider_purchase_reference, make_purchase_snapshot
 from ffun.subscriptions import domain as subscription_domain
 from ffun.subscriptions.entities import (
@@ -601,6 +601,128 @@ class TestActualizeSubscriptionTransaction:
 
         message = str(exception_info.value)
         assert f"subscription_id={subscription_id}" in message
+        assert f"incoming_provider_updated_at={snapshot.provider_updated_at.isoformat()}" in message
+        assert f"current_provider_updated_at={current.provider_updated_at.isoformat()}" in message
+        replace.assert_not_awaited()
+
+
+class TestActualizeOneTimePurchaseTransaction:
+    @pytest.mark.asyncio
+    @pytest.mark.parametrize(
+        ("status", "expected"),
+        [
+            (PurchaseStatus.completed, BenefitEntitlementAction.grant),
+            (PurchaseStatus.refunded, BenefitEntitlementAction.revoke),
+        ],
+    )
+    async def test_builds_transaction_with_derived_action_and_combines_callbacks(
+        self,
+        purchase_package: BenefitPackageTemplate,
+        mocker: MockerFixture,
+        status: PurchaseStatus,
+        expected: BenefitEntitlementAction,
+    ) -> None:
+        snapshot = make_purchase_snapshot(benefit_id=purchase_package.id, status=status)
+        command = make_one_time_purchase_transaction_command()
+        purchase_id = purchase_domain.new_purchase_id()
+        transaction_id = BenefitTransactionId(uuid.uuid4())
+        purchase_callback: Callable[[], None] = mocker.stub(name="purchase_callback")
+        entitlement_callback: Callable[[], None] = mocker.stub(name="entitlement_callback")
+        mocker.patch.object(target_resolution, "resolve_one_time_purchase_target", return_value=purchase_id)
+        mocker.patch.object(operations, "new_benefit_transaction_id", return_value=transaction_id)
+        save_transaction = mocker.patch.object(operations, "save_benefit_transaction")
+        save_purchase = mocker.patch.object(
+            purchase_domain,
+            "save_purchase",
+            return_value=(
+                PurchaseSaveResult(
+                    outcome=PurchasedStateSaveOutcome.created,
+                    current=snapshot.with_identity(
+                        one_time_purchase_id=purchase_id,
+                        state_transaction_id=transaction_id,
+                    ),
+                ),
+                purchase_callback,
+            ),
+        )
+        entitlement_callbacks: list[Callable[[], None]] = [entitlement_callback]
+        mocker.patch.object(domain, "_replace_benefit", return_value=entitlement_callbacks)
+
+        benefit_transaction, callbacks = await domain._actualize_one_time_purchase_transaction(
+            command,
+            execute,
+            snapshot,
+            {_QUANTITY_PARAMETER_ID: 100},
+            evaluation_time=datetime.datetime.now(tz=datetime.UTC),
+            actor_kind=_ACTOR_KIND,
+            actor_id=_ACTOR_ID,
+        )
+
+        assert benefit_transaction == make_one_time_purchase_benefit_transaction(
+            transaction_id=transaction_id,
+            source_id=command.source_id,
+            source_transaction_id=command.source_transaction_id,
+            entitlement_action=expected,
+            user_id=snapshot.user_id,
+            benefit_id=purchase_package.id,
+            one_time_purchase_id=purchase_id,
+            effective_at=command.effective_at,
+            period_starts_at=snapshot.period_starts_at,
+            period_ends_at=snapshot.period_ends_at,
+        )
+        assert callbacks == [purchase_callback, entitlement_callback]
+        save_transaction.assert_awaited_once_with(execute, benefit_transaction)
+        save_purchase.assert_awaited_once_with(
+            execute,
+            purchase_id,
+            transaction_id,
+            snapshot,
+            actor_kind=_ACTOR_KIND,
+            actor_id=_ACTOR_ID,
+        )
+
+    @pytest.mark.asyncio
+    async def test_stale_purchase_raises_before_entitlement_replacement(
+        self,
+        purchase_package: BenefitPackageTemplate,
+        mocker: MockerFixture,
+    ) -> None:
+        snapshot = make_purchase_snapshot(benefit_id=purchase_package.id)
+        command = make_one_time_purchase_transaction_command()
+        purchase_id = purchase_domain.new_purchase_id()
+        transaction_id = BenefitTransactionId(uuid.uuid4())
+        current = snapshot.replace(
+            provider_updated_at=snapshot.provider_updated_at + datetime.timedelta(seconds=1)
+        ).with_identity(
+            one_time_purchase_id=purchase_id,
+            state_transaction_id=BenefitTransactionId(uuid.uuid4()),
+        )
+        mocker.patch.object(target_resolution, "resolve_one_time_purchase_target", return_value=purchase_id)
+        mocker.patch.object(operations, "new_benefit_transaction_id", return_value=transaction_id)
+        mocker.patch.object(operations, "save_benefit_transaction")
+        mocker.patch.object(
+            purchase_domain,
+            "save_purchase",
+            return_value=(
+                PurchaseSaveResult(outcome=PurchasedStateSaveOutcome.stale, current=current),
+                mocker.stub(name="purchase_callback"),
+            ),
+        )
+        replace = mocker.patch.object(domain, "_replace_benefit")
+
+        with pytest.raises(errors.StaleBenefitTransaction) as exception_info:
+            await domain._actualize_one_time_purchase_transaction(
+                command,
+                execute,
+                snapshot,
+                {_QUANTITY_PARAMETER_ID: 100},
+                evaluation_time=datetime.datetime.now(tz=datetime.UTC),
+                actor_kind=_ACTOR_KIND,
+                actor_id=_ACTOR_ID,
+            )
+
+        message = str(exception_info.value)
+        assert f"one_time_purchase_id={purchase_id}" in message
         assert f"incoming_provider_updated_at={snapshot.provider_updated_at.isoformat()}" in message
         assert f"current_provider_updated_at={current.provider_updated_at.isoformat()}" in message
         replace.assert_not_awaited()
