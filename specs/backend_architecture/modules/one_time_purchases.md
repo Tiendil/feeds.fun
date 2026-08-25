@@ -7,7 +7,12 @@ This document describes the responsibility and observable one-time-purchase beha
 ## Scope
 
 This specification applies to provider-independent purchased state and provider-to-local purchase identity associations managed by `ffun.one_time_purchases`.
-Payment-provider communication and commerce workflows, provider objects other than purchase identities, benefit definition, and entitlement derivation or application are outside the module's responsibility.
+The following adjacent concerns are outside the module's responsibility:
+
+- payment-provider communication and commerce workflows.
+- provider objects other than purchase identities.
+- benefit definition.
+- entitlement derivation or application.
 
 ## Dictionary
 
@@ -21,11 +26,34 @@ Payment-provider communication and commerce workflows, provider objects other th
 
 ## Module responsibility
 
-The module owns provider-independent one-time-purchase state, internal purchase identities, provider purchase references, normalized lifecycle meanings and their benefit-granting semantics, the lifetime applicable interval, the rules for accepting authoritative state, and current-state retrieval semantics.
+The module owns:
+
+- provider-independent one-time-purchase state.
+- internal purchase identities.
+- provider purchase references.
+- normalized lifecycle meanings and their benefit-granting semantics.
+- the lifetime applicable interval.
+- the rules for accepting authoritative state.
+- current-state retrieval semantics.
+
 The external purchase authority owns commercial purchase truth, while `ffun.benefits` owns benefit-transaction and entitlement-application decisions.
 
-Callers MUST use the module's domain boundary for one-time-purchase state and provider purchase references and MUST respect its ownership, freshness, replacement, lifecycle, and applicable-interval decisions.
-The module MUST NOT independently infer provider-side state transitions, derive benefit identity from provider products, persist benefit details or parameters, apply entitlement grants, define resource limits, or make access decisions.
+Callers MUST use the module's domain boundary for one-time-purchase state and provider purchase references and MUST respect its decisions about:
+
+- ownership.
+- freshness.
+- replacement.
+- lifecycle.
+- the applicable interval.
+
+The module MUST NOT independently:
+
+- infer provider-side state transitions.
+- derive benefit identity from provider products.
+- persist benefit details or parameters.
+- apply entitlement grants.
+- define resource limits.
+- make access decisions.
 
 ## Special module rules
 
@@ -98,7 +126,13 @@ They MUST NOT reproduce provider-to-local purchase identity behavior.
 ### State acceptance and causality
 
 Proposed purchase state MUST be complete and valid before it has any effect.
-Invalid ownership, benefit association, lifecycle, status, or timing information MUST fail without changing current state.
+Invalid proposed-purchase information in any of the following areas MUST fail without changing current state:
+
+- ownership.
+- benefit association.
+- lifecycle.
+- status.
+- timing.
 
 Accepting the first state for an internal purchase identity MUST establish its complete current state and causal benefit transaction.
 Reusing an existing internal identity for another user or benefit MUST fail without changing current state.
@@ -113,7 +147,13 @@ State that has no effect because it is older or identical MUST preserve the exis
 
 The current state and its causal benefit transaction MUST change atomically.
 Competing proposals for one purchase MUST produce an outcome consistent with authoritative freshness, and older state MUST NOT overwrite newer state.
-Callers MUST be able to distinguish creation, business-state change, freshness-only acceptance, identical-state no-op, and older-state no-op so the owning workflow can apply the corresponding domain effects.
+Callers MUST be able to distinguish the following outcomes so the owning workflow can apply the corresponding domain effects:
+
+- creation.
+- business-state change.
+- freshness-only acceptance.
+- identical-state no-op.
+- older-state no-op.
 
 ### Status and time semantics
 
@@ -138,13 +178,25 @@ Retrieval MUST have no domain effects and MUST NOT produce audit evidence or bus
 
 ## Audit records
 
-Every purchase creation or business-state change MUST produce durable audit evidence of who initiated the change, the affected user, the causal benefit transaction, and the complete previous and resulting purchase state needed to understand the change.
+Every purchase creation or business-state change MUST produce durable audit evidence of:
+
+- who initiated the change.
+- the affected user.
+- the causal benefit transaction.
+- the complete previous and resulting purchase state needed to understand the change.
+
 Creation MUST be represented as having no previous state.
 
 The purchase change and its audit evidence MUST succeed or fail together.
 A failed change MUST leave both the prior purchase state and its audit history unchanged.
 
-Advancing only authoritative freshness and causality, accepting state with no additional effect, establishing a provider purchase reference, a failed request, or retrieval MUST NOT produce audit evidence.
+The following cases MUST NOT produce audit evidence:
+
+- advancing only authoritative freshness and causality.
+- accepting state with no additional effect.
+- establishing a provider purchase reference.
+- a failed request.
+- retrieval.
 
 ## Business events
 
@@ -152,7 +204,13 @@ Every successful purchase creation or business-state change MUST notify consumer
 The notification MUST distinguish creation from replacement and preserve the previous normalized status needed to interpret the transition.
 
 Notification MUST occur only after the purchase state and required audit evidence are durable.
-Advancing only authoritative freshness and causality, accepting state with no additional effect, establishing a provider purchase reference, a failed request, or retrieval MUST NOT produce notification.
+The following cases MUST NOT produce notification:
+
+- advancing only authoritative freshness and causality.
+- accepting state with no additional effect.
+- establishing a provider purchase reference.
+- a failed request.
+- retrieval.
 
 Notification delivery is best-effort and failure MUST NOT alter durable purchase or audit state.
 Repeating an idempotent request MUST NOT replay notification for the earlier change.
