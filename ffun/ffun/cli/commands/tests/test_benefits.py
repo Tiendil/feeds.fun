@@ -144,7 +144,7 @@ class TestRunApplySubscription:
         mocker: MockerFixture,
         capsys: pytest.CaptureFixture[str],
     ) -> None:
-        mocker.patch.object(benefits, "with_app", return_value=contextlib.nullcontext())
+        mocker.patch("ffun.cli.commands.benefits.with_app", return_value=contextlib.nullcontext())
         snapshot = make_subscription_snapshot()
         parameters = {BenefitParameterId("quantity"): 100}
         transaction = make_transaction_command()
@@ -185,7 +185,7 @@ class TestRunApplyOneTimePurchase:
         mocker: MockerFixture,
         capsys: pytest.CaptureFixture[str],
     ) -> None:
-        mocker.patch.object(benefits, "with_app", return_value=contextlib.nullcontext())
+        mocker.patch("ffun.cli.commands.benefits.with_app", return_value=contextlib.nullcontext())
         snapshot = make_purchase_snapshot()
         parameters = {BenefitParameterId("quantity"): 100}
         transaction = make_one_time_purchase_transaction_command()
@@ -220,6 +220,66 @@ class TestRunApplyOneTimePurchase:
 
 
 class TestApplySubscription:
+    @pytest.mark.asyncio
+    async def test_new_target_uses_administrative_defaults(self, mocker: MockerFixture) -> None:
+        received: list[tuple[object, object, object, SerializedId]] = []
+
+        async def run_apply_subscription(
+            snapshot: object,
+            parameters: object,
+            transaction: object,
+            actor_id: SerializedId,
+        ) -> None:
+            received.append((snapshot, parameters, transaction, actor_id))
+
+        operation_time = datetime.datetime.now(tz=datetime.UTC)
+        user_id = uuid.uuid4()
+        source_transaction_id = uuid.uuid4()
+        mocker.patch.object(benefits.core_utils, "now", return_value=operation_time)
+        mocker.patch.object(benefits.uuid, "uuid4", return_value=source_transaction_id)
+        mocker.patch.object(benefits, "run_apply_subscription", side_effect=run_apply_subscription)
+
+        await asyncio.to_thread(
+            benefits.apply_subscription,
+            user_id=user_id,
+            benefit_id="supporter",
+            status=None,
+            provider_status=None,
+            started_at=None,
+            period_starts_at=None,
+            period_ends_at=None,
+            provider_updated_at=None,
+            source_transaction_id=None,
+            actor_id=str(benefits.DEFAULT_ADMIN_ACTOR_ID),
+            parameters=None,
+            subscription_id=None,
+            expected_renewal_at=None,
+            ends_at=None,
+        )
+
+        assert len(received) == 1
+        snapshot, parameters, transaction, actor_id = received[0]
+        assert snapshot == make_subscription_snapshot(
+            user_id=UserId(user_id),
+            benefit_id=BenefitId("supporter"),
+            status=SubscriptionStatusId.active,
+            provider_status=ProviderStatus("active"),
+            started_at=operation_time,
+            period_starts_at=operation_time,
+            period_ends_at=operation_time + benefits.DEFAULT_SUBSCRIPTION_PERIOD,
+            expected_renewal_at=None,
+            ends_at=None,
+            provider_updated_at=operation_time,
+        )
+        assert parameters == {}
+        assert transaction == make_transaction_command(
+            source_id=ADMIN_BENEFIT_SOURCE_ID,
+            source_transaction_id=BenefitSourceTransactionId(source_transaction_id),
+            target=NewTarget(),
+            effective_at=operation_time,
+        )
+        assert actor_id == benefits.DEFAULT_ADMIN_ACTOR_ID
+
     @pytest.mark.asyncio
     @pytest.mark.parametrize("selected_subscription_id", [None, uuid.uuid4()])
     async def test_builds_and_runs_normalized_command(
@@ -317,6 +377,58 @@ class TestApplySubscription:
 
 
 class TestApplyOneTimePurchase:
+    @pytest.mark.asyncio
+    async def test_new_target_uses_administrative_defaults(self, mocker: MockerFixture) -> None:
+        received: list[tuple[object, object, object, SerializedId]] = []
+
+        async def run_apply_one_time_purchase(
+            snapshot: object,
+            parameters: object,
+            transaction: object,
+            actor_id: SerializedId,
+        ) -> None:
+            received.append((snapshot, parameters, transaction, actor_id))
+
+        operation_time = datetime.datetime.now(tz=datetime.UTC)
+        user_id = uuid.uuid4()
+        source_transaction_id = uuid.uuid4()
+        mocker.patch.object(benefits.core_utils, "now", return_value=operation_time)
+        mocker.patch.object(benefits.uuid, "uuid4", return_value=source_transaction_id)
+        mocker.patch.object(benefits, "run_apply_one_time_purchase", side_effect=run_apply_one_time_purchase)
+
+        await asyncio.to_thread(
+            benefits.apply_one_time_purchase,
+            user_id=user_id,
+            benefit_id="lifetime-tokens",
+            status=None,
+            provider_status=None,
+            purchased_at=None,
+            provider_updated_at=None,
+            source_transaction_id=None,
+            actor_id=str(benefits.DEFAULT_ADMIN_ACTOR_ID),
+            parameters=None,
+            one_time_purchase_id=None,
+        )
+
+        assert len(received) == 1
+        snapshot, parameters, transaction, actor_id = received[0]
+        assert snapshot == make_purchase_snapshot(
+            user_id=UserId(user_id),
+            benefit_id=BenefitId("lifetime-tokens"),
+            status=PurchaseStatus.completed,
+            provider_status=ProviderStatus("completed"),
+            purchased_at=operation_time,
+            provider_updated_at=operation_time,
+        )
+        assert parameters == {}
+        assert transaction == make_one_time_purchase_transaction_command(
+            source_id=ADMIN_BENEFIT_SOURCE_ID,
+            source_transaction_id=BenefitSourceTransactionId(source_transaction_id),
+            target=NewTarget(),
+            effective_at=operation_time,
+        )
+        assert actor_id == benefits.DEFAULT_ADMIN_ACTOR_ID
+
     @pytest.mark.asyncio
     @pytest.mark.parametrize("selected_purchase_id", [None, uuid.uuid4()])
     async def test_builds_and_runs_normalized_command(
