@@ -7,7 +7,12 @@ This document describes the responsibility and observable subscription behavior 
 ## Scope
 
 This specification applies to provider-independent purchased-subscription state and provider-to-local subscription identity associations managed by `ffun.subscriptions`.
-Payment-provider communication and commerce workflows, provider objects other than subscription identities, benefit definition, and entitlement derivation or application are outside the module's responsibility.
+The following adjacent concerns are outside the module's responsibility:
+
+- payment-provider communication and commerce workflows.
+- provider objects other than subscription identities.
+- benefit definition.
+- entitlement derivation or application.
 
 ## Dictionary
 
@@ -16,18 +21,37 @@ Payment-provider communication and commerce workflows, provider objects other th
 - `subscription state` - the current provider-independent understanding of one purchased subscription at one provider update time.
 - `subscription status` - one normalized provider-independent lifecycle category owned by this module.
 - `alive subscription` - a subscription whose normalized status and end time indicate that it has not ended at the evaluation time.
-- `provider status` - the open-ended lifecycle description received from the external subscription authority.
 - `subscription period` - the current benefit-bearing period reported for a subscription.
 - `expected renewal` - an optional provider-reported expectation of renewal rather than a renewal scheduled or managed by this module.
 - `provider update time` - the authoritative time associated with provider-reported subscription state and used to order competing versions of that state.
 
 ## Module responsibility
 
-The module owns provider-independent subscription state, internal subscription identities, provider subscription references, normalized lifecycle meanings, the rules for accepting authoritative state, and current-state retrieval semantics.
+The module owns:
+
+- provider-independent subscription state.
+- internal subscription identities.
+- provider subscription references.
+- normalized lifecycle meanings.
+- the rules for accepting authoritative state.
+- current-state retrieval semantics.
+
 The external subscription authority owns commercial subscription truth, while `ffun.benefits` owns benefit-transaction and entitlement-application decisions.
 
-Callers MUST use the module's domain boundary for subscription state and provider subscription references and MUST respect its ownership, freshness, replacement, and lifecycle decisions.
-The module MUST NOT independently infer provider-side state transitions, derive benefit identity from provider products, apply entitlement grants, define resource limits, or make access decisions.
+Callers MUST use the module's domain boundary for subscription state and provider subscription references and MUST respect its decisions about:
+
+- ownership.
+- freshness.
+- replacement.
+- lifecycle.
+
+The module MUST NOT independently:
+
+- infer provider-side state transitions.
+- derive benefit identity from provider products.
+- apply entitlement grants.
+- define resource limits.
+- make access decisions.
 
 ## Special module rules
 
@@ -49,7 +73,12 @@ The current subscription state MUST identify the configured benefit associated w
 The benefit association MAY change when newer authoritative state moves the subscription to another product, but the module MUST accept the association from a trusted workflow rather than infer it from provider product data.
 
 At most one current state MAY exist for one internal subscription identity.
-That state MUST preserve the normalized and provider-reported lifecycle meanings and the authoritative timing observations needed to interpret the subscription's current period, renewal expectation, end, and freshness.
+That state MUST preserve the normalized and provider-reported lifecycle meanings and the authoritative timing observations needed to interpret:
+
+- the subscription's current period.
+- its renewal expectation.
+- its end.
+- its freshness.
 
 ### Provider subscription references
 
@@ -103,7 +132,12 @@ They MUST NOT reproduce provider-to-local subscription identity behavior.
 ### State acceptance and causality
 
 Proposed subscription state MUST be complete and valid before it has any effect.
-Invalid ownership, lifecycle, status, or timing information MUST fail without changing current state.
+Invalid proposed-subscription information in any of the following areas MUST fail without changing current state:
+
+- ownership.
+- lifecycle.
+- status.
+- timing.
 
 Accepting the first state for an internal subscription identity MUST establish its complete current state and causal benefit transaction.
 Reusing an existing internal identity for another user MUST fail without changing current state.
@@ -118,14 +152,27 @@ State that has no effect because it is older or identical MUST preserve the exis
 
 The current state and its causal benefit transaction MUST change atomically.
 Competing proposals for one subscription MUST produce an outcome consistent with authoritative freshness, and older state MUST NOT overwrite newer state.
-Callers MUST be able to distinguish creation, business-state change, freshness-only acceptance, identical-state no-op, and older-state no-op so the owning workflow can apply the corresponding domain effects.
+Callers MUST be able to distinguish the following outcomes so the owning workflow can apply the corresponding domain effects:
+
+- creation.
+- business-state change.
+- freshness-only acceptance.
+- identical-state no-op.
+- older-state no-op.
 
 ### Status and time semantics
 
 Any normalized status transition MUST be accepted when it belongs to newer valid authoritative state.
 The module MUST NOT reject a transition merely because it would be unusual for a particular provider.
 
-Subscriptions in `pending`, `trialing`, `active`, `past_due`, or `paused` status are eligible to be alive.
+Subscriptions in the following statuses are eligible to be alive:
+
+- `pending`.
+- `trialing`.
+- `active`.
+- `past_due`.
+- `paused`.
+
 An eligible subscription is alive at an evaluation time only when its end is absent or later than that time.
 A subscription in `ended` status, or whose end is not later than the evaluation time, is not alive.
 
@@ -149,13 +196,24 @@ Retrieval MUST have no domain effects and MUST NOT produce audit evidence or bus
 
 ## Audit records
 
-Every subscription creation or business-state change MUST produce durable audit evidence of who initiated the change, the affected user, the causal benefit transaction, and the complete previous and resulting subscription state needed to understand the change.
+Every subscription creation or business-state change MUST produce durable audit evidence of:
+
+- who initiated the change.
+- the affected user.
+- the causal benefit transaction.
+- the complete previous and resulting subscription state needed to understand the change.
+
 Creation MUST be represented as having no previous state.
 
 The subscription change and its audit evidence MUST succeed or fail together.
 A failed change MUST leave both the prior subscription state and its audit history unchanged.
 
-Advancing only authoritative freshness and causality, accepting state with no additional effect, a failed request, or retrieval MUST NOT produce audit evidence.
+The following cases MUST NOT produce audit evidence:
+
+- advancing only authoritative freshness and causality.
+- accepting state with no additional effect.
+- a failed request.
+- retrieval.
 
 ## Business events
 
@@ -163,7 +221,12 @@ Every successful subscription creation or business-state change MUST notify cons
 The notification MUST distinguish creation from replacement and preserve the previous normalized status needed to interpret the transition.
 
 Notification MUST occur only after the subscription state and required audit evidence are durable.
-Advancing only authoritative freshness and causality, accepting state with no additional effect, a failed request, or retrieval MUST NOT produce notification.
+The following cases MUST NOT produce notification:
+
+- advancing only authoritative freshness and causality.
+- accepting state with no additional effect.
+- a failed request.
+- retrieval.
 
 Notification delivery is best-effort and failure MUST NOT alter durable subscription or audit state.
 Repeating an idempotent request MUST NOT replay notification for the earlier change.

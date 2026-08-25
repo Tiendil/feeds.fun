@@ -7,7 +7,14 @@ This document describes the responsibility and observable accounting behavior of
 ## Scope
 
 This specification applies to generic per-user resource accounting owned by `ffun.resources`.
-The business meaning of resources and the policies that choose their units, accounting intervals, limits, billing, and presentation are outside the module's responsibility.
+The following concerns are outside the module's responsibility:
+
+- the business meaning of resources.
+- policies for resource units.
+- policies for accounting intervals.
+- policies for limits.
+- billing.
+- presentation.
 
 ## Dictionary
 
@@ -25,8 +32,20 @@ The business meaning of resources and the policies that choose their units, acco
 ## Module responsibility
 
 The module owns per-user used and reserved resource quantities, the rules for changing them, and the resulting consumption history.
-Callers own each resource kind's meaning, the unit shared by related quantities, the intervals to account against, the limits applied to reservation attempts, and the business activity represented by consumption.
-The module MUST NOT define resource kinds, derive interval boundaries, convert units, or retain caller-supplied limits as accounting state.
+Callers own:
+
+- each resource kind's meaning.
+- the unit shared by related quantities.
+- the intervals to account against.
+- the limits applied to reservation attempts.
+- the business activity represented by consumption.
+
+The module MUST NOT:
+
+- define resource kinds.
+- derive interval boundaries.
+- convert units.
+- retain caller-supplied limits as accounting state.
 
 Callers MUST respect the module's reservation decisions and MUST NOT independently change the accounting state it owns.
 
@@ -62,7 +81,14 @@ Statistics records with different users, kinds, or dates MUST be accounted indep
 
 ### Quantity validity
 
-Used amounts, reserved amounts, reservation amounts, finalized amounts, and limits MUST be non-negative quantities.
+The following quantities MUST be non-negative:
+
+- used amounts.
+- reserved amounts.
+- reservation amounts.
+- finalized amounts.
+- limits.
+
 Every limit, reservation, release, and finalized use affecting one resource record MUST use the same caller-defined unit.
 The module MUST NOT normalize units or infer a relationship between a provisional amount and the finalized amount that replaces it.
 
