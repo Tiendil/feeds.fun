@@ -81,7 +81,14 @@ The `Special module rules` section MUST contain only intentional differences fro
 **Example:** A technical audit or locking module may state that it is intentionally used by other modules.
 A purchased-state or entitlement module may state that its state changes are intended to participate in an atomic workflow owned by `ffun.benefits`.
 
-A special rule MUST state the module-specific architectural requirement and the semantic boundary within which it applies, not the functions, transaction contexts, callbacks, or orchestration that implement it.
+A special rule MUST state the module-specific architectural requirement and the semantic boundary within which it applies.
+It MUST NOT prescribe:
+
+- the functions that implement the rule.
+- concrete transaction-context representation or plumbing.
+- callbacks that implement the rule.
+- implementation orchestration.
+
 When one module owns a collaborative policy, that module MUST define the policy.
 Participating modules MUST state only their participation in and respect for the owning module's decision.
 
@@ -116,12 +123,39 @@ They MUST NOT name an operation, prescribe its arguments, or define its return s
 
 Atomicity, concurrency, idempotency, ordering, and temporal guarantees MUST be included only when they define observable correctness.
 Such a guarantee MUST state which domain effects succeed or fail together, which competing outcomes are allowed, or how authority and time affect acceptance.
-It MUST NOT prescribe transaction ownership protocols, lock acquisition, retry loops, event callbacks, or persistence-operation order.
+It MUST NOT prescribe:
+
+- lock acquisition.
+- retry loops.
+- event callbacks.
+- persistence-operation order.
 
 **Example:** `An older authoritative state cannot replace a newer state` is an observable temporal and concurrency invariant.
 `Repeating the same logical operation has no additional effect` is a domain idempotency guarantee.
 
 **Counterexample:** Requiring a particular lock, comparison query, exception type, and retry sequence prescribes how an invariant is enforced rather than defining the invariant.
+
+#### Transaction participation
+
+A module specification MAY define transaction participation only when it is an intentional architectural capability permitted by the backend database architecture or is required to state an observable correctness guarantee for a current workflow.
+When transaction participation is part of the module contract, the specification MUST state its stable boundary and observable effects at the highest semantic level.
+The specification MAY define:
+
+- which module owns the transaction and workflow decision.
+- which module-owned effects participate in the transaction.
+- which effects commit or roll back together.
+- whether participating reads observe state visible within the transaction.
+
+These requirements describe architectural boundaries and observable behavior and MUST NOT be treated as implementation orchestration.
+
+The specification MUST NOT prescribe:
+
+- concrete transaction-context or execute-callable types.
+- function parameters or signatures used to pass transaction state.
+- decorators or context managers.
+- how transaction state is propagated through implementation layers.
+- the sequence of persistence operations.
+- which implementation function opens, commits, or rolls back the transaction.
 
 ### `Audit records`
 
@@ -147,7 +181,13 @@ Out-of-scope statements SHOULD be limited to adjacent responsibilities that are 
 ## Excluded implementation detail
 
 A module specification MUST NOT catalogue public operations or name functions, classes, enums, exceptions, callbacks, arguments, or private implementation components.
-It MUST NOT specify signatures, parameter lists, return shapes, transaction-context protocols, or whether behavior is exposed through any particular programming-language construct.
+It MUST NOT specify:
+
+- signatures.
+- parameter lists.
+- return shapes.
+- concrete transaction-context types or plumbing.
+- whether behavior is exposed through any particular programming-language construct.
 
 A module specification MUST omit the following implementation details:
 
