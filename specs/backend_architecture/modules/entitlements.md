@@ -7,7 +7,13 @@ This document describes the responsibility and observable entitlement behavior o
 ## Scope
 
 This specification applies to source-owned entitlement grants and the effective entitlement state derived from them by `ffun.entitlements`.
-Purchased-state lifecycles, product policy, payment-provider protocols, entitlement consumption, and presentation are outside the module's responsibility.
+The following adjacent concerns are outside the module's responsibility:
+
+- purchased-state lifecycles.
+- product policy.
+- payment-provider protocols.
+- entitlement consumption.
+- presentation.
 
 ## Dictionary
 
