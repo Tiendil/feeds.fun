@@ -26,7 +26,7 @@ A specification MUST contain a single `h1` header with the name of the specifica
 
 Top-level information SHOULD be organized in sections with `h2` headers.
 
-Nested sections MAY use `h3`, `h4`, and deeper headers when they make the document easier to navigate.
+Nested sections MAY use `h3`, `h4`, and deeper headers to represent a meaningful hierarchy within a top-level concern.
 
 Nested sections SHOULD be used for details that belong to a parent top-level section, such as:
 
@@ -35,14 +35,19 @@ Nested sections SHOULD be used for details that belong to a parent top-level sec
 - record fields.
 - subsections of a larger topic.
 
+Each section heading MUST identify the section's stable conceptual concern rather than summarize or enumerate its current contents.
+An existing section heading MUST be preserved while it remains accurate for that concern.
+It MUST NOT be renamed merely to mention a subordinate rule, example, mechanism, or exception added to the section.
+A heading MAY be renamed only when the section's conceptual boundary changes or the existing heading becomes incorrect or ambiguous.
+
 Sections that are mandatory for all specifications:
 
-- `Goal of the document` — a brief description of what the specification is about and what it aims to achieve.
-- `Scope` — a brief description of what the specification covers and what it intentionally does not cover.
+- `Goal of the document`
+- `Scope`
 
 Optional sections:
 
-- `Dictionary` — a list of terms that are specific to the specification.
+- `Dictionary`
 
 The first sections of a specification SHOULD be placed in this order:
 
@@ -50,13 +55,18 @@ The first sections of a specification SHOULD be placed in this order:
 2. `Scope`
 3. `Dictionary`, when the section exists
 
-The `Goal of the document` section MUST describe the content and purpose of the document.
+The `Goal of the document` section MUST describe the document's subject matter and purpose in terms of the content it contains.
+Statements in the section MUST be verifiable from the document's content alone.
+They MUST NOT depend on readers following the specification or on governed artifacts achieving a desired quality.
 
 The `Goal of the document` section MUST NOT define requirements for the document itself, such as saying that the document:
 
 - MUST define something.
 - MUST list something.
 - MUST describe something.
+
+`This document describes the abstraction level and content conventions for backend module specifications` is an appropriate goal because it identifies the document's content.
+`This document describes conventions that keep backend module specifications focused` is inappropriate because it claims an intended effect on governed specifications.
 
 The `Scope` section MUST identify the class of artifacts, behavior, or concerns to which the specification applies.
 It MUST describe that boundary at a stable conceptual level.
@@ -88,7 +98,7 @@ A broader rewrite MAY be used when a targeted edit would leave the specification
 
 ## Abstraction level
 
-Specifications MUST describe project behavior, architecture, constraints, terminology, and compatibility contracts at the highest level that is still precise enough to guide implementation.
+Specifications MUST describe project behavior, architecture, constraints, terminology, and compatibility contracts at the highest level that is still precise enough to distinguish conforming from non-conforming implementations.
 
 Specifications SHOULD define:
 
@@ -140,7 +150,8 @@ When only one variant needs distinction, specifications SHOULD qualify that vari
 
 ### Extensible definitions
 
-Specifications SHOULD define extensible concepts through their invariants, responsibilities, and membership criteria rather than by enumerating their current instances.
+An extensible concept's definition MUST state its semantic meaning, distinguishing invariants, or membership criteria rather than rely only on an enumeration of current instances.
+An enumeration MAY supplement an extensible definition, but it MUST NOT substitute for it.
 
 Specifications MUST use an exhaustive enumeration only when the set is intentionally closed and its completeness is part of a stable contract.
 Examples of members in an extensible set MUST be identified as non-exhaustive.
