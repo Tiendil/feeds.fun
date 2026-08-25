@@ -77,7 +77,8 @@ It MUST NOT turn that boundary into a catalogue of callable operations or repeat
 ### `Special module rules`
 
 The `Special module rules` section MUST contain only intentional differences from, or additions to, ordinary backend-module rules.
-For example, a technical audit or locking module may state that it is intentionally used by other modules.
+
+**Example:** A technical audit or locking module may state that it is intentionally used by other modules.
 A purchased-state or entitlement module may state that its state changes are intended to participate in an atomic workflow owned by `ffun.benefits`.
 
 A special rule MUST state the module-specific architectural requirement and the semantic boundary within which it applies, not the functions, transaction contexts, callbacks, or orchestration that implement it.
@@ -93,8 +94,11 @@ For each identified entity kind, it MUST state the kind's semantic meaning, dist
 It MUST describe module-specific relationships and lifecycle invariants, including ownership, cardinality, identity stability, mutability, and historical status when those properties are part of current domain correctness.
 
 Entity kinds and their relationships MUST be described semantically.
-For example, a purchase may belong to exactly one user, its ownership may be immutable, and a historical transaction may be append-only.
-The specification MUST NOT translate those facts into fields, foreign keys, row shapes, model inheritance, or persistence constraints.
+The specification MUST NOT translate relationships or lifecycle facts into fields, foreign keys, row shapes, model inheritance, or persistence constraints.
+
+**Example:** A purchase may belong to exactly one user, its ownership may be immutable, and a historical transaction may be append-only.
+
+**Counterexample:** Describing a purchase as a row with a non-null user foreign key prescribes its persistence representation instead of its semantic relationship.
 
 A domain state or category MAY be named when the distinction is necessary to define current behavior.
 Its programming-language symbol, numeric representation, or serialized value MUST NOT be specified.
@@ -106,20 +110,25 @@ The `Domain behavior` section MUST define the module-specific rules, state trans
 It SHOULD organize closely related invariants together and omit behavior already governed by another module or by backend-wide specifications.
 
 Capabilities MUST be expressed without prescribing an interface.
-For example, a specification may require that records for one owner can be retrieved in a domain-significant order, but it MUST NOT name the operation, prescribe its arguments, or define its return shape.
+They MUST NOT name an operation, prescribe its arguments, or define its return shape.
+
+**Example:** A specification may require that records for one owner can be retrieved in a domain-significant order.
 
 Atomicity, concurrency, idempotency, ordering, and temporal guarantees MUST be included only when they define observable correctness.
 Such a guarantee MUST state which domain effects succeed or fail together, which competing outcomes are allowed, or how authority and time affect acceptance.
 It MUST NOT prescribe transaction ownership protocols, lock acquisition, retry loops, event callbacks, or persistence-operation order.
 
-For example, `An older authoritative state cannot replace a newer state` is an observable temporal and concurrency invariant.
-Requiring a particular lock, comparison query, exception type, and retry sequence to enforce it is not.
-Likewise, `Repeating the same logical operation has no additional effect` is a domain idempotency guarantee; the key, index, or lookup sequence used to provide it is not.
+**Example:** `An older authoritative state cannot replace a newer state` is an observable temporal and concurrency invariant.
+`Repeating the same logical operation has no additional effect` is a domain idempotency guarantee.
+
+**Counterexample:** Requiring a particular lock, comparison query, exception type, and retry sequence prescribes how an invariant is enforced rather than defining the invariant.
 
 ### `Audit records`
 
 The `Audit records` section MUST describe the module-specific rules for when a domain change produces durable audit evidence.
 It MUST state the semantic purpose of that evidence and any module-specific atomicity, lifecycle, or no-op invariants.
+
+**Example:** `A failed state change leaves both the prior domain state and its audit history unchanged` describes an observable atomicity invariant when partial success would be visible.
 
 ### `Business events`
 
@@ -156,20 +165,6 @@ Current implementation limitations MUST NOT be promoted into permanent domain co
 An otherwise excluded implementation detail MAY appear only when the developer explicitly requests that exact detail as part of the contract.
 The specification MUST place an explanation next to the detail stating why it is required and which current observable behavior or architectural property would be lost without it.
 Existing implementation shape, convenience, symmetry, debugging value, and hypothetical future use are not sufficient justifications.
-
-## Examples and counterexamples
-
-### Conforming examples
-
-- `Each purchase belongs to exactly one user, and that ownership never changes` is an appropriate relationship and lifecycle invariant.
-- `A failed state change leaves both the prior domain state and its audit history unchanged` is an appropriate atomicity invariant when partial success would be observable.
-- `This module's state changes may participate in the benefit workflow's atomic domain change` is an appropriate special rule for a participating module.
-
-### Non-conforming examples
-
-- `The purchase row stores a user UUID in a non-null foreign-key column` is an implementation prescription and MUST NOT appear.
-- `The write helper receives a transaction object and inserts the audit row before returning a callback` prescribes an interface and orchestration and MUST NOT appear.
-- Repeating the benefit module's decision policy and transaction procedure in every participating module is not appropriate.
 
 ## Dependency metadata
 

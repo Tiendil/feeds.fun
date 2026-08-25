@@ -8,7 +8,13 @@ This document describes the Feeds Fun CLI command family for applying administra
 
 This specification covers the public `ffun benefits` command family and its administrative purchased-state application behavior.
 
-Benefit template configuration, provider communication, direct entitlement management, purchased-state inspection, and other CLI command families are out of scope.
+The following concerns are out of scope:
+
+- benefit template configuration.
+- provider communication.
+- direct entitlement management.
+- purchased-state inspection.
+- other CLI command families.
 
 ## Command group
 
@@ -51,7 +57,7 @@ Invalid CLI input MUST use the CLI framework's nonzero parameter-error behavior.
 
 ### `ffun benefits apply-subscription`
 
-Applies one complete subscription snapshot and its benefit parameters through `ffun.benefits.apply_subscription_transaction`.
+Applies one complete subscription snapshot and its benefit parameters through the benefits domain workflow.
 
 Parameters:
 
@@ -72,7 +78,16 @@ Parameters:
 
 Subscription status names MUST be the normalized names defined by the subscriptions module.
 
-When `--subscription-id` is supplied, `--status`, `--provider-status`, `--started-at`, `--period-starts-at`, `--period-ends-at`, and `--provider-updated-at` MUST also be supplied so the command cannot synthesize lifecycle state for an existing subscription.
+When `--subscription-id` is supplied, the following options MUST also be supplied:
+
+- `--status`.
+- `--provider-status`.
+- `--started-at`.
+- `--period-starts-at`.
+- `--period-ends-at`.
+- `--provider-updated-at`.
+
+This requirement prevents the command from synthesizing lifecycle state for an existing subscription.
 The optional expected-renewal and end timestamps MAY remain absent.
 
 When `--subscription-id` is omitted, absent snapshot options MUST use these creation defaults:
@@ -83,11 +98,9 @@ When `--subscription-id` is omitted, absent snapshot options MUST use these crea
 - period end is 31 days after the captured operation time.
 - expected renewal and subscription end are absent.
 
-The command MUST use a new-target selection when `--subscription-id` is omitted and an internal-target selection containing the supplied subscription identifier otherwise.
-
 ### `ffun benefits apply-one-time-purchase`
 
-Applies one complete purchase snapshot and its benefit parameters through `ffun.benefits.apply_one_time_purchase_transaction`.
+Applies one complete purchase snapshot and its benefit parameters through the benefits domain workflow.
 
 Parameters:
 
@@ -104,7 +117,14 @@ Parameters:
 
 Purchase status names MUST be the normalized names defined by the one-time-purchases module.
 
-When `--one-time-purchase-id` is supplied, `--status`, `--provider-status`, `--purchased-at`, and `--provider-updated-at` MUST also be supplied so the command cannot synthesize lifecycle state for an existing purchase.
+When `--one-time-purchase-id` is supplied, the following options MUST also be supplied:
+
+- `--status`.
+- `--provider-status`.
+- `--purchased-at`.
+- `--provider-updated-at`.
+
+This requirement prevents the command from synthesizing lifecycle state for an existing purchase.
 
 When `--one-time-purchase-id` is omitted, absent snapshot options MUST use these creation defaults:
 
@@ -112,9 +132,15 @@ When `--one-time-purchase-id` is omitted, absent snapshot options MUST use these
 - provider status is the selected normalized status name.
 - purchase time and provider update are the captured operation time.
 
-The command MUST use a new-target selection when `--one-time-purchase-id` is omitted and an internal-target selection containing the supplied one-time purchase identifier otherwise.
-
 ## Integration boundary
 
-Both commands MUST invoke the corresponding public `ffun.benefits.domain` workflow.
-They MUST NOT persist purchased states or entitlement changes directly or reproduce benefit-template materialization, transaction idempotency, stale-snapshot handling, audit, or business-event behavior.
+Both commands MUST use the benefits module's public domain boundary for purchased-state application.
+They MUST NOT:
+
+- persist purchased states directly.
+- persist entitlement changes directly.
+- reproduce benefit-template materialization.
+- reproduce transaction idempotency.
+- reproduce stale-snapshot handling.
+- reproduce audit behavior.
+- reproduce business-event behavior.
