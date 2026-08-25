@@ -149,10 +149,32 @@ Out-of-scope statements SHOULD be limited to adjacent responsibilities that are 
 A module specification MUST NOT catalogue public operations or name functions, classes, enums, exceptions, callbacks, arguments, or private implementation components.
 It MUST NOT specify signatures, parameter lists, return shapes, transaction-context protocols, or whether behavior is exposed through any particular programming-language construct.
 
-Entity field inventories, data-transfer shapes, identifier representations, serialization formats, stable numeric enum values, database-oriented identifiers, string formats, size limits, and validation expressions MUST be omitted.
+A module specification MUST omit the following implementation details:
+
+- entity field inventories.
+- data-transfer shapes.
+- identifier representations.
+- serialization formats.
+- stable numeric enum values.
+- database-oriented identifiers.
+- string formats.
+- size limits.
+- validation expressions.
+
 The specification MUST describe the domain distinction or validity rule they serve instead.
 
-Tables, columns, indexes, constraints, migrations, row shapes, persistence-operation sequences, algorithms, and data structures MUST NOT appear in a module specification.
+The following implementation details MUST NOT appear in a module specification:
+
+- tables.
+- columns.
+- indexes.
+- constraints.
+- migrations.
+- row shapes.
+- persistence-operation sequences.
+- algorithms.
+- data structures.
+
 The specification also MUST NOT prescribe transaction, locking, retry, or event-delivery orchestration even when the current implementation uses those mechanisms.
 
 Audit records and business events MUST be specified only as semantic effects when they are part of observable behavior.
