@@ -196,14 +196,7 @@ Retrieval MUST have no domain effects and MUST NOT produce audit evidence or bus
 
 ## Audit records
 
-Every subscription creation or business-state change MUST produce durable audit evidence of:
-
-- who initiated the change.
-- the affected user.
-- the causal benefit transaction.
-- the complete previous and resulting subscription state needed to understand the change.
-
-Creation MUST be represented as having no previous state.
+Every subscription creation or business-state change MUST produce durable audit evidence explaining the authorized subscription transition and its benefit-transaction causality.
 
 The subscription change and its audit evidence MUST succeed or fail together.
 A failed change MUST leave both the prior subscription state and its audit history unchanged.
@@ -217,8 +210,7 @@ The following cases MUST NOT produce audit evidence:
 
 ## Business events
 
-Every successful subscription creation or business-state change MUST notify consumers of the resulting subscription state for the affected user and its causal benefit transaction.
-The notification MUST distinguish creation from replacement and preserve the previous normalized status needed to interpret the transition.
+Every successful subscription creation or business-state change MUST notify consumers of the subscription transition.
 
 Notification MUST occur only after the subscription state and required audit evidence are durable.
 The following cases MUST NOT produce notification:
