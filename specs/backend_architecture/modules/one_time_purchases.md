@@ -177,14 +177,7 @@ Retrieval MUST have no domain effects and MUST NOT produce audit evidence or bus
 
 ## Audit records
 
-Every purchase creation or business-state change MUST produce durable audit evidence of:
-
-- who initiated the change.
-- the affected user.
-- the causal benefit transaction.
-- the complete previous and resulting purchase state needed to understand the change.
-
-Creation MUST be represented as having no previous state.
+Every purchase creation or business-state change MUST produce durable audit evidence sufficient to explain the accepted purchase-state change.
 
 The purchase change and its audit evidence MUST succeed or fail together.
 A failed change MUST leave both the prior purchase state and its audit history unchanged.
@@ -199,8 +192,7 @@ The following cases MUST NOT produce audit evidence:
 
 ## Business events
 
-Every successful purchase creation or business-state change MUST notify consumers of the resulting purchase state for the affected user and its causal benefit transaction.
-The notification MUST distinguish creation from replacement and preserve the previous normalized status needed to interpret the transition.
+Every successful purchase creation or business-state change MUST notify consumers of the purchase-state change.
 
 Notification MUST occur only after the purchase state and required audit evidence are durable.
 The following cases MUST NOT produce notification:
