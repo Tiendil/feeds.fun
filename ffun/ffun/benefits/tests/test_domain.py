@@ -906,7 +906,7 @@ class TestApplySubscriptionTransaction:
         current_snapshot = original_snapshot.replace(
             benefit_id=current_package.id,
             status=SubscriptionStatusId.ended,
-            provider_status="canceled",
+            provider_status=ProviderStatus("canceled"),
             ends_at=application_started_at,
             provider_updated_at=original_snapshot.provider_updated_at + datetime.timedelta(seconds=1),
         )
@@ -1128,7 +1128,7 @@ class TestApplySubscriptionTransaction:
         current_grant = await _apply(current_snapshot, make_transaction_command())
         stale_snapshot = current_snapshot.replace(
             status=SubscriptionStatusId.ended,
-            provider_status="canceled",
+            provider_status=ProviderStatus("canceled"),
             provider_updated_at=current_snapshot.provider_updated_at - datetime.timedelta(seconds=1),
         )
         stale_command = make_transaction_command(target=InternalTarget(internal_id=current_grant.target_id))
@@ -1228,7 +1228,7 @@ class TestApplySubscriptionTransaction:
         grant = await _apply(snapshot, make_transaction_command())
         updated_snapshot = snapshot.replace(
             status=SubscriptionStatusId.ended,
-            provider_status="canceled",
+            provider_status=ProviderStatus("canceled"),
             provider_updated_at=snapshot.provider_updated_at + datetime.timedelta(seconds=1),
         )
         command = make_transaction_command(target=InternalTarget(internal_id=grant.target_id))
