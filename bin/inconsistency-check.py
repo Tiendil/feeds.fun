@@ -47,7 +47,7 @@ PROJECT_ROOT = Path(__file__).resolve().parents[1]
 CONFIG_PATH = PROJECT_ROOT / "consistency.toml"
 TASKWARRIOR_BIN = "task"
 VALID_CHECK_STATUSES = {"unchecked", "consistent", "inconsistent", "outdated"}
-VALID_PAIR_OPERATIONS = {"queued", "checked", "marked", "status_changed"}
+VALID_PAIR_OPERATIONS = {"queued", "dispatched", "checked", "marked", "status_changed"}
 
 
 @dataclass(frozen=True)
@@ -2549,17 +2549,17 @@ def start_child_checker(prepared: PreparedChildCheck) -> RunningChildCheck:
             f"{pair_subject}: {format_argv(command)}: {error}"
         ) from error
 
+    running = RunningChildCheck(
+        prepared=prepared,
+        argv=command,
+        process=process,
+        stdout_path=stdout_path,
+        stderr_path=stderr_path,
+        started_at=time.monotonic(),
+    )
+
     if process.stdin is None:
-        kill_running_child(
-            RunningChildCheck(
-                prepared=prepared,
-                argv=command,
-                process=process,
-                stdout_path=stdout_path,
-                stderr_path=stderr_path,
-                started_at=time.monotonic(),
-            )
-        )
+        kill_running_child(running)
         raise CheckerFailureError(
             f"{prepared.agent_name} child Codex checker stdin was unavailable for {pair_subject}"
         )
@@ -2568,28 +2568,26 @@ def start_child_checker(prepared: PreparedChildCheck) -> RunningChildCheck:
         process.stdin.write(prepared.prompt)
         process.stdin.close()
     except OSError as error:
-        kill_running_child(
-            RunningChildCheck(
-                prepared=prepared,
-                argv=command,
-                process=process,
-                stdout_path=stdout_path,
-                stderr_path=stderr_path,
-                started_at=time.monotonic(),
-            )
-        )
+        kill_running_child(running)
         raise CheckerFailureError(
             f"writing {prepared.agent_name} child Codex checker prompt failed for {pair_subject}: {error}"
         ) from error
 
-    return RunningChildCheck(
-        prepared=prepared,
-        argv=command,
-        process=process,
-        stdout_path=stdout_path,
-        stderr_path=stderr_path,
-        started_at=time.monotonic(),
-    )
+    status = normalized_check_status(prepared.current_pair.record)
+
+    try:
+        record_pair_operation(
+            prepared.current_pair.identity,
+            operation="dispatched",
+            previous_status=status,
+            next_status=status,
+            source=prepared.agent_name,
+        )
+    except CheckerFailureError:
+        kill_running_child(running)
+        raise
+
+    return running
 
 
 def child_checker_timed_out(running: RunningChildCheck) -> bool:
@@ -3502,23 +3500,44 @@ def list_pairs(args: argparse.Namespace) -> ExitCode:
     return ExitCode.SUCCESS
 
 
-def format_pair_operation(record: PairOperation) -> str:
-    previous_status = record.previous_status or "(none)"
-
-    return " | ".join(
+def build_pair_operations_report(operations: Iterable[PairOperation]) -> str:
+    operation_records = list(operations)
+    headers = [
+        "occurred at",
+        "operation",
+        "previous status",
+        "next status",
+        "source",
+        "changed file",
+        "relation",
+        "related file",
+    ]
+    operation_rows = [
         [
             record.occurred_at,
             record.operation,
-            f"{previous_status}->{record.next_status}",
+            record.previous_status or "(none)",
+            record.next_status,
             record.source,
-            f"{record.changed_path} -> {record.related_path} [{record.relation}]",
+            record.changed_path,
+            record.relation,
+            record.related_path,
         ]
-    )
-
-
-def build_pair_operations_report(operations: Iterable[PairOperation]) -> str:
-    operation_records = list(operations)
-    lines = [format_pair_operation(record) for record in operation_records]
+        for record in operation_records
+    ]
+    table_rows = [headers, *operation_rows]
+    column_widths = [
+        max(len(value) for value in column)
+        for column in zip(*table_rows, strict=True)
+    ]
+    lines = [
+        " | ".join(
+            value.ljust(width)
+            for value, width in zip(row, column_widths, strict=True)
+        )
+        for row in table_rows
+    ]
+    lines.insert(1, " | ".join("-" * width for width in column_widths))
 
     if lines:
         lines.append("")
@@ -4201,6 +4220,17 @@ def run_self_check() -> ExitCode:
         ),
         PairOperation(
             occurred_at="2026-01-01T00:00:02+00:00",
+            operation="dispatched",
+            pair_key="self-check-operation-2",
+            changed_path="@/self-check/second-operation-changed.py",
+            related_path="@/self-check/second-operation-related.md",
+            relation=allowed_relation,
+            previous_status="unchecked",
+            next_status="unchecked",
+            source="reviewer",
+        ),
+        PairOperation(
+            occurred_at="2026-01-01T00:00:03+00:00",
             operation="checked",
             pair_key="self-check-operation-2",
             changed_path="@/self-check/second-operation-changed.py",
@@ -4211,7 +4241,7 @@ def run_self_check() -> ExitCode:
             source="validator",
         ),
         PairOperation(
-            occurred_at="2026-01-01T00:00:03+00:00",
+            occurred_at="2026-01-01T00:00:04+00:00",
             operation="status_changed",
             pair_key="self-check-operation-2",
             changed_path="@/self-check/second-operation-changed.py",
@@ -4226,18 +4256,69 @@ def run_self_check() -> ExitCode:
     for operation_record in self_check_operations:
         append_pair_operation_record(self_check_operation_log, operation_record)
 
-    recent_self_check_operations = load_pair_operations(self_check_operation_log, last=3)
+    recent_self_check_operations = load_pair_operations(self_check_operation_log, last=4)
     assert_self_check(
         recent_self_check_operations == list(self_check_operations[-3:]),
         "operation log must retain the requested tail in chronological order",
     )
     operation_report = build_pair_operations_report(recent_self_check_operations)
+    report_lines = operation_report.splitlines()
+    rendered_header_columns = report_lines[0].split(" | ")
+    separator_columns = report_lines[1].split(" | ")
+    header_columns = [value.strip() for value in rendered_header_columns]
+    operation_lines = report_lines[2 : len(recent_self_check_operations) + 2]
+    operation_columns = [line.split(" | ") for line in operation_lines]
+    table_columns = [rendered_header_columns, *operation_columns]
     assert_self_check(
-        operation_report.startswith("2026-01-01T00:00:01+00:00 | marked | unchecked->inconsistent"),
-        "operation report must show time, operation, and status transition",
+        header_columns
+        == [
+            "occurred at",
+            "operation",
+            "previous status",
+            "next status",
+            "source",
+            "changed file",
+            "relation",
+            "related file",
+        ],
+        "operation report must show the expected column headers",
     )
     assert_self_check(
-        operation_report.endswith("operations: 3"),
+        all(
+            separator == "-" * len(header)
+            for separator, header in zip(separator_columns, rendered_header_columns, strict=True)
+        ),
+        "operation report must separate its header from its body with a width-aligned line",
+    )
+    assert_self_check(
+        operation_columns[0][0] == "2026-01-01T00:00:01+00:00"
+        and operation_columns[0][1].strip() == "marked"
+        and operation_columns[0][2].strip() == "unchecked"
+        and operation_columns[0][3].strip() == "inconsistent",
+        "operation report must show time, operation, previous status, and next status separately",
+    )
+    assert_self_check(
+        operation_columns[0][5].strip() == "@/self-check/operation-changed.py"
+        and operation_columns[0][6].strip() == allowed_relation
+        and operation_columns[0][7].strip() == "@/self-check/operation-related.md",
+        "operation report must show changed file, relation, and related file separately",
+    )
+    assert_self_check(
+        operation_columns[1][1].strip() == "dispatched"
+        and operation_columns[1][2].strip() == "unchecked"
+        and operation_columns[1][3].strip() == "unchecked"
+        and operation_columns[1][4].strip() == "reviewer",
+        "operation report must show a same-status agent dispatch",
+    )
+    assert_self_check(
+        all(
+            len({len(columns[column_index]) for columns in table_columns}) == 1
+            for column_index in range(len(header_columns))
+        ),
+        "operation report columns must use widths derived from the headers and selected operations",
+    )
+    assert_self_check(
+        operation_report.endswith("operations: 4"),
         "operation report must show the selected operation count",
     )
     self_check_operation_log.write_text("{not json}\n", encoding="utf-8")
