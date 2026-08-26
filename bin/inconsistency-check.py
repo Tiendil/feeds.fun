@@ -2157,6 +2157,37 @@ def artifact_statuses(
     return result
 
 
+def scheduling_component_depths(graphs: DependencyGraphs) -> dict[GraphComponent, int]:
+    predecessors: dict[GraphComponent, set[GraphComponent]] = {
+        component: set() for component in graphs.scheduling_components
+    }
+
+    for source, target in graphs.scheduling_edges:
+        predecessors[target].add(source)
+
+    depths: dict[GraphComponent, int] = {}
+    pending = set(graphs.scheduling_components)
+
+    while pending:
+        ready = sorted(component for component in pending if predecessors[component].issubset(depths))
+
+        if not ready:
+            pending_text = ", ".join(path for component in sorted(pending) for path in component)
+            raise CheckerFailureError(f"dependency components have no topological order: {pending_text}")
+
+        for component in ready:
+            component_predecessors = predecessors[component]
+            depths[component] = (
+                max(depths[predecessor] for predecessor in component_predecessors) + 1
+                if component_predecessors
+                else 0
+            )
+
+        pending.difference_update(ready)
+
+    return depths
+
+
 def select_frontier(
     graphs: DependencyGraphs,
     current_pairs: Iterable[CurrentPair],
@@ -2204,11 +2235,15 @@ def select_frontier(
         for component, status in component_statuses.items()
         if status in {"unchecked", "inconsistent"}
     }
+    component_depths = scheduling_component_depths(graphs)
     frontier_components = tuple(
         sorted(
-            component
-            for component in pending_components
-            if all(component_statuses[predecessor] == "resolved" for predecessor in all_predecessors(component))
+            (
+                component
+                for component in pending_components
+                if all(component_statuses[predecessor] == "resolved" for predecessor in all_predecessors(component))
+            ),
+            key=lambda component: (component_depths[component], component),
         )
     )
 
@@ -3805,6 +3840,49 @@ def run_dependency_scheduler_self_checks() -> None:
     assert_self_check(
         frontier_files(select_frontier(independent_graph, independent_pairs)) == tuple(sorted((root, independent))),
         "independent roots must share a frontier",
+    )
+
+    shallow_spec = "@/specs/shallow.md"
+    deep_code = "@/ffun/deep.py"
+    mixed_depth_graph = build_dependency_graphs(
+        [root, middle, shallow_spec, deep_code],
+        {
+            root: [],
+            middle: [root],
+            shallow_spec: [root],
+            deep_code: [middle],
+        },
+    )
+    mixed_depth_pairs = [
+        synthetic_current_pair(root, status="consistent"),
+        synthetic_current_pair(middle, status="consistent"),
+        synthetic_current_pair(shallow_spec, status="inconsistent"),
+        synthetic_current_pair(deep_code, status="inconsistent"),
+    ]
+    mixed_depth_selection = select_frontier(mixed_depth_graph, mixed_depth_pairs)
+    mixed_depth_ordered_pairs = ordered_frontier_pairs(mixed_depth_selection, mixed_depth_pairs)
+    assert_self_check(
+        frontier_files(mixed_depth_selection) == tuple(sorted((shallow_spec, deep_code))),
+        "ready artifacts from different dependency depths must share a frontier",
+    )
+    assert_self_check(
+        mixed_depth_selection.frontier_components == ((shallow_spec,), (deep_code,)),
+        "shallower frontier components must precede deeper components before lexical ordering",
+    )
+    assert_self_check(
+        first_frontier_pair_with_status(mixed_depth_ordered_pairs, "inconsistent")
+        == mixed_depth_pairs[2],
+        "a shallower inconsistency must be selected before a deeper inconsistency",
+    )
+    assert_self_check(
+        next_frontier_candidate(
+            mixed_depth_ordered_pairs,
+            set(),
+            agent_jobs=get_config().agent_jobs,
+            stop_launching=False,
+        )
+        == mixed_depth_pairs[2],
+        "shallower frontier work must launch before deeper frontier work",
     )
 
     left = "@/changed/left"
