@@ -1781,11 +1781,15 @@ def write_task_record(
     return raw_record_to_check_record(raw_record)
 
 
-def upsert_unchecked_record(identity: PairIdentity) -> CheckRecord:
-    raw_record = find_raw_record_by_pair_key(load_taskwarrior_records(), identity.pair_key)
+def upsert_unchecked_record(
+    identity: PairIdentity,
+    records_by_pair_key: dict[str, CheckRecord],
+) -> CheckRecord:
+    existing = records_by_pair_key.get(identity.pair_key)
 
-    if raw_record is None:
+    if existing is None:
         record = write_task_record(identity, uuid=None, check_status="unchecked", report="", checked_at="")
+        records_by_pair_key[identity.pair_key] = record
         record_pair_operation(
             identity,
             operation="queued",
@@ -1797,30 +1801,29 @@ def upsert_unchecked_record(identity: PairIdentity) -> CheckRecord:
 
         return record
 
-    existing = raw_record_to_check_record(raw_record)
     existing_status = existing.check_status or "unchecked"
     should_reset_outdated = existing_status == "outdated"
-    next_status = "unchecked" if should_reset_outdated else existing_status
-    next_report = "" if should_reset_outdated else existing.report
-    next_checked_at = "" if should_reset_outdated else existing.checked_at
+
+    if not should_reset_outdated:
+        return existing
 
     record = write_task_record(
         identity,
         uuid=existing.uuid,
-        check_status=next_status,
-        report=next_report,
-        checked_at=next_checked_at,
+        check_status="unchecked",
+        report="",
+        checked_at="",
     )
+    records_by_pair_key[identity.pair_key] = record
 
-    if should_reset_outdated:
-        record_pair_operation(
-            identity,
-            operation="status_changed",
-            previous_status="outdated",
-            next_status="unchecked",
-            source="reconciliation",
-        )
-        log_pair_state_change(identity, "outdated", "unchecked")
+    record_pair_operation(
+        identity,
+        operation="status_changed",
+        previous_status="outdated",
+        next_status="unchecked",
+        source="reconciliation",
+    )
+    log_pair_state_change(identity, "outdated", "unchecked")
 
     return record
 
@@ -1993,7 +1996,8 @@ def set_relation_pair_check_status(
         raise CheckerFailureError(f"unsupported explicit check status: {check_status}")
 
     identity = build_pair_identity(pair)
-    upsert_unchecked_record(identity)
+    existing_records = load_allowed_check_records()
+    upsert_unchecked_record(identity, {record.pair_key: record for record in existing_records})
     normalized_report = "" if check_status == "unchecked" else normalize_explicit_report(check_status, report)
     checked_at = "" if check_status == "unchecked" else utc_timestamp()
     record = update_check_record(
@@ -2015,6 +2019,7 @@ def set_relation_pair_check_status(
 def reconcile_queue(pairs: list[RelationPair]) -> list[CurrentPair]:
     current_pairs: list[CurrentPair] = []
     existing_records = load_allowed_check_records()
+    records_by_pair_key = {record.pair_key: record for record in existing_records}
     skipped_missing = 0
     superseded_records = 0
 
@@ -2032,7 +2037,7 @@ def reconcile_queue(pairs: list[RelationPair]) -> list[CurrentPair]:
             )
             continue
 
-        record = upsert_unchecked_record(identity)
+        record = upsert_unchecked_record(identity, records_by_pair_key)
         superseded_records += mark_superseded_pair_versions(identity, existing_records)
         current_pairs.append(CurrentPair(pair=pair, identity=identity, record=record))
 
@@ -2631,6 +2636,10 @@ def finish_child_checker(running: RunningChildCheck) -> str:
 
 def utc_timestamp() -> str:
     return datetime.now(UTC).isoformat()
+
+
+def local_timestamp(timestamp: str) -> str:
+    return datetime.fromisoformat(timestamp).astimezone().isoformat()
 
 
 def malformed_child_error(agent_name: str, reason: str, output: str) -> CheckerFailureError:
@@ -3514,7 +3523,7 @@ def build_pair_operations_report(operations: Iterable[PairOperation]) -> str:
     ]
     operation_rows = [
         [
-            record.occurred_at,
+            local_timestamp(record.occurred_at),
             record.operation,
             record.previous_status or "(none)",
             record.next_status,
@@ -4291,7 +4300,7 @@ def run_self_check() -> ExitCode:
         "operation report must separate its header from its body with a width-aligned line",
     )
     assert_self_check(
-        operation_columns[0][0] == "2026-01-01T00:00:01+00:00"
+        operation_columns[0][0] == local_timestamp("2026-01-01T00:00:01+00:00")
         and operation_columns[0][1].strip() == "marked"
         and operation_columns[0][2].strip() == "unchecked"
         and operation_columns[0][3].strip() == "inconsistent",
@@ -4488,11 +4497,17 @@ def run_self_check() -> ExitCode:
         has_unchecked_pair(current_pairs),
         "one processed pair must leave later unchecked pairs for exit 20",
     )
+    preserved_raw_record_before = find_raw_record_by_pair_key(load_taskwarrior_records(), consistent_pair.identity.pair_key)
     preserved_pairs = reconcile_queue([pair, second_pair])
+    preserved_raw_record_after = find_raw_record_by_pair_key(load_taskwarrior_records(), consistent_pair.identity.pair_key)
     preserved_record = next(
         item.record for item in preserved_pairs if item.identity.pair_key == consistent_pair.identity.pair_key
     )
     assert_self_check(preserved_record.check_status == "consistent", "unchanged pair key must preserve cached status")
+    assert_self_check(
+        preserved_raw_record_before == preserved_raw_record_after,
+        "unchanged pair reconciliation must not rewrite its Taskwarrior record",
+    )
     inconsistent_pair = update_record_from_reviewer_output(
         consistent_pair,
         validator_report=validator_report,
