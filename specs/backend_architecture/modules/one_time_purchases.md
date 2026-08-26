@@ -48,7 +48,6 @@ The module MUST NOT independently:
 
 - infer provider-side state transitions.
 - derive benefit identity from provider products.
-- persist benefit details or parameters.
 - apply entitlement grants.
 - define resource limits.
 - make access decisions.
@@ -104,7 +103,6 @@ Every purchase state MUST establish when the purchase originated according to th
 Both times MUST identify unambiguous instants, and the purchase time MUST precede the project's stable lifetime interval-end marker.
 
 The purchase's applicable interval MUST begin at its purchase time and end at the project's stable lifetime interval-end marker.
-Those boundaries MUST be derived from the purchase state and MUST NOT be independently supplied or retained as additional state.
 A benefit transaction's effective time MUST NOT replace the purchase time as the interval start.
 
 ## Domain behavior
