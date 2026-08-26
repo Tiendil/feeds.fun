@@ -130,6 +130,10 @@ The `sync-queue` command performs mode-aware queue reconciliation without proces
 current files and whose oriented relation is still returned by `depmesh`; this current-only view does not mutate the
 queue.
 
+`list-operations` shows the latest pair operations in chronological order. The history records queue creation,
+completed child checks, explicit status marks, and automatic status changes. It remains available when queue records
+are cleared.
+
 Main commands:
 
 - `python ./bin/inconsistency-check.py enqueue @/path/to/file` — manually add one file and all configured depmesh relation pairs for that file to the isolated queue.
@@ -137,16 +141,18 @@ Main commands:
 - `python ./bin/inconsistency-check.py enqueue-changed` — enqueue all relation pairs for files changed relative to `main` without processing unchecked pairs or spawning child checkers.
 - `python ./bin/inconsistency-check.py sync-queue` — reconcile the mode-eligible queue without processing pairs.
 - `python ./bin/inconsistency-check.py list-pairs --current` — show only current-checksum records for relations still returned by `depmesh`.
+- `python ./bin/inconsistency-check.py list-operations --last 20` — show the latest pair operations oldest-to-newest within the selected tail.
 - `python ./bin/inconsistency-check.py progress --file @/path/to/file` — show queued records where the file is either the changed side or the related side.
 - `python ./bin/inconsistency-check.py mark-consistent --changed @/changed --related @/related --relation <relation>` — explicitly mark the current-checksum relation pair as consistent.
 - `python ./bin/inconsistency-check.py mark-unchecked --changed @/changed --related @/related --relation <relation>` — reset the current-checksum relation pair to unchecked, clear its previous reviewer result, and require checker reevaluation.
 - `python ./bin/inconsistency-check.py mark-inconsistent --changed @/changed --related @/related --relation <relation> --report "<markdown>"` — explicitly mark the current-checksum relation pair as inconsistent.
-- `python ./bin/inconsistency-check.py clear-queue` — delete all records from the isolated relation-pair queue.
+- `python ./bin/inconsistency-check.py clear-queue` — delete all records from the isolated relation-pair queue without deleting pair-operation history.
 - `python ./bin/inconsistency-check.py run-cycle` — reconcile the queue and process one mode-eligible dependency frontier.
 - `python ./bin/inconsistency-check.py process-queue` — process one mode-eligible dependency frontier.
 - `python ./bin/inconsistency-check.py self-check` — run deterministic script verification without spawning a child Codex checker.
 
 The script stores its relation-pair queue and runtime files only under `@/.session/inconsistency-check/`.
+Structured pair-operation history is stored in `@/.session/inconsistency-check/operations.jsonl`.
 
 ### `ast-grep`
 

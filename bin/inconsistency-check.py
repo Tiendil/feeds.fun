@@ -13,7 +13,8 @@ Project journal logging belongs in ``log_project_journal``. Relation-pair
 queue records must use the isolated Taskwarrior database under
 ``.session/inconsistency-check``; project journal entries must use
 ``bin/taskwarior.sh`` through ``log_project_journal`` and carry the
-``+consistency`` tag.
+``+consistency`` tag. Structured pair-operation history is stored separately
+in ``.session/inconsistency-check/operations.jsonl``.
 """
 
 # TODO: depmesh does not support missed files detection => we may miss some inconsistencies
@@ -31,7 +32,7 @@ import subprocess  # noqa: S404
 import sys
 import time
 import tomllib
-from collections import Counter
+from collections import Counter, deque
 from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass
 from datetime import UTC, datetime
@@ -46,6 +47,7 @@ PROJECT_ROOT = Path(__file__).resolve().parents[1]
 CONFIG_PATH = PROJECT_ROOT / "consistency.toml"
 TASKWARRIOR_BIN = "task"
 VALID_CHECK_STATUSES = {"unchecked", "consistent", "inconsistent", "outdated"}
+VALID_PAIR_OPERATIONS = {"queued", "checked", "marked", "status_changed"}
 
 
 @dataclass(frozen=True)
@@ -89,6 +91,7 @@ class RuntimePaths:
     prompt_dir: Path
     schema_dir: Path
     self_check_dir: Path
+    operation_log_path: Path
 
 
 ACTIVE_CONFIG: ConsistencyConfig | None = None
@@ -148,6 +151,19 @@ class CheckRecord:
     check_status: str
     report: str
     checked_at: str
+
+
+@dataclass(frozen=True)
+class PairOperation:
+    occurred_at: str
+    operation: str
+    pair_key: str
+    changed_path: str
+    related_path: str
+    relation: str
+    previous_status: str
+    next_status: str
+    source: str
 
 
 @dataclass(frozen=True)
@@ -607,6 +623,7 @@ def runtime_paths() -> RuntimePaths:
         prompt_dir=runtime_dir / "prompts",
         schema_dir=runtime_dir / "schemas",
         self_check_dir=runtime_dir / "self-check",
+        operation_log_path=runtime_dir / "operations.jsonl",
     )
 
 
@@ -1411,6 +1428,151 @@ def log_pair_state_change(identity: PairIdentity, previous_status: str, next_sta
     )
 
 
+def pair_operation_values(record: PairOperation) -> dict[str, str]:
+    return {
+        "occurred_at": record.occurred_at,
+        "operation": record.operation,
+        "pair_key": record.pair_key,
+        "changed_path": record.changed_path,
+        "related_path": record.related_path,
+        "relation": record.relation,
+        "previous_status": record.previous_status,
+        "next_status": record.next_status,
+        "source": record.source,
+    }
+
+
+def raw_pair_operation(record: dict[str, Any], *, context: str) -> PairOperation:
+    expected_fields = {
+        "occurred_at",
+        "operation",
+        "pair_key",
+        "changed_path",
+        "related_path",
+        "relation",
+        "previous_status",
+        "next_status",
+        "source",
+    }
+
+    if set(record) != expected_fields:
+        missing = ", ".join(sorted(expected_fields - set(record))) or "(none)"
+        unexpected = ", ".join(sorted(set(record) - expected_fields)) or "(none)"
+        raise CheckerFailureError(
+            f"{context}: operation fields differ; missing: {missing}; unexpected: {unexpected}"
+        )
+
+    if any(not isinstance(record[field], str) for field in expected_fields):
+        raise CheckerFailureError(f"{context}: every operation field must be a string")
+
+    operation = PairOperation(
+        occurred_at=record["occurred_at"],
+        operation=record["operation"],
+        pair_key=record["pair_key"],
+        changed_path=record["changed_path"],
+        related_path=record["related_path"],
+        relation=record["relation"],
+        previous_status=record["previous_status"],
+        next_status=record["next_status"],
+        source=record["source"],
+    )
+
+    if operation.operation not in VALID_PAIR_OPERATIONS:
+        raise CheckerFailureError(f"{context}: unsupported operation: {operation.operation!r}")
+
+    if operation.previous_status and operation.previous_status not in VALID_CHECK_STATUSES:
+        raise CheckerFailureError(f"{context}: unsupported previous status: {operation.previous_status!r}")
+
+    if operation.next_status not in VALID_CHECK_STATUSES:
+        raise CheckerFailureError(f"{context}: unsupported next status: {operation.next_status!r}")
+
+    required_values = {
+        "occurred_at": operation.occurred_at,
+        "pair_key": operation.pair_key,
+        "changed_path": operation.changed_path,
+        "related_path": operation.related_path,
+        "relation": operation.relation,
+        "source": operation.source,
+    }
+
+    for field, value in required_values.items():
+        if not value or single_line(value) != value:
+            raise CheckerFailureError(f"{context}: {field} must be a non-empty single-line string")
+
+    return operation
+
+
+def append_pair_operation_record(path: Path, record: PairOperation) -> None:
+    raw_pair_operation(pair_operation_values(record), context="writing pair operation")
+    serialized = json.dumps(pair_operation_values(record), separators=(",", ":"), sort_keys=True) + "\n"
+
+    try:
+        path.parent.mkdir(parents=True, exist_ok=True)
+
+        with path.open("a", encoding="utf-8") as operation_log:
+            operation_log.write(serialized)
+    except OSError as error:
+        raise CheckerFailureError(f"writing pair-operation log failed: {path}: {error}") from error
+
+
+def record_pair_operation(
+    identity: PairIdentity,
+    *,
+    operation: str,
+    previous_status: str,
+    next_status: str,
+    source: str,
+) -> None:
+    record = PairOperation(
+        occurred_at=utc_timestamp(),
+        operation=operation,
+        pair_key=identity.pair_key,
+        changed_path=identity.changed_path,
+        related_path=identity.related_path,
+        relation=identity.relation,
+        previous_status=previous_status,
+        next_status=next_status,
+        source=source,
+    )
+    append_pair_operation_record(runtime_paths().operation_log_path, record)
+
+
+def load_pair_operations(path: Path, *, last: int) -> list[PairOperation]:
+    if last <= 0:
+        raise CheckerFailureError("list-operations --last must be positive")
+
+    if not path.is_file():
+        return []
+
+    recent_operations: deque[PairOperation] = deque(maxlen=last)
+
+    try:
+        with path.open(encoding="utf-8") as operation_log:
+            for line_number, line in enumerate(operation_log, start=1):
+                if not line.strip():
+                    continue
+
+                try:
+                    raw_record = json.loads(line)
+                except json.JSONDecodeError as error:
+                    raise CheckerFailureError(
+                        f"reading pair-operation log: invalid JSON on line {line_number}: {error}"
+                    ) from error
+
+                if not isinstance(raw_record, dict):
+                    raise CheckerFailureError(
+                        f"reading pair-operation log: JSON line {line_number} is not an object"
+                    )
+
+                recent_operations.append(
+                    raw_pair_operation(raw_record, context=f"reading pair-operation log line {line_number}")
+                )
+    except OSError as error:
+        raise CheckerFailureError(f"reading pair-operation log failed: {path}: {error}") from error
+
+    return list(recent_operations)
+
+
 def ensure_runtime_state() -> None:
     paths = runtime_paths()
     paths.runtime_dir.mkdir(parents=True, exist_ok=True)
@@ -1624,6 +1786,13 @@ def upsert_unchecked_record(identity: PairIdentity) -> CheckRecord:
 
     if raw_record is None:
         record = write_task_record(identity, uuid=None, check_status="unchecked", report="", checked_at="")
+        record_pair_operation(
+            identity,
+            operation="queued",
+            previous_status="",
+            next_status=record.check_status or "unchecked",
+            source="queue",
+        )
         log_pair_queued(identity, record.check_status or "unchecked")
 
         return record
@@ -1644,12 +1813,27 @@ def upsert_unchecked_record(identity: PairIdentity) -> CheckRecord:
     )
 
     if should_reset_outdated:
+        record_pair_operation(
+            identity,
+            operation="status_changed",
+            previous_status="outdated",
+            next_status="unchecked",
+            source="reconciliation",
+        )
         log_pair_state_change(identity, "outdated", "unchecked")
 
     return record
 
 
-def update_check_record(identity: PairIdentity, *, check_status: str, report: str, checked_at: str) -> CheckRecord:
+def update_check_record(
+    identity: PairIdentity,
+    *,
+    check_status: str,
+    report: str,
+    checked_at: str,
+    operation: str,
+    source: str,
+) -> CheckRecord:
     raw_record = find_raw_record_by_pair_key(load_taskwarrior_records(), identity.pair_key)
 
     if raw_record is None:
@@ -1663,6 +1847,13 @@ def update_check_record(identity: PairIdentity, *, check_status: str, report: st
         check_status=check_status,
         report=report,
         checked_at=checked_at,
+    )
+    record_pair_operation(
+        identity,
+        operation=operation,
+        previous_status=previous_status,
+        next_status=check_status,
+        source=source,
     )
     log_pair_state_change(identity, previous_status, check_status)
 
@@ -1706,6 +1897,13 @@ def mark_record_outdated(record: CheckRecord, reason: str) -> CheckRecord:
         check_status="outdated",
         report=record.report,
         checked_at=utc_timestamp(),
+    )
+    record_pair_operation(
+        identity,
+        operation="status_changed",
+        previous_status=record.check_status or "unchecked",
+        next_status="outdated",
+        source="reconciliation",
     )
     log_pair_state_change(identity, record.check_status or "unchecked", "outdated")
     log_project_journal("step", f"outdated pair detected for {record_journal_subject(record)}: {single_line(reason)}")
@@ -1803,6 +2001,8 @@ def set_relation_pair_check_status(
         check_status=check_status,
         report=normalized_report,
         checked_at=checked_at,
+        operation="marked",
+        source="explicit-command",
     )
     log_project_journal(
         "step",
@@ -2526,6 +2726,8 @@ def update_record_from_decision(
         check_status=check_status,
         report=report,
         checked_at=utc_timestamp(),
+        operation="checked",
+        source=decision_source,
     )
     log_project_journal(
         "step",
@@ -3300,6 +3502,42 @@ def list_pairs(args: argparse.Namespace) -> ExitCode:
     return ExitCode.SUCCESS
 
 
+def format_pair_operation(record: PairOperation) -> str:
+    previous_status = record.previous_status or "(none)"
+
+    return " | ".join(
+        [
+            record.occurred_at,
+            record.operation,
+            f"{previous_status}->{record.next_status}",
+            record.source,
+            f"{record.changed_path} -> {record.related_path} [{record.relation}]",
+        ]
+    )
+
+
+def build_pair_operations_report(operations: Iterable[PairOperation]) -> str:
+    operation_records = list(operations)
+    lines = [format_pair_operation(record) for record in operation_records]
+
+    if lines:
+        lines.append("")
+
+    lines.append(f"operations: {len(operation_records)}")
+
+    return "\n".join(lines)
+
+
+def list_operations(args: argparse.Namespace) -> ExitCode:
+    ensure_runtime_state()
+    last = int(args.last)
+    log_project_journal("step", f"list-operations command started last:{last}")
+    operations = load_pair_operations(runtime_paths().operation_log_path, last=last)
+    print(build_pair_operations_report(operations))
+
+    return ExitCode.SUCCESS
+
+
 def print_status_update(current_pair: CurrentPair) -> None:
     record = current_pair.record
     print("Updated relation pair status")
@@ -3415,6 +3653,16 @@ def reset_self_check_record(identity: PairIdentity) -> None:
     existing = raw_record_to_check_record(raw_record)
     previous_status = existing.check_status or "unchecked"
     write_task_record(identity, uuid=existing.uuid, check_status="unchecked", report="", checked_at="")
+
+    if previous_status != "unchecked":
+        record_pair_operation(
+            identity,
+            operation="status_changed",
+            previous_status=previous_status,
+            next_status="unchecked",
+            source="self-check",
+        )
+
     log_pair_state_change(identity, previous_status, "unchecked")
 
 
@@ -3926,6 +4174,86 @@ def run_self_check() -> ExitCode:
     assert_self_check(all(path.startswith("@/") for path in changed_files), "changed files must be artifact ids")
 
     paths = runtime_paths()
+    self_check_operation_log = paths.self_check_dir / "operations.jsonl"
+    self_check_operation_log.unlink(missing_ok=True)
+    self_check_operations = (
+        PairOperation(
+            occurred_at="2026-01-01T00:00:00+00:00",
+            operation="queued",
+            pair_key="self-check-operation-1",
+            changed_path="@/self-check/operation-changed.py",
+            related_path="@/self-check/operation-related.md",
+            relation=allowed_relation,
+            previous_status="",
+            next_status="unchecked",
+            source="queue",
+        ),
+        PairOperation(
+            occurred_at="2026-01-01T00:00:01+00:00",
+            operation="marked",
+            pair_key="self-check-operation-1",
+            changed_path="@/self-check/operation-changed.py",
+            related_path="@/self-check/operation-related.md",
+            relation=allowed_relation,
+            previous_status="unchecked",
+            next_status="inconsistent",
+            source="explicit-command",
+        ),
+        PairOperation(
+            occurred_at="2026-01-01T00:00:02+00:00",
+            operation="checked",
+            pair_key="self-check-operation-2",
+            changed_path="@/self-check/second-operation-changed.py",
+            related_path="@/self-check/second-operation-related.md",
+            relation=allowed_relation,
+            previous_status="unchecked",
+            next_status="consistent",
+            source="validator",
+        ),
+        PairOperation(
+            occurred_at="2026-01-01T00:00:03+00:00",
+            operation="status_changed",
+            pair_key="self-check-operation-2",
+            changed_path="@/self-check/second-operation-changed.py",
+            related_path="@/self-check/second-operation-related.md",
+            relation=allowed_relation,
+            previous_status="consistent",
+            next_status="outdated",
+            source="reconciliation",
+        ),
+    )
+
+    for operation_record in self_check_operations:
+        append_pair_operation_record(self_check_operation_log, operation_record)
+
+    recent_self_check_operations = load_pair_operations(self_check_operation_log, last=3)
+    assert_self_check(
+        recent_self_check_operations == list(self_check_operations[-3:]),
+        "operation log must retain the requested tail in chronological order",
+    )
+    operation_report = build_pair_operations_report(recent_self_check_operations)
+    assert_self_check(
+        operation_report.startswith("2026-01-01T00:00:01+00:00 | marked | unchecked->inconsistent"),
+        "operation report must show time, operation, and status transition",
+    )
+    assert_self_check(
+        operation_report.endswith("operations: 3"),
+        "operation report must show the selected operation count",
+    )
+    self_check_operation_log.write_text("{not json}\n", encoding="utf-8")
+
+    try:
+        load_pair_operations(self_check_operation_log, last=1)
+    except CheckerFailureError as error:
+        malformed_operation_error = str(error)
+    else:
+        raise CheckerFailureError("self-check failed: malformed operation JSON must fail")
+
+    assert_self_check(
+        "invalid JSON on line 1" in malformed_operation_error,
+        "malformed operation JSON must identify its line",
+    )
+    self_check_operation_log.unlink(missing_ok=True)
     changed_path = runtime_artifact_path("self-check", "changed.txt")
     related_path = runtime_artifact_path("self-check", "related.txt")
     second_related_path = runtime_artifact_path("self-check", "second-related.txt")
@@ -4223,6 +4551,19 @@ def run_self_check() -> ExitCode:
         explicitly_inconsistent_pair.record.report.startswith("## Manually marked inconsistent"),
         "explicit inconsistent reports without a section must be normalized",
     )
+    explicitly_inconsistent_pair = set_relation_pair_check_status(
+        pair,
+        check_status="inconsistent",
+        report="Manual self-check inconsistency note.",
+    )
+    latest_operation = load_pair_operations(paths.operation_log_path, last=1)[0]
+    assert_self_check(
+        latest_operation.operation == "marked"
+        and latest_operation.pair_key == changed_identity.pair_key
+        and latest_operation.previous_status == "inconsistent"
+        and latest_operation.next_status == "inconsistent",
+        "explicit same-status marks must remain visible in operation history",
+    )
     changed_report = build_progress_report(changed_path)
     related_report = build_progress_report(related_path)
     list_pairs_report = build_list_pairs_report(ListPairsOptions(statuses=("inconsistent",)))
@@ -4446,6 +4787,17 @@ def parse_args() -> argparse.Namespace:
         help="do not print the number of output records",
     )
 
+    list_operations_parser = subparsers.add_parser(
+        "list-operations",
+        help="list the latest pair operations in chronological order",
+    )
+    list_operations_parser.add_argument(
+        "--last",
+        type=int,
+        default=20,
+        help="number of latest operations to include; defaults to 20",
+    )
+
     mark_consistent_parser = subparsers.add_parser(
         "mark-consistent",
         help="explicitly mark one current-checksum relation pair as consistent",
@@ -4504,6 +4856,9 @@ def main() -> int:
 
         if args.command == "list-pairs":
             return int(list_pairs(args))
+
+        if args.command == "list-operations":
+            return int(list_operations(args))
 
         if args.command == "mark-consistent":
             return int(mark_pair_status(args, check_status="consistent"))
