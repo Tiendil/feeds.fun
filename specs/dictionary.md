@@ -20,6 +20,10 @@ Terms defined in this section are stable project vocabulary. Project artifacts M
 - `rule` - user-defined score expression based on tags.
 - `collection` - curated feed collection configuration.
 - `integration` - external source-specific behavior, such as YouTube or Reddit support.
+- `benefit parameter` - one named normalized whole-number value accepted by a benefit package template at materialization time.
+- `benefit package template` - the locally controlled definition from which one configured product benefit can be materialized.
+- `benefit package` - one concrete set of entitlement guarantees produced by materializing a benefit package template with normalized benefit parameters.
+- `package materialization` - deterministic validation and application of normalized benefit parameters to one configured benefit package template.
 - `entitlement guarantee` - one entitlement kind and integer value promised by a benefit package or another entitlement-granting product concept.
 - `benefit identifier` - a stable local non-empty identifier that selects one configured benefit package template.
 - `subscription identifier` - the internally generated UUID that identifies one provider-independent subscription projection.

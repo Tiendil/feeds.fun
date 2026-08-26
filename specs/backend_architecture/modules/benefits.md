@@ -16,10 +16,6 @@ The following adjacent concerns are outside the module's responsibility:
 
 ## Dictionary
 
-- `benefit parameter` - one named normalized whole-number value accepted by a benefit package template at materialization time.
-- `benefit package template` - the locally controlled definition from which one configured product benefit can be materialized.
-- `benefit package` - one concrete set of entitlement guarantees produced by materializing a benefit package template with normalized benefit parameters.
-- `package materialization` - deterministic validation and application of normalized benefit parameters to one configured benefit package template.
 - `transaction source identity` - the stable identity by which a source subsystem identifies one durable logical operation.
 - `transaction effective time` - the source-reported time associated with the operation recorded by a benefit transaction.
 - `entitlement action` - the provider-independent grant or revoke decision derived from a purchased state's normalized status.
