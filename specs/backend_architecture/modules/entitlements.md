@@ -50,13 +50,14 @@ The supported set is intentionally closed and consists of:
 
 A source entitlement is the durable record of one source's grant to one user for one entitlement kind, caused by one benefit transaction.
 Its stable identity combines the source, granting benefit transaction, user, and entitlement kind.
-Source entitlements with different identities MUST coexist, including future grants and multiple grants from one source.
+Source entitlements with different identities MUST coexist, including future grants and multiple grants from one source, when their establishment satisfies the value and effective-state validity rules below.
 
 A source entitlement MAY belong to one subscription, one one-time purchase, or no purchased-state owner, but MUST NOT belong to both owner kinds.
 Ownerless grants MAY represent explicitly supported administrative or system entitlements.
 A grant's meaning and purchased-state ownership MUST remain unchanged after establishment; correcting either requires a distinct grant.
 
-Every source-entitlement value MUST be a positive whole quantity.
+Every source-entitlement value MUST be a positive whole quantity no greater than `2**63 - 1`.
+This explicit upper bound is developer-approved because source and materialized effective values use a durable signed-64-bit contract; without it, a source change could establish source state whose required effective state cannot be represented atomically.
 A non-lifetime grant MUST have a finite effective period.
 A lifetime grant does not semantically expire.
 
@@ -91,6 +92,8 @@ An owner-scoped revocation MUST leave grants belonging to every other purchased-
 
 The effective state for one user and entitlement kind at any time MUST be derived from every source entitlement active at that time.
 Daily and monthly token entitlements MUST use the largest active grant value, while lifetime token entitlements MUST use the sum of all active grant values.
+The combined effective value MUST NOT exceed `2**63 - 1`.
+A source change whose required combined value would exceed that bound MUST fail without changing source state, effective state, or audit history.
 When no source entitlement is active, the entitlement MUST be not granted and have no effective value.
 
 Periods without an active source entitlement MUST be absent from the effective timeline.
