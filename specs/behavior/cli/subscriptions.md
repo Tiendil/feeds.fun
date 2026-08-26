@@ -8,7 +8,12 @@ This document describes the Feeds Fun CLI command family for inspecting locally 
 
 This specification covers the public `ffun subscriptions` command family and its inspection and debugging behavior.
 
-Subscription domain rules, provider communication, entitlement behavior, and other CLI command families are out of scope.
+The following concerns are out of scope:
+
+- subscription domain rules.
+- provider communication.
+- entitlement behavior.
+- other CLI command families.
 
 ## Command group
 
@@ -41,7 +46,19 @@ When one or more `--status` options are supplied, the command MUST return only s
 The `--alive` option MUST NOT be combined with `--status`.
 
 By default, the command MUST print a human-readable grid table with one row for every returned subscription in subscription-domain order.
-The table MUST contain the internal subscription identifier, benefit identifier, normalized and provider statuses, subscription start, current-period start, current-period end, expected-renewal, end, and provider-update timestamps.
+The table MUST contain:
+
+- the internal subscription identifier.
+- the benefit identifier.
+- the normalized status.
+- the provider status.
+- the subscription start timestamp.
+- the current-period start timestamp.
+- the current-period end timestamp.
+- the expected-renewal timestamp.
+- the end timestamp.
+- the provider-update timestamp.
+
 Missing expected-renewal and end timestamps MUST be rendered as `-`.
 
 When `--json` is supplied, the command MUST print one JSON object on its own line for every returned subscription in subscription-domain order.
@@ -64,4 +81,11 @@ Every JSON object MUST contain these fields:
 ## Integration boundary
 
 Subscription commands MUST invoke the public `ffun.subscriptions.domain` interface.
-They MUST NOT reproduce subscription identity, validation, freshness, replacement, audit, or business-event behavior.
+They MUST NOT reproduce:
+
+- subscription identity behavior.
+- subscription validation behavior.
+- subscription freshness behavior.
+- subscription replacement behavior.
+- subscription audit behavior.
+- subscription business-event behavior.
