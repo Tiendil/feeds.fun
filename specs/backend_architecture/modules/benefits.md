@@ -191,7 +191,8 @@ The transaction effective time MUST remain causal provenance and MUST NOT replac
 ### Transaction acceptance and idempotency
 
 The first accepted transaction for one transaction source identity MUST remain authoritative.
-Repeating that source identity MUST have no additional domain effect and MUST identify the previously accepted transaction and target, regardless of different data supplied by the repeated request.
+Repeating that source identity for the same purchased-state target kind MUST have no additional domain effect and MUST identify the previously accepted transaction and target, regardless of differences in other request data.
+Repeating that source identity for a different purchased-state target kind MUST fail without changing the transaction ledger, purchased state, entitlements, or audit history and MUST NOT emit business events.
 
 Competing attempts to accept the same previously unseen source identity MUST permit at most one transaction to succeed.
 An overlapping losing attempt MAY fail, while a retry after the winning outcome is durable MUST receive the accepted idempotent outcome.
