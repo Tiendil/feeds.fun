@@ -1143,10 +1143,15 @@ class TestRevokeSubscriptionEntitlements:
             grant_transaction_id=BenefitTransactionId(uuid.UUID(int=6)),
             starts_at=now - datetime.timedelta(days=2),
             expires_at=now + datetime.timedelta(days=1),
-            revoked_at=now - datetime.timedelta(days=1),
         )
-        await operations.insert_source_entitlement(execute, expired)
-        await operations.insert_source_entitlement(execute, revoked)
+        await _grant(expired, evaluation_time=now, emit_event=False)
+        await _grant(revoked, evaluation_time=now - datetime.timedelta(days=1), emit_event=False)
+        revoked_outcome, _ = await _revoke(
+            revoked,
+            evaluation_time=now - datetime.timedelta(days=1),
+            emit_event=False,
+        )
+        revoked = revoked_outcome.source_state
 
         async with transaction() as transaction_execute:
             outcomes, callbacks = await domain.revoke_subscription_entitlements(
@@ -1268,10 +1273,15 @@ class TestRevokeOneTimePurchaseEntitlements:
             grant_transaction_id=BenefitTransactionId(uuid.UUID(int=6)),
             starts_at=now - datetime.timedelta(days=2),
             expires_at=now + datetime.timedelta(days=1),
-            revoked_at=now - datetime.timedelta(days=1),
         )
-        await operations.insert_source_entitlement(execute, expired)
-        await operations.insert_source_entitlement(execute, revoked)
+        await _grant(expired, evaluation_time=now, emit_event=False)
+        await _grant(revoked, evaluation_time=now - datetime.timedelta(days=1), emit_event=False)
+        revoked_outcome, _ = await _revoke(
+            revoked,
+            evaluation_time=now - datetime.timedelta(days=1),
+            emit_event=False,
+        )
+        revoked = revoked_outcome.source_state
 
         async with transaction() as transaction_execute:
             outcomes, callbacks = await domain.revoke_one_time_purchase_entitlements(
