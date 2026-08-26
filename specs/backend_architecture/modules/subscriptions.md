@@ -23,7 +23,6 @@ The following adjacent concerns are outside the module's responsibility:
 - `alive subscription` - a subscription whose normalized status and end time indicate that it has not ended at the evaluation time.
 - `subscription period` - the current benefit-bearing period reported for a subscription.
 - `expected renewal` - an optional provider-reported expectation of renewal rather than a renewal scheduled or managed by this module.
-- `provider update time` - the authoritative time associated with provider-reported subscription state and used to order competing versions of that state.
 
 ## Module responsibility
 

@@ -20,7 +20,6 @@ The following adjacent concerns are outside the module's responsibility:
 - `provider purchase reference` - the immutable association between one provider purchase identity and one internal one-time-purchase identity.
 - `purchase state` - the current provider-independent understanding of one purchase at one provider update time.
 - `purchase status` - one normalized provider-independent lifecycle category owned by this module.
-- `provider update time` - the authoritative time associated with provider-reported purchase state and used to order competing versions of that state.
 - `lifetime applicable interval` - the benefit-bearing interval derived from the purchase time and the project's stable lifetime interval-end marker.
 
 ## Module responsibility
