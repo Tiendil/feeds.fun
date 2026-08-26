@@ -8,7 +8,6 @@ from ffun.audit import domain as audit_domain
 from ffun.audit.entities import AuditEntityKind, AuditEventName
 from ffun.core import logging
 from ffun.core.postgresql import ExecuteType, execute
-from ffun.domain.datetime_intervals import LIFETIME_INTERVAL_END_MARKER
 from ffun.domain.entities import BenefitTransactionId, OneTimePurchaseId, SerializedId, SubscriptionId, UserId
 from ffun.entitlements import entities as entitlement_entities
 from ffun.entitlements import errors, operations
@@ -447,7 +446,6 @@ async def grant_source_entitlements(  # noqa: CFQ002
     event_callbacks: list[Callable[[], None]] = []
 
     for guarantee in sorted(guarantees, key=_guarantee_kind_id):
-        kind = get_entitlement_kind(guarantee.kind_id)
         try:
             entitlement = SourceEntitlement(
                 source_id=source_id,
@@ -458,7 +456,7 @@ async def grant_source_entitlements(  # noqa: CFQ002
                 kind_id=guarantee.kind_id,
                 value=guarantee.value,
                 starts_at=starts_at,
-                expires_at=LIFETIME_INTERVAL_END_MARKER if kind.is_lifetime else expires_at,
+                expires_at=expires_at,
             )
         except ValueError as error:
             raise errors.InvalidSourceEntitlement(reason=str(error)) from error

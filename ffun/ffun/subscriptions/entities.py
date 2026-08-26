@@ -6,6 +6,7 @@ import pydantic
 
 from ffun.core import utils
 from ffun.core.entities import BaseEntity
+from ffun.domain.datetime_intervals import LIFETIME_INTERVAL_END_MARKER
 from ffun.domain.entities import (
     BenefitId,
     BenefitTransactionId,
@@ -69,6 +70,9 @@ class SubscriptionSnapshot(BaseEntity):
     def validate_subscription_period(self) -> "SubscriptionSnapshot":
         if self.period_starts_at >= self.period_ends_at:
             raise ValueError("Subscription period start must be earlier than period end")
+
+        if self.period_ends_at == LIFETIME_INTERVAL_END_MARKER:
+            raise ValueError("Subscription period end must be finite")
 
         return self
 

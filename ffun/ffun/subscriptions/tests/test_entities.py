@@ -4,6 +4,7 @@ from typing import cast
 import pydantic
 import pytest
 
+from ffun.domain.datetime_intervals import LIFETIME_INTERVAL_END_MARKER
 from ffun.domain.entities import BenefitId, BenefitTransactionId
 from ffun.subscriptions.entities import (
     SubscriptionSnapshot,
@@ -64,6 +65,10 @@ class TestSubscriptionSnapshot:
 
         with pytest.raises(pydantic.ValidationError, match="period start must be earlier than period end"):
             make_subscription(period_starts_at=now + offset, period_ends_at=now)
+
+    def test_init__period_end_must_be_finite(self) -> None:
+        with pytest.raises(pydantic.ValidationError, match="period end must be finite"):
+            make_subscription(period_ends_at=LIFETIME_INTERVAL_END_MARKER)
 
     def test_has_same_business_state_as__ignores_only_provider_update_time(self) -> None:
         subscription = make_subscription()

@@ -189,8 +189,7 @@ The accepted benefit transaction MUST preserve the derived action so later polic
 The action describes the selected purchased-state target's complete desired entitlement state and MUST NOT be interpreted as a request to reverse one historical transaction.
 
 The benefits module MUST use the applicable interval determined by the selected purchased state.
-Every lifetime guarantee MUST use the project's stable lifetime interval-end marker.
-A package applied to a one-time purchase MUST contain only lifetime entitlement kinds because one-time-purchase state provides no authoritative finite interval.
+Every package guarantee's lifetime status MUST match that applicable interval: a lifetime entitlement kind requires the project's stable lifetime interval-end marker, while a non-lifetime entitlement kind requires a finite interval end.
 The transaction effective time MUST remain causal provenance and MUST NOT replace the purchased state's interval boundaries or schedule entitlement revocation.
 
 ### Transaction acceptance and idempotency
@@ -221,8 +220,8 @@ Actualization MUST occur for every newly identified transaction whose supplied p
 An idempotent retry of an already accepted transaction source identity MUST NOT actualize the target again.
 
 Actualization MUST use one evaluation time for every time-dependent decision and effect.
-Both grant and revoke decisions MUST first remove every active or future entitlement owned by the selected target according to the entitlements module's owner-scoped revocation semantics.
-That revocation takes effect at the workflow's evaluation time rather than at the transaction effective time.
+Actualization MUST replace the selected target's active or future owned entitlements with its complete desired entitlement state.
+That replacement takes effect at the workflow's evaluation time rather than at the transaction effective time.
 
 For a grant decision, the workflow MUST establish one source entitlement for each guarantee in the materialized package using the target's applicable interval.
 Those grants MUST remain attributable to the benefits source, the accepted benefit transaction, and exactly the selected purchased-state target.
@@ -269,5 +268,4 @@ The module produces no additional business event.
 Every participating purchased-state or entitlement change MUST produce the business notification required by its owning module only after the complete application outcome and required audit evidence are durable.
 
 A failed or idempotent application MUST emit no notification.
-Notification delivery is best-effort and failure MUST NOT alter the durable application outcome.
 Retrying an accepted transaction source identity MUST NOT replay notifications from its original application.

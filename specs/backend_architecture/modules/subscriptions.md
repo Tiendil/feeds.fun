@@ -107,7 +107,7 @@ Provider statuses are open-ended external descriptions and MUST NOT be constrain
 ### Lifecycle observations
 
 Every subscription state MUST establish when the subscription began, one current subscription period, and the provider update time.
-The current period MUST begin before it ends.
+The current period MUST begin before it ends, and its end MUST NOT equal the project's stable lifetime interval-end marker.
 Every lifecycle time MUST identify an unambiguous instant.
 
 Expected renewal and subscription end MAY be absent.

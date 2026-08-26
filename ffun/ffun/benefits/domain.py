@@ -16,6 +16,7 @@ from ffun.benefits.entities import (
 )
 from ffun.benefits.settings import settings
 from ffun.core.postgresql import ExecuteType, run_in_transaction, transaction
+from ffun.domain.datetime_intervals import LIFETIME_INTERVAL_END_MARKER
 from ffun.domain.entities import (
     BenefitId,
     OneTimePurchaseId,
@@ -81,15 +82,19 @@ def _application_result(
     )
 
 
-def _validate_one_time_purchase_package(package: BenefitPackage) -> None:
+def _validate_package_for_interval(package: BenefitPackage, period_ends_at: datetime.datetime) -> None:
+    period_is_lifetime = period_ends_at == LIFETIME_INTERVAL_END_MARKER
+
     for guarantee in package.guarantees:
-        if entitlement_domain.get_entitlement_kind(guarantee.kind_id).is_lifetime:
+        kind = entitlement_domain.get_entitlement_kind(guarantee.kind_id)
+
+        if kind.is_lifetime == period_is_lifetime:
             continue
 
         raise errors.InvalidBenefitEntitlement(
             benefit_id=package.id,
             entitlement_kind_id=int(guarantee.kind_id),
-            reason="one-time purchase packages require lifetime entitlement kinds",
+            reason="entitlement kind lifetime status must match the benefit period",
         )
 
 
@@ -176,6 +181,7 @@ async def _actualize_subscription_transaction(  # noqa: CFQ002
     actor_id: SerializedId,
 ) -> tuple[BenefitTransaction, list[Callable[[], None]]]:
     package = materialize_benefit_package(subscription.benefit_id, parameters)
+    _validate_package_for_interval(package, subscription.period_ends_at)
     subscription_id = await target_resolution.resolve_subscription_target(
         execute,
         command.target,
@@ -232,7 +238,7 @@ async def _actualize_one_time_purchase_transaction(  # noqa: CFQ002
     actor_id: SerializedId,
 ) -> tuple[BenefitTransaction, list[Callable[[], None]]]:
     package = materialize_benefit_package(purchase.benefit_id, parameters)
-    _validate_one_time_purchase_package(package)
+    _validate_package_for_interval(package, purchase.period_ends_at)
     one_time_purchase_id = await target_resolution.resolve_one_time_purchase_target(
         execute,
         command.target,

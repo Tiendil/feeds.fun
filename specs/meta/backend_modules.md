@@ -108,7 +108,16 @@ The specification MUST NOT translate relationships or lifecycle facts into field
 **Counterexample:** Describing a purchase as a row with a non-null user foreign key prescribes its persistence representation instead of its semantic relationship.
 
 A domain state or category MAY be named when the distinction is necessary to define current behavior.
-Its programming-language symbol, numeric representation, or serialized value MUST NOT be specified.
+Semantic names MAY use the same spelling and typography in specifications, code, and serialized representations when they denote the same domain concept.
+Terms defined by an applicable external standard or third-party contract SHOULD be preserved as-is when referring to that external concept.
+Exact spelling MAY be required when interoperability depends on it.
+Name reuse alone does not prescribe an implementation representation.
+
+A specification MUST NOT prescribe how a semantic name is declared, encoded, stored, or mapped unless that representation is part of a current interoperability contract or the developer explicitly requests it as part of the contract.
+
+**Example:** An OAuth integration may use `access_token` unchanged in specifications and code.
+The specification may require that exact wire name when OAuth interoperability depends on it, but it MUST NOT prescribe a Python type or database representation merely for convenience.
+
 An exhaustive domain set MUST be listed only when it is intentionally closed and the completeness of the set changes valid behavior.
 
 ### `Domain behavior`
@@ -224,7 +233,7 @@ It MUST NOT define exact event names, schemas, attribute inventories, serializat
 Test cases, fixtures, and implementation verification strategies MUST NOT be specified.
 Current implementation limitations MUST NOT be promoted into permanent domain constraints, and speculative variants, compatibility provisions, or extension points without a current consumer MUST be omitted.
 
-An otherwise excluded implementation detail MAY appear only when the developer explicitly requests that exact detail as part of the contract.
+An otherwise excluded implementation detail MAY appear only when a current interoperability contract requires it or when the developer explicitly requests that exact detail as part of the contract.
 The specification MUST place an explanation next to the detail stating why it is required and which current observable behavior or architectural property would be lost without it.
 Existing implementation shape, convenience, symmetry, debugging value, and hypothetical future use are not sufficient justifications.
 

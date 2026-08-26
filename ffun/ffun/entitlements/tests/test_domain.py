@@ -999,7 +999,7 @@ class TestGrantSourceEntitlements:
         assert callbacks == []
 
     @pytest.mark.asyncio
-    async def test_grants_sorted_guarantees_with_lifetime_expiration_and_subscription(self) -> None:
+    async def test_grants_sorted_guarantees_with_supplied_expiration_and_subscription(self) -> None:
         user_id = new_user_id()
         subscription_id = new_subscription_id()
         now = datetime.datetime.now(tz=datetime.UTC)
@@ -1014,7 +1014,7 @@ class TestGrantSourceEntitlements:
                     subscription_id=subscription_id,
                     one_time_purchase_id=None,
                     guarantees=[
-                        EntitlementGuarantee(kind_id=_LIFETIME_TOKENS, value=30),
+                        EntitlementGuarantee(kind_id=_MONTH_TOKENS, value=30),
                         EntitlementGuarantee(kind_id=_DAY_TOKENS, value=10),
                     ],
                     starts_at=now,
@@ -1028,9 +1028,8 @@ class TestGrantSourceEntitlements:
             for callback in callbacks:
                 callback()
 
-        assert [outcome.source_state.kind_id for outcome in outcomes] == [_DAY_TOKENS, _LIFETIME_TOKENS]
-        assert outcomes[0].source_state.expires_at == now + datetime.timedelta(days=1)
-        assert outcomes[1].source_state.expires_at == LIFETIME_INTERVAL_END_MARKER
+        assert [outcome.source_state.kind_id for outcome in outcomes] == [_DAY_TOKENS, _MONTH_TOKENS]
+        assert all(outcome.source_state.expires_at == now + datetime.timedelta(days=1) for outcome in outcomes)
         assert all(outcome.source_state.subscription_id == subscription_id for outcome in outcomes)
         assert all(outcome.source_state.grant_transaction_id == _GRANT_TRANSACTION_ID for outcome in outcomes)
         assert sum(record.get("event") == "source_entitlement_changed" for record in logs) == 2
@@ -1053,7 +1052,7 @@ class TestGrantSourceEntitlements:
                     one_time_purchase_id=one_time_purchase_id,
                     guarantees=[EntitlementGuarantee(kind_id=_LIFETIME_TOKENS, value=30)],
                     starts_at=now,
-                    expires_at=now + datetime.timedelta(days=1),
+                    expires_at=LIFETIME_INTERVAL_END_MARKER,
                     evaluation_time=now,
                     actor_kind=_ACTOR_KIND,
                     actor_id=_ACTOR_ID,
@@ -1305,13 +1304,13 @@ class TestRevokeOneTimePurchaseEntitlements:
         other_transaction_id = BenefitTransactionId(uuid.UUID(int=4))
 
         grants = (
-            (_GRANT_TRANSACTION_ID, one_time_purchase_id, 100, -1, 1),
-            (future_transaction_id, one_time_purchase_id, 50, 1, 2),
-            (other_transaction_id, other_purchase_id, 250, -1, 1),
+            (_GRANT_TRANSACTION_ID, one_time_purchase_id, 100, -1),
+            (future_transaction_id, one_time_purchase_id, 50, 1),
+            (other_transaction_id, other_purchase_id, 250, -1),
         )
         grant_callbacks = []
         async with transaction() as transaction_execute:
-            for transaction_id, purchase_id, value, starts_in_days, expires_in_days in grants:
+            for transaction_id, purchase_id, value, starts_in_days in grants:
                 _, callbacks = await domain.grant_source_entitlements(
                     transaction_execute,
                     source_id=_SOURCE_ID,
@@ -1321,7 +1320,7 @@ class TestRevokeOneTimePurchaseEntitlements:
                     one_time_purchase_id=purchase_id,
                     guarantees=[EntitlementGuarantee(kind_id=_LIFETIME_TOKENS, value=value)],
                     starts_at=now + datetime.timedelta(days=starts_in_days),
-                    expires_at=now + datetime.timedelta(days=expires_in_days),
+                    expires_at=LIFETIME_INTERVAL_END_MARKER,
                     evaluation_time=now,
                     actor_kind=_ACTOR_KIND,
                     actor_id=_ACTOR_ID,

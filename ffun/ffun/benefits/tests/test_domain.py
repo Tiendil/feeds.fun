@@ -217,26 +217,48 @@ class TestApplicationResult:
         )
 
 
-class TestValidateOneTimePurchasePackage:
-    def test_lifetime_entitlement(self) -> None:
+class TestValidatePackageForInterval:
+    @pytest.mark.parametrize(
+        ("kind_id", "period_ends_at"),
+        [
+            (EntitlementKindId.day_tokens, datetime.datetime(2026, 1, 2, tzinfo=datetime.UTC)),
+            (EntitlementKindId.lifetime_tokens, LIFETIME_INTERVAL_END_MARKER),
+        ],
+    )
+    def test_matching_lifetime_status(
+        self,
+        kind_id: EntitlementKindId,
+        period_ends_at: datetime.datetime,
+    ) -> None:
         package = make_benefit_package(
-            entitlements={EntitlementKindId.lifetime_tokens: 10},
+            entitlements={kind_id: 10},
         )
 
-        domain._validate_one_time_purchase_package(package)
+        domain._validate_package_for_interval(package, period_ends_at)
 
-    def test_non_lifetime_entitlement(self) -> None:
+    @pytest.mark.parametrize(
+        ("kind_id", "period_ends_at"),
+        [
+            (EntitlementKindId.day_tokens, LIFETIME_INTERVAL_END_MARKER),
+            (EntitlementKindId.lifetime_tokens, datetime.datetime(2026, 1, 2, tzinfo=datetime.UTC)),
+        ],
+    )
+    def test_mismatching_lifetime_status(
+        self,
+        kind_id: EntitlementKindId,
+        period_ends_at: datetime.datetime,
+    ) -> None:
         package = make_benefit_package(
-            entitlements={EntitlementKindId.day_tokens: 10},
+            entitlements={kind_id: 10},
         )
 
         with pytest.raises(errors.InvalidBenefitEntitlement) as exception_info:
-            domain._validate_one_time_purchase_package(package)
+            domain._validate_package_for_interval(package, period_ends_at)
 
         attributes = cast(dict[str, object], vars(exception_info.value))
         assert attributes["benefit_id"] == package.id
-        assert attributes["entitlement_kind_id"] == EntitlementKindId.day_tokens
-        assert attributes["reason"] == "one-time purchase packages require lifetime entitlement kinds"
+        assert attributes["entitlement_kind_id"] == kind_id
+        assert attributes["reason"] == "entitlement kind lifetime status must match the benefit period"
 
 
 class TestApplyBenefitTransaction:
@@ -734,7 +756,7 @@ class TestApplySubscriptionTransaction:
         package = make_benefit_package_template(
             entitlements={
                 EntitlementKindId.day_tokens: ParameterConstant(value=10),
-                EntitlementKindId.lifetime_tokens: ParameterConstant(value=100),
+                EntitlementKindId.month_tokens: ParameterConstant(value=100),
             }
         )
         mocker.patch.object(domain.settings, "package_templates", (package,))
@@ -771,10 +793,10 @@ class TestApplySubscriptionTransaction:
             domain.BENEFITS_ENTITLEMENT_SOURCE_ID,
             result.transaction_id,
         )
-        lifetime_source = await entitlement_helpers.load_source_entitlement(
+        month_source = await entitlement_helpers.load_source_entitlement(
             execute,
             snapshot.user_id,
-            EntitlementKindId.lifetime_tokens,
+            EntitlementKindId.month_tokens,
             domain.BENEFITS_ENTITLEMENT_SOURCE_ID,
             result.transaction_id,
         )
@@ -783,10 +805,10 @@ class TestApplySubscriptionTransaction:
         assert day_source.value == 10
         assert day_source.starts_at == snapshot.period_starts_at
         assert day_source.expires_at == snapshot.period_ends_at
-        assert lifetime_source is not None
-        assert lifetime_source.value == 100
-        assert lifetime_source.starts_at == snapshot.period_starts_at
-        assert lifetime_source.expires_at == LIFETIME_INTERVAL_END_MARKER
+        assert month_source is not None
+        assert month_source.value == 100
+        assert month_source.starts_at == snapshot.period_starts_at
+        assert month_source.expires_at == snapshot.period_ends_at
 
         assert_logs_has_business_event(
             logs,
@@ -819,7 +841,7 @@ class TestApplySubscriptionTransaction:
             parameters=(quantity,),
             entitlements={
                 EntitlementKindId.day_tokens: ParameterConstant(value=10),
-                EntitlementKindId.lifetime_tokens: ParameterReference(parameter_id=quantity.id),
+                EntitlementKindId.month_tokens: ParameterReference(parameter_id=quantity.id),
             },
         )
         mocker.patch.object(domain.settings, "package_templates", (package,))
@@ -848,17 +870,17 @@ class TestApplySubscriptionTransaction:
             domain.BENEFITS_ENTITLEMENT_SOURCE_ID,
             result.transaction_id,
         )
-        lifetime_source = await entitlement_helpers.load_source_entitlement(
+        month_source = await entitlement_helpers.load_source_entitlement(
             execute,
             snapshot.user_id,
-            EntitlementKindId.lifetime_tokens,
+            EntitlementKindId.month_tokens,
             domain.BENEFITS_ENTITLEMENT_SOURCE_ID,
             result.transaction_id,
         )
         assert day_source is not None
         assert day_source.value == 10
-        assert lifetime_source is not None
-        assert lifetime_source.value == 25
+        assert month_source is not None
+        assert month_source.value == 25
 
     @pytest.mark.asyncio
     async def test_revoke_is_inferred_from_status_and_replaces_complete_state(
@@ -874,7 +896,7 @@ class TestApplySubscriptionTransaction:
         )
         current_package = make_benefit_package_template(
             benefit_id=BenefitId("current"),
-            entitlements={EntitlementKindId.lifetime_tokens: ParameterConstant(value=30)},
+            entitlements={EntitlementKindId.day_tokens: ParameterConstant(value=30)},
         )
         mocker.patch.object(domain.settings, "package_templates", (original_package, current_package))
         original_snapshot = make_subscription_snapshot(benefit_id=original_package.id)
@@ -928,7 +950,7 @@ class TestApplySubscriptionTransaction:
             await entitlement_helpers.load_source_entitlement(
                 execute,
                 original_snapshot.user_id,
-                EntitlementKindId.lifetime_tokens,
+                EntitlementKindId.day_tokens,
                 domain.BENEFITS_ENTITLEMENT_SOURCE_ID,
                 revocation.transaction_id,
             )
