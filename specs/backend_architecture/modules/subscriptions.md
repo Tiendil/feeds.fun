@@ -220,5 +220,4 @@ The following cases MUST NOT produce notification:
 - a failed request.
 - retrieval.
 
-Notification delivery is best-effort and failure MUST NOT alter durable subscription or audit state.
 Repeating an idempotent request MUST NOT replay notification for the earlier change.
