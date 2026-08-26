@@ -1127,6 +1127,50 @@ class TestRevokeSubscriptionEntitlements:
         assert callbacks == []
 
     @pytest.mark.asyncio
+    async def test_revokes_expired_and_ignores_already_revoked_subscription_grants(self) -> None:
+        user_id = new_user_id()
+        subscription_id = new_subscription_id()
+        now = datetime.datetime.now(tz=datetime.UTC)
+        expired = make_source_entitlement(
+            user_id=user_id,
+            subscription_id=subscription_id,
+            grant_transaction_id=BenefitTransactionId(uuid.UUID(int=5)),
+            starts_at=now - datetime.timedelta(days=2),
+            expires_at=now,
+        )
+        revoked = make_source_entitlement(
+            user_id=user_id,
+            subscription_id=subscription_id,
+            grant_transaction_id=BenefitTransactionId(uuid.UUID(int=6)),
+            starts_at=now - datetime.timedelta(days=2),
+            expires_at=now + datetime.timedelta(days=1),
+            revoked_at=now - datetime.timedelta(days=1),
+        )
+        await operations.insert_source_entitlement(execute, expired)
+        await operations.insert_source_entitlement(execute, revoked)
+
+        async with transaction() as transaction_execute:
+            outcomes, callbacks = await domain.revoke_subscription_entitlements(
+                transaction_execute,
+                subscription_id=subscription_id,
+                revoked_by_transaction_id=_REVOKING_TRANSACTION_ID,
+                evaluation_time=now,
+                actor_kind=_ACTOR_KIND,
+                actor_id=_ACTOR_ID,
+            )
+
+        revoked_expired = expired.replace(
+            revoked_at=now,
+            revoked_by_transaction_id=_REVOKING_TRANSACTION_ID,
+        )
+        assert [outcome.source_state for outcome in outcomes] == [revoked_expired]
+        assert len(callbacks) == 1
+        assert await operations.load_source_entitlements_for_subscription(execute, subscription_id) == [
+            revoked_expired,
+            revoked,
+        ]
+
+    @pytest.mark.asyncio
     async def test_revokes_active_and_future_grants_linked_to_subscription(self) -> None:
         user_id = new_user_id()
         subscription_id = new_subscription_id()
@@ -1206,6 +1250,50 @@ class TestRevokeOneTimePurchaseEntitlements:
 
         assert outcomes == []
         assert callbacks == []
+
+    @pytest.mark.asyncio
+    async def test_revokes_expired_and_ignores_already_revoked_purchase_grants(self) -> None:
+        user_id = new_user_id()
+        one_time_purchase_id = new_purchase_id()
+        now = datetime.datetime.now(tz=datetime.UTC)
+        expired = make_source_entitlement(
+            user_id=user_id,
+            one_time_purchase_id=one_time_purchase_id,
+            grant_transaction_id=BenefitTransactionId(uuid.UUID(int=5)),
+            starts_at=now - datetime.timedelta(days=2),
+            expires_at=now,
+        )
+        revoked = make_source_entitlement(
+            user_id=user_id,
+            one_time_purchase_id=one_time_purchase_id,
+            grant_transaction_id=BenefitTransactionId(uuid.UUID(int=6)),
+            starts_at=now - datetime.timedelta(days=2),
+            expires_at=now + datetime.timedelta(days=1),
+            revoked_at=now - datetime.timedelta(days=1),
+        )
+        await operations.insert_source_entitlement(execute, expired)
+        await operations.insert_source_entitlement(execute, revoked)
+
+        async with transaction() as transaction_execute:
+            outcomes, callbacks = await domain.revoke_one_time_purchase_entitlements(
+                transaction_execute,
+                one_time_purchase_id=one_time_purchase_id,
+                revoked_by_transaction_id=_REVOKING_TRANSACTION_ID,
+                evaluation_time=now,
+                actor_kind=_ACTOR_KIND,
+                actor_id=_ACTOR_ID,
+            )
+
+        revoked_expired = expired.replace(
+            revoked_at=now,
+            revoked_by_transaction_id=_REVOKING_TRANSACTION_ID,
+        )
+        assert [outcome.source_state for outcome in outcomes] == [revoked_expired]
+        assert len(callbacks) == 1
+        assert await operations.load_source_entitlements_for_one_time_purchase(execute, one_time_purchase_id) == [
+            revoked_expired,
+            revoked,
+        ]
 
     @pytest.mark.asyncio
     async def test_revokes_purchase_grants_and_rebuilds_timeline_without_other_purchase(self) -> None:

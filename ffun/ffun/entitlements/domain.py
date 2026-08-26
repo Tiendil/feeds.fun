@@ -485,11 +485,11 @@ async def revoke_subscription_entitlements(  # noqa: CFQ002
     actor_kind: AuditEntityKind,
     actor_id: SerializedId,
 ) -> tuple[list[SourceEntitlementChange], list[Callable[[], None]]]:
-    source_entitlements = await operations.load_source_entitlements_for_subscription(
-        execute,
-        subscription_id,
-        evaluation_time=evaluation_time,
-    )
+    source_entitlements = [
+        entitlement
+        for entitlement in await operations.load_source_entitlements_for_subscription(execute, subscription_id)
+        if entitlement.revoked_at is None
+    ]
     outcomes: list[SourceEntitlementChange] = []
     event_callbacks: list[Callable[[], None]] = []
 
@@ -520,11 +520,13 @@ async def revoke_one_time_purchase_entitlements(  # noqa: CFQ002
     actor_kind: AuditEntityKind,
     actor_id: SerializedId,
 ) -> tuple[list[SourceEntitlementChange], list[Callable[[], None]]]:
-    source_entitlements = await operations.load_source_entitlements_for_one_time_purchase(
-        execute,
-        one_time_purchase_id,
-        evaluation_time=evaluation_time,
-    )
+    source_entitlements = [
+        entitlement
+        for entitlement in await operations.load_source_entitlements_for_one_time_purchase(
+            execute, one_time_purchase_id
+        )
+        if entitlement.revoked_at is None
+    ]
     outcomes: list[SourceEntitlementChange] = []
     event_callbacks: list[Callable[[], None]] = []
 

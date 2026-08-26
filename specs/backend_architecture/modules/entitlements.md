@@ -84,9 +84,9 @@ Revoking an existing grant MUST make it permanently inactive from the workflow's
 Revoking an already revoked grant MUST have no additional effect and MUST preserve the meaning of the original revocation.
 Attempting to revoke a missing grant MUST fail without changing entitlement state.
 
-A subscription-owned revocation MUST revoke every grant belonging to that subscription that is active at the evaluation time or can become active afterward.
+A subscription-owned revocation MUST revoke every unrevoked grant belonging to that subscription, including grants whose effective periods have ended.
 A one-time-purchase-owned revocation MUST apply the same rule within that purchase's ownership scope.
-An owner-scoped revocation MUST leave grants belonging to every other purchased-state owner unchanged and MUST have no effect when its owner has no current or future grants.
+An owner-scoped revocation MUST leave grants belonging to every other purchased-state owner unchanged and MUST have no effect when its owner has no unrevoked grants.
 
 ### Effective state
 

@@ -178,48 +178,28 @@ async def revoke_source_entitlement(
 async def load_source_entitlements_for_subscription(
     execute: ExecuteType,
     subscription_id: SubscriptionId,
-    *,
-    evaluation_time: datetime.datetime,
 ) -> list[SourceEntitlement]:
     sql = """
     SELECT *
     FROM en_source_entitlements
     WHERE subscription_id = %(subscription_id)s
-      AND %(evaluation_time)s < expires_at
-      AND revoked_at IS NULL
     ORDER BY user_id, kind_id, source_id, grant_transaction_id
     """
-    rows = await execute(
-        sql,
-        {
-            "subscription_id": subscription_id,
-            "evaluation_time": evaluation_time,
-        },
-    )
+    rows = await execute(sql, {"subscription_id": subscription_id})
     return [row_to_source_entitlement(row) for row in rows]
 
 
 async def load_source_entitlements_for_one_time_purchase(
     execute: ExecuteType,
     one_time_purchase_id: OneTimePurchaseId,
-    *,
-    evaluation_time: datetime.datetime,
 ) -> list[SourceEntitlement]:
     sql = """
     SELECT *
     FROM en_source_entitlements
     WHERE one_time_purchase_id = %(one_time_purchase_id)s
-      AND %(evaluation_time)s < expires_at
-      AND revoked_at IS NULL
     ORDER BY user_id, kind_id, source_id, grant_transaction_id
     """
-    rows = await execute(
-        sql,
-        {
-            "one_time_purchase_id": one_time_purchase_id,
-            "evaluation_time": evaluation_time,
-        },
-    )
+    rows = await execute(sql, {"one_time_purchase_id": one_time_purchase_id})
     return [row_to_source_entitlement(row) for row in rows]
 
 

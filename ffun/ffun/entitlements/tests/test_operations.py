@@ -334,13 +334,12 @@ class TestLoadSourceEntitlementsForSubscription:
         loaded = await operations.load_source_entitlements_for_subscription(
             execute,
             new_subscription_id(),
-            evaluation_time=datetime.datetime.now(tz=datetime.UTC),
         )
 
         assert loaded == []
 
     @pytest.mark.asyncio
-    async def test_returns_unrevoked_active_and_future_linked_grants_in_kind_and_transaction_order(self) -> None:
+    async def test_returns_all_linked_grants_in_kind_and_transaction_order(self) -> None:
         subscription_id = new_subscription_id()
         now = datetime.datetime.now(tz=datetime.UTC)
         active_month = make_source_entitlement(
@@ -360,12 +359,14 @@ class TestLoadSourceEntitlementsForSubscription:
         )
         expired = make_source_entitlement(
             subscription_id=subscription_id,
+            grant_transaction_id=_transaction_id(3),
+            user_id=active_month.user_id,
             starts_at=now - datetime.timedelta(days=2),
             expires_at=now,
         )
         future_day = make_source_entitlement(
             subscription_id=subscription_id,
-            grant_transaction_id=_transaction_id(3),
+            grant_transaction_id=_transaction_id(4),
             user_id=active_month.user_id,
             kind_id=EntitlementKindId.day_tokens,
             starts_at=now + datetime.timedelta(days=1),
@@ -373,7 +374,7 @@ class TestLoadSourceEntitlementsForSubscription:
         )
         never_active_future = make_source_entitlement(
             subscription_id=subscription_id,
-            grant_transaction_id=_transaction_id(4),
+            grant_transaction_id=_transaction_id(5),
             user_id=active_month.user_id,
             kind_id=EntitlementKindId.day_tokens,
             starts_at=now + datetime.timedelta(days=2),
@@ -382,6 +383,8 @@ class TestLoadSourceEntitlementsForSubscription:
         )
         revoked = make_source_entitlement(
             subscription_id=subscription_id,
+            grant_transaction_id=_transaction_id(6),
+            user_id=active_month.user_id,
             starts_at=now - datetime.timedelta(days=1),
             expires_at=now + datetime.timedelta(days=1),
             revoked_at=now,
@@ -404,10 +407,9 @@ class TestLoadSourceEntitlementsForSubscription:
         loaded = await operations.load_source_entitlements_for_subscription(
             execute,
             subscription_id,
-            evaluation_time=now,
         )
 
-        assert loaded == [active_day, future_day, active_month]
+        assert loaded == [active_day, expired, future_day, never_active_future, revoked, active_month]
 
 
 class TestLoadSourceEntitlementsForOneTimePurchase:
@@ -416,13 +418,12 @@ class TestLoadSourceEntitlementsForOneTimePurchase:
         loaded = await operations.load_source_entitlements_for_one_time_purchase(
             execute,
             new_purchase_id(),
-            evaluation_time=datetime.datetime.now(tz=datetime.UTC),
         )
 
         assert loaded == []
 
     @pytest.mark.asyncio
-    async def test_returns_unrevoked_active_and_future_linked_grants_in_kind_and_transaction_order(self) -> None:
+    async def test_returns_all_linked_grants_in_kind_and_transaction_order(self) -> None:
         one_time_purchase_id = new_purchase_id()
         now = datetime.datetime.now(tz=datetime.UTC)
         active_month = make_source_entitlement(
@@ -442,7 +443,7 @@ class TestLoadSourceEntitlementsForOneTimePurchase:
         )
         future_day = make_source_entitlement(
             one_time_purchase_id=one_time_purchase_id,
-            grant_transaction_id=_transaction_id(3),
+            grant_transaction_id=_transaction_id(4),
             user_id=active_month.user_id,
             kind_id=EntitlementKindId.day_tokens,
             starts_at=now + datetime.timedelta(days=1),
@@ -450,11 +451,15 @@ class TestLoadSourceEntitlementsForOneTimePurchase:
         )
         expired = make_source_entitlement(
             one_time_purchase_id=one_time_purchase_id,
+            grant_transaction_id=_transaction_id(3),
+            user_id=active_month.user_id,
             starts_at=now - datetime.timedelta(days=2),
             expires_at=now,
         )
         revoked = make_source_entitlement(
             one_time_purchase_id=one_time_purchase_id,
+            grant_transaction_id=_transaction_id(5),
+            user_id=active_month.user_id,
             starts_at=now - datetime.timedelta(days=1),
             expires_at=now + datetime.timedelta(days=1),
             revoked_at=now,
@@ -470,10 +475,9 @@ class TestLoadSourceEntitlementsForOneTimePurchase:
         loaded = await operations.load_source_entitlements_for_one_time_purchase(
             execute,
             one_time_purchase_id,
-            evaluation_time=now,
         )
 
-        assert loaded == [active_day, future_day, active_month]
+        assert loaded == [active_day, expired, future_day, revoked, active_month]
 
 
 class TestLoadSourceEntitlements:
