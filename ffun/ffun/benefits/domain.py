@@ -9,13 +9,17 @@ from ffun.benefits.entities import (
     BenefitPackage,
     BenefitPackageTemplate,
     BenefitParameterId,
+    BenefitSourceTransactionId,
+    BenefitSubscriptionRefreshCommand,
+    BenefitSubscriptionRefreshOutcome,
+    BenefitSubscriptionRefreshResult,
     BenefitTransaction,
     BenefitTransactionApplicationResult,
     BenefitTransactionCommand,
     TargetIdT,
 )
 from ffun.benefits.settings import settings
-from ffun.core.postgresql import ExecuteType, run_in_transaction, transaction
+from ffun.core.postgresql import TransactionExecuteType, run_in_transaction, transaction
 from ffun.domain.datetime_intervals import LIFETIME_INTERVAL_END_MARKER
 from ffun.domain.entities import (
     BenefitId,
@@ -25,7 +29,7 @@ from ffun.domain.entities import (
     SubscriptionId,
 )
 from ffun.entitlements import domain as entitlement_domain
-from ffun.entitlements.entities import EntitlementSourceId
+from ffun.entitlements.entities import EntitlementSourceId, SourceEntitlement
 from ffun.one_time_purchases import domain as purchase_domain
 from ffun.one_time_purchases.entities import PurchaseSnapshot
 from ffun.subscriptions import domain as subscription_domain
@@ -34,7 +38,7 @@ from ffun.subscriptions.entities import SubscriptionSnapshot
 BENEFITS_ENTITLEMENT_SOURCE_ID = EntitlementSourceId("benefits")
 
 _ActualizeTransaction = Callable[
-    [ExecuteType, datetime.datetime],
+    [TransactionExecuteType, datetime.datetime],
     Awaitable[tuple[BenefitTransaction, list[Callable[[], None]]]],
 ]
 
@@ -98,8 +102,53 @@ def _validate_package_for_interval(package: BenefitPackage, period_ends_at: date
         )
 
 
+def _subscription_has_required_entitlements(
+    package: BenefitPackage,
+    subscription: SubscriptionSnapshot,
+    source_entitlements: list[SourceEntitlement],
+    *,
+    evaluation_time: datetime.datetime,
+) -> bool:
+    expected = sorted(
+        (
+            BENEFITS_ENTITLEMENT_SOURCE_ID,
+            guarantee.kind_id,
+            guarantee.value,
+            max(subscription.period_starts_at, evaluation_time),
+            subscription.period_ends_at,
+        )
+        for guarantee in package.guarantees
+    )
+    current = sorted(
+        (
+            entitlement.source_id,
+            entitlement.kind_id,
+            entitlement.value,
+            max(entitlement.starts_at, evaluation_time),
+            entitlement.expires_at,
+        )
+        for entitlement in source_entitlements
+        if entitlement.revoked_at is None and entitlement.expires_at > evaluation_time
+    )
+    return current == expected
+
+
+def _run_business_event_callbacks(callbacks: list[Callable[[], None]]) -> None:
+    first_error: Exception | None = None
+
+    for callback in callbacks:
+        try:
+            callback()
+        except Exception as error:
+            if first_error is None:
+                first_error = error
+
+    if first_error is not None:
+        raise first_error
+
+
 async def _revoke_owned_entitlements(  # noqa: CFQ002
-    execute: ExecuteType,
+    execute: TransactionExecuteType,
     benefit_transaction: BenefitTransaction,
     *,
     evaluation_time: datetime.datetime,
@@ -132,7 +181,7 @@ async def _revoke_owned_entitlements(  # noqa: CFQ002
 
 
 async def _replace_benefit(  # noqa: CFQ002
-    execute: ExecuteType,
+    execute: TransactionExecuteType,
     benefit_transaction: BenefitTransaction,
     package: BenefitPackage,
     *,
@@ -172,15 +221,14 @@ async def _replace_benefit(  # noqa: CFQ002
 
 async def _actualize_subscription_transaction(  # noqa: CFQ002
     command: BenefitTransactionCommand[SubscriptionId],
-    execute: ExecuteType,
+    execute: TransactionExecuteType,
     subscription: SubscriptionSnapshot,
-    parameters: Mapping[BenefitParameterId, object],
     *,
     evaluation_time: datetime.datetime,
     actor_kind: AuditEntityKind,
     actor_id: SerializedId,
 ) -> tuple[BenefitTransaction, list[Callable[[], None]]]:
-    package = materialize_benefit_package(subscription.benefit_id, parameters)
+    package = materialize_benefit_package(subscription.benefit_id, {})
     _validate_package_for_interval(package, subscription.period_ends_at)
     subscription_id = await target_resolution.resolve_subscription_target(
         execute,
@@ -229,7 +277,7 @@ async def _actualize_subscription_transaction(  # noqa: CFQ002
 
 async def _actualize_one_time_purchase_transaction(  # noqa: CFQ002
     command: BenefitTransactionCommand[OneTimePurchaseId],
-    execute: ExecuteType,
+    execute: TransactionExecuteType,
     purchase: PurchaseSnapshot,
     parameters: Mapping[BenefitParameterId, object],
     *,
@@ -312,8 +360,7 @@ async def _apply_benefit_transaction(
             evaluation_time,
         )
 
-    for callback in business_event_callbacks:
-        callback()
+    _run_business_event_callbacks(business_event_callbacks)
 
     return _application_result(
         benefit_transaction,
@@ -324,7 +371,6 @@ async def _apply_benefit_transaction(
 
 async def apply_subscription_transaction(
     subscription: SubscriptionSnapshot,
-    parameters: Mapping[BenefitParameterId, object],
     command: BenefitTransactionCommand[SubscriptionId],
     *,
     actor_kind: AuditEntityKind,
@@ -337,7 +383,6 @@ async def apply_subscription_transaction(
             command,
             execute,
             subscription,
-            parameters,
             evaluation_time=evaluation_time,
             actor_kind=actor_kind,
             actor_id=actor_id,
@@ -368,3 +413,101 @@ async def apply_one_time_purchase_transaction(
         ),
         get_target_id=BenefitTransaction.get_one_time_purchase_id_or_raise,
     )
+
+
+async def _refresh_subscription_entitlements(
+    subscription_id: SubscriptionId,
+    command: BenefitSubscriptionRefreshCommand,
+    *,
+    actor_kind: AuditEntityKind,
+    actor_id: SerializedId,
+) -> BenefitSubscriptionRefreshResult:
+    callbacks: list[Callable[[], None]] = []
+
+    async with transaction() as execute:
+        async with subscription_domain.lock_subscription(execute, subscription_id):
+            subscription = await subscription_domain.load_subscription(execute, subscription_id)
+
+            if subscription is None:
+                raise errors.InvalidBenefitSubscription(subscription_id=str(subscription_id), reason="not found")
+
+            if subscription.benefit_id != command.benefit_id or not (
+                subscription.is_in_effect(command.effective_at) or subscription.is_upcoming(command.effective_at)
+            ):
+                return BenefitSubscriptionRefreshResult(
+                    subscription_id=subscription_id,
+                    outcome=BenefitSubscriptionRefreshOutcome.ineligible,
+                )
+
+            package = materialize_benefit_package(command.benefit_id, {})
+            _validate_package_for_interval(package, subscription.period_ends_at)
+            source_entitlements = await entitlement_domain.load_source_entitlements_for_subscription(
+                execute,
+                subscription_id,
+            )
+
+            if _subscription_has_required_entitlements(
+                package,
+                subscription,
+                source_entitlements,
+                evaluation_time=command.effective_at,
+            ):
+                return BenefitSubscriptionRefreshResult(
+                    subscription_id=subscription_id,
+                    outcome=BenefitSubscriptionRefreshOutcome.unchanged,
+                )
+
+            transaction_id = operations.new_benefit_transaction_id()
+            benefit_transaction = BenefitTransaction(
+                id=transaction_id,
+                source_id=command.source_id,
+                source_transaction_id=BenefitSourceTransactionId(transaction_id),
+                entitlement_action=BenefitEntitlementAction.grant,
+                user_id=subscription.user_id,
+                benefit_id=package.id,
+                subscription_id=subscription.id,
+                effective_at=command.effective_at,
+                period_starts_at=subscription.period_starts_at,
+                period_ends_at=subscription.period_ends_at,
+            )
+            await operations.save_benefit_transaction(execute, benefit_transaction)
+            callbacks = await _replace_benefit(
+                execute,
+                benefit_transaction,
+                package,
+                evaluation_time=command.effective_at,
+                actor_kind=actor_kind,
+                actor_id=actor_id,
+            )
+
+    _run_business_event_callbacks(callbacks)
+
+    return BenefitSubscriptionRefreshResult(
+        subscription_id=subscription_id,
+        outcome=BenefitSubscriptionRefreshOutcome.updated,
+        transaction_id=benefit_transaction.id,
+    )
+
+
+async def refresh_subscription_entitlements(
+    command: BenefitSubscriptionRefreshCommand,
+    *,
+    actor_kind: AuditEntityKind,
+    actor_id: SerializedId,
+) -> list[BenefitSubscriptionRefreshResult]:
+    async with transaction() as execute:
+        subscription_ids = await subscription_domain.load_subscription_ids_by_benefit(execute, command.benefit_id)
+
+    results: list[BenefitSubscriptionRefreshResult] = []
+
+    for subscription_id in subscription_ids:
+        results.append(
+            await _refresh_subscription_entitlements(
+                subscription_id,
+                command,
+                actor_kind=actor_kind,
+                actor_id=actor_id,
+            )
+        )
+
+    return results

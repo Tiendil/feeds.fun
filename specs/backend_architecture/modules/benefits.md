@@ -41,7 +41,6 @@ Purchased-state modules own:
 
 The entitlements module owns source grants, revocations, and effective entitlement state.
 
-Trusted callers MUST supply an authoritative benefit identifier, normalized benefit parameters, and one complete provider-independent subscription or one-time-purchase state.
 The benefits module MUST derive the entitlement action from policy owned by the corresponding purchased-state module.
 Callers MUST NOT select that action independently or supply materialized entitlement guarantees.
 
@@ -64,7 +63,9 @@ One-time-purchase benefit application is a benefits-owned workflow in which the 
 - entitlement state managed through `ffun.entitlements`.
 - all required audit evidence.
 
-These database-transaction exceptions apply only to the two benefit-application workflows and MUST NOT transfer ownership of participating modules' domain policies or permit bypassing their public domain boundaries.
+Conditional subscription refresh is a benefits-owned workflow in which current subscription state read through `ffun.subscriptions`, benefit transactions owned by `ffun.benefits`, and entitlement state managed through `ffun.entitlements` MUST share one database transaction.
+
+These database-transaction exceptions apply only to the workflows above and MUST NOT transfer ownership of participating modules' domain policies or permit bypassing their public domain boundaries.
 
 **Rationale:** Without these exceptions, a failure could leave purchased state inconsistent with its causal benefit transaction or owned entitlements.
 
@@ -172,9 +173,10 @@ Benefit application MUST support an existing internal purchased-state target, a 
 When a previously unknown provider identity selects the target, the owning purchased-state module MUST establish its immutable association with the new internal target as part of the same application outcome.
 One provider identity MUST NOT resolve to multiple internal targets.
 
-Provider adapters and other trusted callers MUST obtain the benefit identifier and normalized parameters from authoritative metadata.
+Provider adapters and other trusted callers MUST obtain the benefit identifier from authoritative metadata.
+One-time-purchase application callers MUST also obtain normalized benefit parameters from authoritative metadata.
 The benefits module MUST NOT infer that information from provider product data.
-Benefit parameters MUST remain separate from purchased state and MUST NOT be persisted as subscription or one-time-purchase state.
+Benefit parameters MUST remain separate from one-time-purchase state and MUST NOT be persisted as purchased state.
 
 ### Entitlement-action and interval derivation
 
@@ -202,8 +204,10 @@ Retrieval MUST have no domain effects.
 
 ### Purchased-state application and entitlement actualization
 
-Every newly accepted transaction MUST apply the supplied purchased state through its owning module and actualize the complete entitlement state owned by that target.
+Every newly accepted purchased-state application transaction MUST apply the supplied purchased state through its owning module and actualize the complete entitlement state owned by that target.
 The module MUST NOT accept a purchased-state update without considering its corresponding entitlement state.
+Subscription application MUST materialize its package from an empty parameter collection and MUST fail before accepting a transaction when the selected template declares parameters.
+One-time-purchase application MAY materialize a parameterized package from its supplied normalized parameters.
 
 Purchased state that is older than current authoritative state MUST fail benefit application because it cannot authorize replacement of the target's entitlement state.
 Failure MUST leave the transaction source identity unaccepted and preserve:
@@ -249,6 +253,27 @@ Competing applications affecting any of the following MUST preserve the serializ
 - the same purchased-state target.
 - the same user.
 - the same entitlement kind.
+
+### Conditional subscription refresh
+
+The module MUST support conditionally actualizing the current benefit configuration for subscriptions associated with one selected benefit.
+Only subscriptions whose normalized status grants benefits, whose current period ends after the evaluation time, and whose optional subscription end is absent or later than the evaluation time are eligible.
+A subscription whose current period begins in the future MAY be refreshed.
+
+Before accepting a refresh transaction, the workflow MUST materialize the current package from an empty parameter collection and compare its complete desired grants with the subscription-owned, unrevoked source entitlements that can affect the evaluation time or a later time.
+A parameterized template MUST therefore fail refresh before a transaction is accepted.
+The comparison MUST use the future projection of source, kind, value, and interval.
+It MUST ignore expired and revoked history and MUST NOT use merged effective entitlements, because another source could hide an incorrect subscription-owned grant.
+
+An ineligible subscription or a subscription whose relevant source entitlements already match the desired package MUST produce no benefit transaction, purchased-state change, entitlement change, audit evidence, or business event.
+When relevant source entitlements differ, the workflow MUST accept one new grant transaction and replace the target's owned entitlements through the normal actualization behavior.
+The refresh MUST NOT change the subscription snapshot or its causal state transaction.
+
+The eligibility decision, source-entitlement comparison, transaction acceptance, and entitlement replacement for one subscription MUST share one database transaction and serialize with subscription-state application.
+Each accepted refresh transaction MUST receive a new distinct source transaction identity.
+Repeating a refresh MUST reevaluate each subscription against the current package and current source entitlements.
+A subscription updated by an earlier invocation will therefore be unchanged unless its desired or owned entitlement state has subsequently changed.
+The workflow MUST NOT reuse a previous refresh transaction instead of performing that current-state comparison.
 
 ## Audit records
 

@@ -5,7 +5,7 @@ from typing import cast
 from pydantic import ValidationError
 
 from ffun.core.postgresql import ExecuteType
-from ffun.domain.entities import ProviderObjectReference, SubscriptionId, UserId
+from ffun.domain.entities import BenefitId, ProviderObjectReference, SubscriptionId, UserId
 from ffun.subscriptions import errors
 from ffun.subscriptions.entities import Subscription, SubscriptionStatusId
 
@@ -176,3 +176,17 @@ ORDER BY
 """
     rows = await execute(sql, {"user_ids": user_ids, "statuses": statuses})
     return [row_to_subscription(row) for row in rows]
+
+
+async def load_subscription_ids_by_benefit(
+    execute: ExecuteType,
+    benefit_id: BenefitId,
+) -> list[SubscriptionId]:
+    sql = """
+SELECT subscriptions.id
+FROM sb_subscriptions AS subscriptions
+WHERE subscriptions.benefit_id = %(benefit_id)s
+ORDER BY subscriptions.id
+"""
+    rows = await execute(sql, {"benefit_id": benefit_id})
+    return [cast(SubscriptionId, row["id"]) for row in rows]

@@ -187,17 +187,33 @@ class TestEmitSubscriptionChangeEvent:
         assert sum(record.get("event") == "subscription_changed" for record in logs) == 1
 
 
+class TestLockSubscription:
+    @pytest.mark.asyncio
+    async def test_locks_subscription_identity(self, mocker: MockerFixture) -> None:
+        subscription_id = make_subscription().id
+        transaction_execute = cast(ExecuteType, mocker.Mock())
+        lock_factory = mocker.patch.object(domain, "Lock")
+
+        async with domain.lock_subscription(transaction_execute, subscription_id):
+            pass
+
+        lock_factory.assert_called_once_with(
+            transaction_execute,
+            LockKind("subscription_state"),
+            subscription_id,
+        )
+
+
 class TestSaveSubscription:
     @pytest.mark.asyncio
-    async def test_locks_internal_subscription_identity(self, mocker: MockerFixture) -> None:
+    async def test_uses_subscription_lock(self, mocker: MockerFixture) -> None:
         subscription = make_subscription()
-        lock_factory = mocker.patch.object(domain, "Lock")
+        lock_subscription = mocker.spy(domain, "lock_subscription")
 
         await _save_subscription(subscription, emit_event=False)
 
-        lock_factory.assert_called_once_with(
+        lock_subscription.assert_called_once_with(
             cast(object, mocker.ANY),
-            LockKind("subscription_state"),
             subscription.id,
         )
 
@@ -546,6 +562,16 @@ class TestSaveSubscription:
 class TestNewSubscriptionId:
     def test_reexports_operation(self) -> None:
         assert domain.new_subscription_id is operations.new_subscription_id
+
+
+class TestLoadSubscription:
+    def test_reexports_operation(self) -> None:
+        assert domain.load_subscription is operations.load_subscription
+
+
+class TestLoadSubscriptionIdsByBenefit:
+    def test_reexports_operation(self) -> None:
+        assert domain.load_subscription_ids_by_benefit is operations.load_subscription_ids_by_benefit
 
 
 class TestLoadProviderSubscriptionReference:

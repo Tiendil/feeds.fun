@@ -62,7 +62,8 @@ A non-lifetime grant MUST have a finite effective period.
 A lifetime grant MUST use the project's stable lifetime interval-end marker and does not semantically expire.
 
 Revocation is the only lifecycle transition of an established grant.
-It is terminal, takes effect at one evaluation time, and remains attributable to the benefit transaction that caused it.
+It is terminal, occurs immediately at the workflow's current evaluation time, and MUST NOT be scheduled for a future time.
+Its recorded time describes the completed transition, which remains attributable to the benefit transaction that caused it.
 
 Effective entitlement intervals are half-open: their activation is inclusive and their expiration is exclusive.
 At most one effective interval MAY cover one user and entitlement kind at any time.
@@ -80,7 +81,7 @@ Reusing the identity with a different meaning MUST fail without changing entitle
 
 ### Revocation
 
-Revoking an existing grant MUST make it permanently inactive from the workflow's evaluation time.
+Revoking an existing grant MUST make it permanently inactive immediately at the workflow's current evaluation time.
 Revoking an already revoked grant MUST have no additional effect and MUST preserve the meaning of the original revocation.
 Attempting to revoke a missing grant MUST fail without changing entitlement state.
 
@@ -111,6 +112,10 @@ Every source change MUST use one evaluation time consistently for every time-dep
 
 Callers MUST be able to determine whether any supported entitlement kind is effective for any user at a chosen evaluation time and, when granted, its value and effective interval.
 Retrieval MUST NOT change entitlement state merely because time has passed.
+
+The benefits workflow MUST be able to retrieve source entitlements owned by one subscription through the entitlements domain boundary so it can compare that target's current or future grants with a newly materialized benefit package.
+This retrieval MUST include revoked and expired history so the benefits workflow can select the relevant source state without inferring from merged effective entitlements.
+It MUST have no domain effects.
 
 ## Audit records
 

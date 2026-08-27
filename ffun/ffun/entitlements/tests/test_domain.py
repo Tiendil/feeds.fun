@@ -38,7 +38,6 @@ from ffun.entitlements.tests.helpers import (
     clear_effective_intervals,
 )
 from ffun.entitlements.tests.make import make_effective_entitlement_interval, make_source_entitlement
-from ffun.locks.entities import LockKind
 from ffun.one_time_purchases.domain import new_purchase_id
 from ffun.subscriptions.domain import new_subscription_id
 
@@ -47,6 +46,11 @@ _MONTH_TOKENS = EntitlementKindId.month_tokens
 _LIFETIME_TOKENS = EntitlementKindId.lifetime_tokens
 _SOURCE_ID = EntitlementSourceId("test")
 _GRANT_TRANSACTION_ID = BenefitTransactionId(uuid.UUID(int=1))
+
+
+class TestLoadSourceEntitlementsForSubscription:
+    def test_reexports_operation(self) -> None:
+        assert domain.load_source_entitlements_for_subscription is operations.load_source_entitlements_for_subscription
 
 
 class TestEmptyBusinessEventCallback:
@@ -111,6 +115,10 @@ class TestMergeValues:
         with pytest.raises(errors.InvalidMergeValues, match="At least one"):
             domain.merge_values(MergePolicy.max, [])
 
+    def test_unsupported_policy(self) -> None:
+        with pytest.raises(AssertionError, match="Expected code to be unreachable"):
+            domain.merge_values(cast(MergePolicy, "unsupported"), [1])
+
     def test_result_must_fit_persistence_bounds(self) -> None:
         with pytest.raises(errors.InvalidMergeValues, match="persistence-safe bounds"):
             domain.merge_values(
@@ -163,15 +171,14 @@ class TestBuildEffectiveTimeline:
             (20, second.starts_at, second.expires_at),
         ]
 
-    def test_revoked_entitlement_is_excluded_regardless_of_revocation_time(self) -> None:
+    def test_revoked_entitlement_is_excluded(self) -> None:
         user_id = new_user_id()
         now = datetime.datetime.now(tz=datetime.UTC)
-        revoked_at = now + datetime.timedelta(days=1)
         entitlement = make_source_entitlement(
             user_id=user_id,
             starts_at=now - datetime.timedelta(days=1),
             expires_at=now + datetime.timedelta(days=2),
-            revoked_at=revoked_at,
+            revoked_at=now,
         )
 
         intervals = domain.build_effective_timeline(
@@ -585,20 +592,6 @@ class TestGrantSourceEntitlement:
                     )
 
     @pytest.mark.asyncio
-    async def test_locks_user_and_kind(self, mocker: MockerFixture) -> None:
-        source_entitlement = make_source_entitlement()
-        lock_factory = mocker.patch.object(domain, "Lock")
-
-        await _grant(source_entitlement, emit_event=False)
-
-        lock_factory.assert_called_once_with(
-            cast(object, mocker.ANY),
-            LockKind("entitlements_user_kind"),
-            source_entitlement.user_id,
-            source_entitlement.kind_id,
-        )
-
-    @pytest.mark.asyncio
     async def test_same_user_and_kind_cannot_load_while_first_grant_holds_lock(
         self,
         mocker: MockerFixture,
@@ -808,19 +801,82 @@ class TestGrantSourceEntitlement:
 
 class TestRevokeSourceEntitlement:
     @pytest.mark.asyncio
-    async def test_locks_user_and_kind(self, mocker: MockerFixture) -> None:
+    async def test_same_user_and_kind_cannot_load_while_first_revocation_holds_lock(
+        self,
+        mocker: MockerFixture,
+    ) -> None:
         source_entitlement = make_source_entitlement()
-        await _grant(source_entitlement)
-        lock_factory = mocker.patch.object(domain, "Lock")
+        evaluation_time = datetime.datetime.now(tz=datetime.UTC)
+        await _grant(source_entitlement, evaluation_time=evaluation_time, emit_event=False)
+        first_load_entered = asyncio.Event()
+        release_first_load = asyncio.Event()
+        second_revocation_attempting = asyncio.Event()
+        second_load_entered = asyncio.Event()
+        load_count = 0
+        original_load_source_entitlement = operations.load_source_entitlement
 
-        await _revoke(source_entitlement, emit_event=False)
+        async def tracked_load_source_entitlement(
+            transaction_execute: ExecuteType,
+            user_id: UserId,
+            kind_id: EntitlementKindId,
+            source_id: EntitlementSourceId,
+            grant_transaction_id: BenefitTransactionId,
+        ) -> SourceEntitlement | None:
+            nonlocal load_count
+            load_count += 1
 
-        lock_factory.assert_called_once_with(
-            cast(object, mocker.ANY),
-            LockKind("entitlements_user_kind"),
-            source_entitlement.user_id,
-            source_entitlement.kind_id,
+            if load_count == 1:
+                first_load_entered.set()
+                await release_first_load.wait()
+            elif load_count == 2:
+                second_load_entered.set()
+
+            return await original_load_source_entitlement(
+                transaction_execute,
+                user_id,
+                kind_id,
+                source_id,
+                grant_transaction_id,
+            )
+
+        async def revoke_second() -> entitlement_entities.SourceEntitlementChange:
+            second_revocation_attempting.set()
+            outcome, _ = await _revoke(
+                source_entitlement,
+                evaluation_time=evaluation_time,
+                emit_event=False,
+            )
+            return outcome
+
+        mocker.patch.object(
+            operations,
+            "load_source_entitlement",
+            side_effect=tracked_load_source_entitlement,
         )
+
+        first_revocation = asyncio.create_task(
+            _revoke(
+                source_entitlement,
+                evaluation_time=evaluation_time,
+                emit_event=False,
+            )
+        )
+        await first_load_entered.wait()
+        second_revocation = asyncio.create_task(revoke_second())
+        await second_revocation_attempting.wait()
+
+        try:
+            with pytest.raises(TimeoutError):
+                async with asyncio.timeout(0.05):
+                    await second_load_entered.wait()
+        finally:
+            release_first_load.set()
+            (first_outcome, _), second_outcome = await asyncio.gather(first_revocation, second_revocation)
+
+        assert second_load_entered.is_set()
+        assert first_outcome.changed
+        assert not second_outcome.changed
+        assert first_outcome.source_state == second_outcome.source_state
 
     @pytest.mark.asyncio
     async def test_missing_grant_fails_without_changes(self) -> None:

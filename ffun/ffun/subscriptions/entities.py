@@ -83,6 +83,25 @@ class SubscriptionSnapshot(BaseEntity):
     def has_same_business_state_as(self, other: "SubscriptionSnapshot") -> bool:
         return self.business_state() == other.business_state()
 
+    def is_ended(self, evaluation_time: datetime.datetime) -> bool:
+        return self.status is SubscriptionStatusId.ended or (
+            self.ends_at is not None and self.ends_at <= evaluation_time
+        )
+
+    def is_in_effect(self, evaluation_time: datetime.datetime) -> bool:
+        return (
+            self.status.grants_benefits
+            and not self.is_ended(evaluation_time)
+            and self.period_starts_at <= evaluation_time < self.period_ends_at
+        )
+
+    def is_upcoming(self, evaluation_time: datetime.datetime) -> bool:
+        return (
+            self.status.grants_benefits
+            and not self.is_ended(evaluation_time)
+            and self.period_starts_at > evaluation_time
+        )
+
     def audit_state(self) -> dict[str, object]:
         return cast(
             dict[str, object],

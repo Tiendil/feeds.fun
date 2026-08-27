@@ -39,6 +39,11 @@ CREATE INDEX sb_subscriptions_user_started_at_id_idx ON sb_subscriptions (
 )
 """
 
+sql_create_subscriptions_benefit_idx = """
+-- Supports deterministic subscription lookup for benefit refreshes.
+CREATE INDEX sb_subscriptions_benefit_id_idx ON sb_subscriptions (benefit_id)
+"""
+
 sql_create_subscription_refs = """
 -- Resolves an external provider subscription to its internal subscription projection.
 CREATE TABLE sb_subscription_refs (
@@ -56,6 +61,7 @@ def apply_step(conn: Connection[dict[str, Any]]) -> None:
     cursor = conn.cursor()
     cursor.execute(sql_create_subscriptions)
     cursor.execute(sql_create_subscriptions_user_idx)
+    cursor.execute(sql_create_subscriptions_benefit_idx)
     cursor.execute(sql_create_subscription_refs)
 
 

@@ -391,3 +391,29 @@ class BenefitTransactionApplicationResult(BaseEntity, Generic[TargetIdT]):
     transaction_id: BenefitTransactionId
     transaction_created: bool
     target_id: TargetIdT
+
+
+class BenefitSubscriptionRefreshOutcome(enum.StrEnum):
+    ineligible = "ineligible"
+    unchanged = "unchanged"
+    updated = "updated"
+
+
+class BenefitSubscriptionRefreshCommand(BaseEntity):
+    source_id: BenefitSourceId
+    benefit_id: BenefitId
+    effective_at: datetime.datetime
+
+    @pydantic.field_validator("effective_at")
+    @classmethod
+    def effective_at_must_have_timezone(cls, timestamp: datetime.datetime) -> datetime.datetime:
+        if not utils.has_timezone(timestamp):
+            raise ValueError("Benefit subscription refresh timestamp must have a UTC offset")
+
+        return timestamp
+
+
+class BenefitSubscriptionRefreshResult(BaseEntity):
+    subscription_id: SubscriptionId
+    outcome: BenefitSubscriptionRefreshOutcome
+    transaction_id: BenefitTransactionId | None = None

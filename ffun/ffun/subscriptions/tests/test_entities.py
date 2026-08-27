@@ -78,6 +78,73 @@ class TestSubscriptionSnapshot:
         )
         assert not subscription.has_same_business_state_as(subscription.replace(status=SubscriptionStatusId.ended))
 
+    @pytest.mark.parametrize(
+        ("changes", "expected"),
+        [
+            ({}, True),
+            ({"period_starts_at": datetime.timedelta()}, True),
+            ({"period_starts_at": datetime.timedelta(seconds=1)}, False),
+            ({"ends_at": datetime.timedelta(hours=12)}, True),
+            ({"status": SubscriptionStatusId.ended}, False),
+            ({"period_ends_at": datetime.timedelta()}, False),
+            ({"ends_at": datetime.timedelta()}, False),
+        ],
+    )
+    def test_is_in_effect(self, changes: dict[str, object], expected: bool) -> None:
+        evaluation_time = datetime.datetime.now(tz=datetime.UTC)
+        normalized_changes = {
+            field: evaluation_time + value if isinstance(value, datetime.timedelta) else value
+            for field, value in changes.items()
+        }
+        subscription = make_subscription(
+            period_starts_at=evaluation_time - datetime.timedelta(days=1),
+            period_ends_at=evaluation_time + datetime.timedelta(days=1),
+        ).replace(**normalized_changes)
+
+        assert subscription.is_in_effect(evaluation_time) == expected
+
+    @pytest.mark.parametrize(
+        ("changes", "expected"),
+        [
+            ({"period_starts_at": datetime.timedelta(days=1), "period_ends_at": datetime.timedelta(days=2)}, True),
+            ({}, False),
+            ({"status": SubscriptionStatusId.pending}, False),
+            ({"status": SubscriptionStatusId.ended}, False),
+            ({"ends_at": datetime.timedelta()}, False),
+        ],
+    )
+    def test_is_upcoming(self, changes: dict[str, object], expected: bool) -> None:
+        evaluation_time = datetime.datetime.now(tz=datetime.UTC)
+        normalized_changes = {
+            field: evaluation_time + value if isinstance(value, datetime.timedelta) else value
+            for field, value in changes.items()
+        }
+        subscription = make_subscription(
+            period_starts_at=evaluation_time - datetime.timedelta(days=1),
+            period_ends_at=evaluation_time + datetime.timedelta(days=1),
+        ).replace(**normalized_changes)
+
+        assert subscription.is_upcoming(evaluation_time) == expected
+
+    @pytest.mark.parametrize(
+        ("changes", "expected"),
+        [
+            ({}, False),
+            ({"ends_at": datetime.timedelta(seconds=1)}, False),
+            ({"ends_at": datetime.timedelta()}, True),
+            ({"status": SubscriptionStatusId.ended}, True),
+        ],
+    )
+    def test_is_ended(self, changes: dict[str, object], expected: bool) -> None:
+        evaluation_time = datetime.datetime.now(tz=datetime.UTC)
+        normalized_changes = {
+            field: evaluation_time + value if isinstance(value, datetime.timedelta) else value
+            for field, value in changes.items()
+        }
+        subscription = make_subscription().replace(**normalized_changes)
+
+        assert subscription.is_ended(evaluation_time) == expected
+
     def test_business_state__contains_snapshot_except_provider_update_time(self) -> None:
         subscription = make_subscription()
 

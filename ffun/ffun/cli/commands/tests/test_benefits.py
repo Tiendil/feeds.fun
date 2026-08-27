@@ -3,6 +3,7 @@ import contextlib
 import datetime
 import json
 import uuid
+from typing import cast
 
 import pytest
 import typer
@@ -13,6 +14,9 @@ from ffun.benefits.entities import (
     ADMIN_BENEFIT_SOURCE_ID,
     BenefitParameterId,
     BenefitSourceTransactionId,
+    BenefitSubscriptionRefreshCommand,
+    BenefitSubscriptionRefreshOutcome,
+    BenefitSubscriptionRefreshResult,
     BenefitTransactionApplicationResult,
     InternalTarget,
     NewTarget,
@@ -146,7 +150,6 @@ class TestRunApplySubscription:
     ) -> None:
         mocker.patch("ffun.cli.commands.benefits.with_app", return_value=contextlib.nullcontext())
         snapshot = make_subscription_snapshot()
-        parameters = {BenefitParameterId("quantity"): 100}
         transaction = make_transaction_command()
         actor_id = SerializedId("administrator@example.com")
         result = BenefitTransactionApplicationResult[SubscriptionId](
@@ -160,11 +163,10 @@ class TestRunApplySubscription:
             return_value=result,
         )
 
-        await benefits.run_apply_subscription(snapshot, parameters, transaction, actor_id)
+        await benefits.run_apply_subscription(snapshot, transaction, actor_id)
 
         apply.assert_awaited_once_with(
             snapshot,
-            parameters,
             transaction,
             actor_kind=AuditEntityKind.admin,
             actor_id=actor_id,
@@ -219,18 +221,117 @@ class TestRunApplyOneTimePurchase:
         assert capsys.readouterr().out == json.dumps(expected_payload) + "\n"
 
 
+class TestRunRefreshSubscriptions:
+    @pytest.mark.asyncio
+    async def test_submits_refresh_as_administrator_and_prints_summary(
+        self,
+        mocker: MockerFixture,
+        capsys: pytest.CaptureFixture[str],
+    ) -> None:
+        mocker.patch("ffun.cli.commands.benefits.with_app", return_value=contextlib.nullcontext())
+        command = BenefitSubscriptionRefreshCommand(
+            source_id=ADMIN_BENEFIT_SOURCE_ID,
+            benefit_id=BenefitId("supporter"),
+            effective_at=datetime.datetime.now(tz=datetime.UTC),
+        )
+        actor_id = SerializedId("administrator@example.com")
+        updated = BenefitSubscriptionRefreshResult(
+            subscription_id=SubscriptionId(uuid.uuid4()),
+            outcome=BenefitSubscriptionRefreshOutcome.updated,
+            transaction_id=BenefitTransactionId(uuid.uuid4()),
+        )
+        unchanged = BenefitSubscriptionRefreshResult(
+            subscription_id=SubscriptionId(uuid.uuid4()),
+            outcome=BenefitSubscriptionRefreshOutcome.unchanged,
+        )
+        ineligible = BenefitSubscriptionRefreshResult(
+            subscription_id=SubscriptionId(uuid.uuid4()),
+            outcome=BenefitSubscriptionRefreshOutcome.ineligible,
+        )
+        results: list[BenefitSubscriptionRefreshResult] = [updated, unchanged, ineligible]
+        refresh = mocker.patch.object(
+            benefits.benefits_domain,
+            "refresh_subscription_entitlements",
+            return_value=results,
+        )
+
+        await benefits.run_refresh_subscriptions(command, actor_id)
+
+        refresh.assert_awaited_once_with(
+            command,
+            actor_kind=AuditEntityKind.admin,
+            actor_id=actor_id,
+        )
+        payload = cast(dict[str, object], json.loads(capsys.readouterr().out))
+        assert payload == {
+            "benefit_id": command.benefit_id,
+            "candidates": 3,
+            "updated": 1,
+            "unchanged": 1,
+            "ineligible": 1,
+            "results": [
+                {
+                    "subscription_id": str(updated.subscription_id),
+                    "outcome": "updated",
+                    "transaction_id": str(updated.transaction_id),
+                },
+                {
+                    "subscription_id": str(unchanged.subscription_id),
+                    "outcome": "unchanged",
+                    "transaction_id": None,
+                },
+                {
+                    "subscription_id": str(ineligible.subscription_id),
+                    "outcome": "ineligible",
+                    "transaction_id": None,
+                },
+            ],
+        }
+
+    @pytest.mark.asyncio
+    async def test_prints_empty_summary(
+        self,
+        mocker: MockerFixture,
+        capsys: pytest.CaptureFixture[str],
+    ) -> None:
+        mocker.patch("ffun.cli.commands.benefits.with_app", return_value=contextlib.nullcontext())
+        command = BenefitSubscriptionRefreshCommand(
+            source_id=ADMIN_BENEFIT_SOURCE_ID,
+            benefit_id=BenefitId("supporter"),
+            effective_at=datetime.datetime.now(tz=datetime.UTC),
+        )
+        actor_id = SerializedId("administrator@example.com")
+        results: list[BenefitSubscriptionRefreshResult] = []
+        mocker.patch.object(
+            benefits.benefits_domain,
+            "refresh_subscription_entitlements",
+            return_value=results,
+        )
+
+        await benefits.run_refresh_subscriptions(command, actor_id)
+
+        payload = cast(dict[str, object], json.loads(capsys.readouterr().out))
+        assert payload == {
+            "benefit_id": command.benefit_id,
+            "candidates": 0,
+            "updated": 0,
+            "unchanged": 0,
+            "ineligible": 0,
+            "results": [],
+        }
+
+
 class TestApplySubscription:
     @pytest.mark.asyncio
     async def test_new_target_uses_administrative_defaults(self, mocker: MockerFixture) -> None:
-        received: list[tuple[object, object, object, SerializedId]] = []
+        received: list[tuple[object, object, SerializedId]] = []
 
         async def run_apply_subscription(
             snapshot: object,
-            parameters: object,
             transaction: object,
             actor_id: SerializedId,
         ) -> None:
-            received.append((snapshot, parameters, transaction, actor_id))
+            received.append((snapshot, transaction, actor_id))
 
         operation_time = datetime.datetime.now(tz=datetime.UTC)
         user_id = uuid.uuid4()
@@ -251,14 +352,13 @@ class TestApplySubscription:
             provider_updated_at=None,
             source_transaction_id=None,
             actor_id=str(benefits.DEFAULT_ADMIN_ACTOR_ID),
-            parameters=None,
             subscription_id=None,
             expected_renewal_at=None,
             ends_at=None,
         )
 
         assert len(received) == 1
-        snapshot, parameters, transaction, actor_id = received[0]
+        snapshot, transaction, actor_id = received[0]
         assert snapshot == make_subscription_snapshot(
             user_id=UserId(user_id),
             benefit_id=BenefitId("supporter"),
@@ -271,7 +371,6 @@ class TestApplySubscription:
             ends_at=None,
             provider_updated_at=operation_time,
         )
-        assert parameters == {}
         assert transaction == make_transaction_command(
             source_id=ADMIN_BENEFIT_SOURCE_ID,
             source_transaction_id=BenefitSourceTransactionId(source_transaction_id),
@@ -291,18 +390,16 @@ class TestApplySubscription:
             tuple[
                 object,
                 object,
-                object,
                 SerializedId,
             ]
         ] = []
 
         async def run_apply_subscription(
             snapshot: object,
-            parameters: object,
             transaction: object,
             actor_id: SerializedId,
         ) -> None:
-            received.append((snapshot, parameters, transaction, actor_id))
+            received.append((snapshot, transaction, actor_id))
 
         mocker.patch.object(benefits, "run_apply_subscription", side_effect=run_apply_subscription)
         now = datetime.datetime.now(tz=datetime.UTC)
@@ -322,14 +419,13 @@ class TestApplySubscription:
             provider_updated_at=now,
             source_transaction_id=source_transaction_id,
             actor_id="administrator@example.com",
-            parameters=["quantity=500"],
             subscription_id=selected_subscription_id,
             expected_renewal_at=now + datetime.timedelta(days=29),
             ends_at=None,
         )
 
         assert len(received) == 1
-        snapshot, parameters, transaction, actor_id = received[0]
+        snapshot, transaction, actor_id = received[0]
         assert snapshot == make_subscription_snapshot(
             user_id=UserId(user_id),
             benefit_id=BenefitId("supporter"),
@@ -341,7 +437,6 @@ class TestApplySubscription:
             expected_renewal_at=now + datetime.timedelta(days=29),
             provider_updated_at=now,
         )
-        assert parameters == {BenefitParameterId("quantity"): 500}
         assert transaction == make_transaction_command(
             source_id=ADMIN_BENEFIT_SOURCE_ID,
             source_transaction_id=BenefitSourceTransactionId(source_transaction_id),
@@ -357,7 +452,7 @@ class TestApplySubscription:
     def test_rejects_invalid_snapshot(self) -> None:
         now = datetime.datetime.now(tz=datetime.UTC)
 
-        with pytest.raises(typer.BadParameter, match="invalid subscription benefit parameters"):
+        with pytest.raises(typer.BadParameter, match="invalid subscription snapshot"):
             benefits.apply_subscription(
                 user_id=uuid.uuid4(),
                 benefit_id="supporter",
@@ -369,7 +464,6 @@ class TestApplySubscription:
                 provider_updated_at=now,
                 source_transaction_id=uuid.uuid4(),
                 actor_id="administrator@example.com",
-                parameters=[],
                 subscription_id=None,
                 expected_renewal_at=None,
                 ends_at=None,
@@ -505,3 +599,36 @@ class TestApplyOneTimePurchase:
                 parameters=["quantity=500"],
                 one_time_purchase_id=None,
             )
+
+
+class TestRefreshSubscriptions:
+    @pytest.mark.asyncio
+    async def test_builds_and_runs_normalized_command(self, mocker: MockerFixture) -> None:
+        received: list[tuple[object, SerializedId]] = []
+
+        async def run_refresh_subscriptions(
+            command: object,
+            actor_id: SerializedId,
+        ) -> None:
+            received.append((command, actor_id))
+
+        operation_time = datetime.datetime.now(tz=datetime.UTC)
+        mocker.patch.object(benefits.core_utils, "now", return_value=operation_time)
+        mocker.patch.object(benefits, "run_refresh_subscriptions", side_effect=run_refresh_subscriptions)
+
+        await asyncio.to_thread(
+            benefits.refresh_subscriptions,
+            benefit_id="supporter",
+            actor_id="administrator@example.com",
+        )
+
+        assert received == [
+            (
+                BenefitSubscriptionRefreshCommand(
+                    source_id=ADMIN_BENEFIT_SOURCE_ID,
+                    benefit_id=BenefitId("supporter"),
+                    effective_at=operation_time,
+                ),
+                SerializedId("administrator@example.com"),
+            )
+        ]

@@ -106,7 +106,7 @@ Provider statuses are open-ended external descriptions and MUST NOT be constrain
 ### Lifecycle observations
 
 Every subscription state MUST establish when the subscription began, one current subscription period, and the provider update time.
-The current period MUST begin before it ends, and its end MUST NOT equal the project's stable lifetime interval-end marker.
+The current period MUST begin before it ends and MUST have a finite end rather than represent lifetime validity.
 Every lifecycle time MUST identify an unambiguous instant.
 
 Expected renewal and subscription end MAY be absent.
@@ -190,7 +190,13 @@ Retrieval by user MUST support restriction to selected normalized statuses.
 Selecting no statuses MUST produce no subscriptions, while applying no status restriction MUST include every status.
 Callers MUST be able to retrieve only the subscriptions that are alive at the query's evaluation time.
 
+The benefits workflow MUST be able to retrieve every subscription identity associated with one benefit.
+It MUST load each identified subscription and use the module's status and time semantics to determine whether that subscription can grant benefits at the evaluation time or later.
+An eligible subscription MUST have a benefit-granting status, a current period ending after the evaluation time, and no subscription end at or before the evaluation time.
+A current period beginning after the evaluation time MUST remain eligible.
+
 Subscriptions for one user MUST be ordered by subscription start descending and then by internal subscription identity ascending.
+Subscription identities retrieved for a benefit refresh MUST be ordered by internal subscription identity ascending.
 Retrieval MUST have no domain effects and MUST NOT produce audit evidence or business events.
 
 ## Audit records

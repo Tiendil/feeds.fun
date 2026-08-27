@@ -263,3 +263,34 @@ class TestLoadSubscriptions:
         loaded = await operations.load_subscriptions(execute, [selected_user_id, selected_user_id])
 
         assert loaded == [same_start_earlier_identity, same_start_later_identity, earlier]
+
+
+class TestLoadSubscriptionIdsByBenefit:
+    @pytest.mark.asyncio
+    async def test_no_matching_subscriptions(self) -> None:
+        assert (
+            await operations.load_subscription_ids_by_benefit(
+                execute,
+                BenefitId(f"missing-benefit-{uuid.uuid4()}"),
+            )
+            == []
+        )
+
+    @pytest.mark.asyncio
+    async def test_finds_all_ids_by_benefit_in_identity_order(self) -> None:
+        benefit_id = BenefitId(f"selected-benefit-{uuid.uuid4()}")
+        subscription_ids = sorted([SubscriptionId(uuid.uuid4()), SubscriptionId(uuid.uuid4())])
+        later_identity = make_subscription(
+            subscription_id=subscription_ids[1],
+            benefit_id=benefit_id,
+            status=SubscriptionStatusId.ended,
+        )
+        earlier_identity = make_subscription(
+            subscription_id=subscription_ids[0],
+            benefit_id=benefit_id,
+        )
+        other = make_subscription(benefit_id=BenefitId(f"other-benefit-{uuid.uuid4()}"))
+        for subscription in (later_identity, earlier_identity, other):
+            await operations.save_subscription(execute, subscription)
+
+        assert await operations.load_subscription_ids_by_benefit(execute, benefit_id) == subscription_ids

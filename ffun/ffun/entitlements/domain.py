@@ -7,7 +7,7 @@ from typing import assert_never, cast
 from ffun.audit import domain as audit_domain
 from ffun.audit.entities import AuditEntityKind, AuditEventName
 from ffun.core import logging
-from ffun.core.postgresql import ExecuteType, execute
+from ffun.core.postgresql import ExecuteType, TransactionExecuteType, execute
 from ffun.domain.entities import BenefitTransactionId, OneTimePurchaseId, SerializedId, SubscriptionId, UserId
 from ffun.entitlements import entities as entitlement_entities
 from ffun.entitlements import errors, operations
@@ -26,6 +26,8 @@ from ffun.locks.domain import Lock
 from ffun.locks.entities import LockKind
 
 logger = logging.get_module_logger()
+
+load_source_entitlements_for_subscription = operations.load_source_entitlements_for_subscription
 
 
 def _empty_business_event_callback() -> None:
@@ -354,7 +356,7 @@ def _emit_source_change_events(outcome: SourceEntitlementChange) -> None:
 
 
 async def grant_source_entitlement(
-    execute: ExecuteType,
+    execute: TransactionExecuteType,
     source_entitlement: SourceEntitlement,
     *,
     evaluation_time: datetime.datetime,
@@ -391,7 +393,7 @@ async def grant_source_entitlement(
 
 
 async def revoke_source_entitlement(  # noqa: CFQ002
-    execute: ExecuteType,
+    execute: TransactionExecuteType,
     *,
     source_id: EntitlementSourceId,
     grant_transaction_id: BenefitTransactionId,
@@ -428,7 +430,7 @@ async def revoke_source_entitlement(  # noqa: CFQ002
 
 
 async def grant_source_entitlements(  # noqa: CFQ002
-    execute: ExecuteType,
+    execute: TransactionExecuteType,
     *,
     source_id: EntitlementSourceId,
     grant_transaction_id: BenefitTransactionId,
@@ -475,7 +477,7 @@ async def grant_source_entitlements(  # noqa: CFQ002
 
 
 async def revoke_subscription_entitlements(  # noqa: CFQ002
-    execute: ExecuteType,
+    execute: TransactionExecuteType,
     *,
     subscription_id: SubscriptionId,
     revoked_by_transaction_id: BenefitTransactionId,
@@ -510,7 +512,7 @@ async def revoke_subscription_entitlements(  # noqa: CFQ002
 
 
 async def revoke_one_time_purchase_entitlements(  # noqa: CFQ002
-    execute: ExecuteType,
+    execute: TransactionExecuteType,
     *,
     one_time_purchase_id: OneTimePurchaseId,
     revoked_by_transaction_id: BenefitTransactionId,

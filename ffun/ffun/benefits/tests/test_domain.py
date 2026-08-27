@@ -10,12 +10,16 @@ from pytest_mock import MockerFixture
 from ffun.audit.entities import AuditEntityKind
 from ffun.benefits import domain, errors, operations, target_resolution
 from ffun.benefits.entities import (
+    ADMIN_BENEFIT_SOURCE_ID,
     BenefitEntitlementAction,
     BenefitPackageTemplate,
     BenefitParameterDefinition,
     BenefitParameterId,
     BenefitSourceId,
     BenefitSourceTransactionId,
+    BenefitSubscriptionRefreshCommand,
+    BenefitSubscriptionRefreshOutcome,
+    BenefitSubscriptionRefreshResult,
     BenefitTransaction,
     BenefitTransactionApplicationResult,
     BenefitTransactionCommand,
@@ -33,7 +37,7 @@ from ffun.benefits.tests.make import (
     make_subscription_snapshot,
     make_transaction_command,
 )
-from ffun.core.postgresql import ExecuteType, execute
+from ffun.core.postgresql import ExecuteType, TransactionExecuteType, execute, transaction
 from ffun.core.tests.helpers import (
     TableSizeDelta,
     TableSizeNotChanged,
@@ -55,15 +59,12 @@ from ffun.domain.entities import (
 from ffun.entitlements import domain as entitlement_domain
 from ffun.entitlements.entities import EntitlementGuarantee, EntitlementKindId
 from ffun.entitlements.tests import helpers as entitlement_helpers
+from ffun.entitlements.tests.make import make_source_entitlement
 from ffun.one_time_purchases import domain as purchase_domain
 from ffun.one_time_purchases.entities import PurchaseSaveResult, PurchaseSnapshot, PurchaseStatus
 from ffun.one_time_purchases.tests.make import make_provider_purchase_reference, make_purchase_snapshot
 from ffun.subscriptions import domain as subscription_domain
-from ffun.subscriptions.entities import (
-    SubscriptionSaveResult,
-    SubscriptionSnapshot,
-    SubscriptionStatusId,
-)
+from ffun.subscriptions.entities import SubscriptionSaveResult, SubscriptionSnapshot, SubscriptionStatusId
 from ffun.subscriptions.tests.make import make_provider_subscription_reference
 
 _ACTOR_KIND = AuditEntityKind.psp
@@ -102,7 +103,6 @@ async def _apply(
 ) -> BenefitTransactionApplicationResult[SubscriptionId]:
     return await domain.apply_subscription_transaction(
         subscription,
-        {},
         command,
         actor_kind=_ACTOR_KIND,
         actor_id=_ACTOR_ID,
@@ -221,7 +221,7 @@ class TestValidatePackageForInterval:
     @pytest.mark.parametrize(
         ("kind_id", "period_ends_at"),
         [
-            (EntitlementKindId.day_tokens, datetime.datetime(2026, 1, 2, tzinfo=datetime.UTC)),
+            (EntitlementKindId.day_tokens, datetime.datetime.now(tz=datetime.UTC)),
             (EntitlementKindId.lifetime_tokens, LIFETIME_INTERVAL_END_MARKER),
         ],
     )
@@ -240,7 +240,7 @@ class TestValidatePackageForInterval:
         ("kind_id", "period_ends_at"),
         [
             (EntitlementKindId.day_tokens, LIFETIME_INTERVAL_END_MARKER),
-            (EntitlementKindId.lifetime_tokens, datetime.datetime(2026, 1, 2, tzinfo=datetime.UTC)),
+            (EntitlementKindId.lifetime_tokens, datetime.datetime.now(tz=datetime.UTC)),
         ],
     )
     def test_mismatching_lifetime_status(
@@ -269,7 +269,7 @@ class TestApplyBenefitTransaction:
             source_id=command.source_id,
             source_transaction_id=command.source_transaction_id,
         )
-        actualize_calls: list[tuple[ExecuteType, datetime.datetime]] = []
+        actualize_calls: list[tuple[TransactionExecuteType, datetime.datetime]] = []
         callback_calls = 0
 
         def callback() -> None:
@@ -277,7 +277,7 @@ class TestApplyBenefitTransaction:
             callback_calls += 1
 
         async def actualize(
-            actualize_execute: ExecuteType,
+            actualize_execute: TransactionExecuteType,
             evaluation_time: datetime.datetime,
         ) -> tuple[BenefitTransaction, list[Callable[[], None]]]:
             actualize_calls.append((actualize_execute, evaluation_time))
@@ -313,7 +313,7 @@ class TestApplyBenefitTransaction:
         actualize_called = False
 
         async def actualize(
-            _execute: ExecuteType,
+            _execute: TransactionExecuteType,
             _evaluation_time: datetime.datetime,
         ) -> tuple[BenefitTransaction, list[Callable[[], None]]]:
             nonlocal actualize_called
@@ -351,17 +351,18 @@ class TestRevokeOwnedEntitlements:
         )
         evaluation_time = datetime.datetime.now(tz=datetime.UTC)
 
-        callbacks = await domain._revoke_owned_entitlements(
-            execute,
-            benefit_transaction,
-            evaluation_time=evaluation_time,
-            actor_kind=_ACTOR_KIND,
-            actor_id=_ACTOR_ID,
-        )
+        async with transaction() as transaction_execute:
+            callbacks = await domain._revoke_owned_entitlements(
+                transaction_execute,
+                benefit_transaction,
+                evaluation_time=evaluation_time,
+                actor_kind=_ACTOR_KIND,
+                actor_id=_ACTOR_ID,
+            )
 
         assert callbacks == [revoke_callback]
         revoke.assert_awaited_once_with(
-            execute,
+            transaction_execute,
             subscription_id=subscription_id,
             revoked_by_transaction_id=benefit_transaction.id,
             evaluation_time=evaluation_time,
@@ -386,18 +387,19 @@ class TestRevokeOwnedEntitlements:
         )
         evaluation_time = datetime.datetime.now(tz=datetime.UTC)
 
-        callbacks = await domain._revoke_owned_entitlements(
-            execute,
-            benefit_transaction,
-            evaluation_time=evaluation_time,
-            actor_kind=_ACTOR_KIND,
-            actor_id=_ACTOR_ID,
-        )
+        async with transaction() as transaction_execute:
+            callbacks = await domain._revoke_owned_entitlements(
+                transaction_execute,
+                benefit_transaction,
+                evaluation_time=evaluation_time,
+                actor_kind=_ACTOR_KIND,
+                actor_id=_ACTOR_ID,
+            )
 
         assert callbacks == [revoke_callback]
         revoke_subscription.assert_not_awaited()
         revoke.assert_awaited_once_with(
-            execute,
+            transaction_execute,
             one_time_purchase_id=one_time_purchase_id,
             revoked_by_transaction_id=benefit_transaction.id,
             evaluation_time=evaluation_time,
@@ -436,25 +438,26 @@ class TestReplaceBenefit:
         )
         evaluation_time = datetime.datetime.now(tz=datetime.UTC)
 
-        callbacks = await domain._replace_benefit(
-            execute,
-            benefit_transaction,
-            package,
-            evaluation_time=evaluation_time,
-            actor_kind=_ACTOR_KIND,
-            actor_id=_ACTOR_ID,
-        )
+        async with transaction() as transaction_execute:
+            callbacks = await domain._replace_benefit(
+                transaction_execute,
+                benefit_transaction,
+                package,
+                evaluation_time=evaluation_time,
+                actor_kind=_ACTOR_KIND,
+                actor_id=_ACTOR_ID,
+            )
 
         assert callbacks == [revoke_callback, grant_callback]
         revoke.assert_awaited_once_with(
-            execute,
+            transaction_execute,
             benefit_transaction,
             evaluation_time=evaluation_time,
             actor_kind=_ACTOR_KIND,
             actor_id=_ACTOR_ID,
         )
         grant.assert_awaited_once_with(
-            execute,
+            transaction_execute,
             source_id=domain.BENEFITS_ENTITLEMENT_SOURCE_ID,
             grant_transaction_id=benefit_transaction.id,
             user_id=benefit_transaction.user_id,
@@ -486,18 +489,19 @@ class TestReplaceBenefit:
         grant = mocker.patch.object(entitlement_domain, "grant_source_entitlements")
         evaluation_time = datetime.datetime.now(tz=datetime.UTC)
 
-        callbacks = await domain._replace_benefit(
-            execute,
-            benefit_transaction,
-            package,
-            evaluation_time=evaluation_time,
-            actor_kind=_ACTOR_KIND,
-            actor_id=_ACTOR_ID,
-        )
+        async with transaction() as transaction_execute:
+            callbacks = await domain._replace_benefit(
+                transaction_execute,
+                benefit_transaction,
+                package,
+                evaluation_time=evaluation_time,
+                actor_kind=_ACTOR_KIND,
+                actor_id=_ACTOR_ID,
+            )
 
         assert callbacks == [revoke_callback]
         revoke.assert_awaited_once_with(
-            execute,
+            transaction_execute,
             benefit_transaction,
             evaluation_time=evaluation_time,
             actor_kind=_ACTOR_KIND,
@@ -548,15 +552,15 @@ class TestActualizeSubscriptionTransaction:
         entitlement_callbacks: list[Callable[[], None]] = [entitlement_callback]
         mocker.patch.object(domain, "_replace_benefit", return_value=entitlement_callbacks)
 
-        benefit_transaction, callbacks = await domain._actualize_subscription_transaction(
-            command,
-            execute,
-            snapshot,
-            {},
-            evaluation_time=datetime.datetime.now(tz=datetime.UTC),
-            actor_kind=_ACTOR_KIND,
-            actor_id=_ACTOR_ID,
-        )
+        async with transaction() as transaction_execute:
+            benefit_transaction, callbacks = await domain._actualize_subscription_transaction(
+                command,
+                transaction_execute,
+                snapshot,
+                evaluation_time=datetime.datetime.now(tz=datetime.UTC),
+                actor_kind=_ACTOR_KIND,
+                actor_id=_ACTOR_ID,
+            )
 
         assert benefit_transaction == make_benefit_transaction(
             transaction_id=transaction_id,
@@ -571,9 +575,9 @@ class TestActualizeSubscriptionTransaction:
             period_ends_at=snapshot.period_ends_at,
         )
         assert callbacks == [subscription_callback, entitlement_callback]
-        save_transaction.assert_awaited_once_with(execute, benefit_transaction)
+        save_transaction.assert_awaited_once_with(transaction_execute, benefit_transaction)
         save_subscription.assert_awaited_once_with(
-            execute,
+            transaction_execute,
             subscription_id,
             transaction_id,
             snapshot,
@@ -611,15 +615,15 @@ class TestActualizeSubscriptionTransaction:
         replace = mocker.patch.object(domain, "_replace_benefit")
 
         with pytest.raises(errors.StaleBenefitTransaction) as exception_info:
-            await domain._actualize_subscription_transaction(
-                command,
-                execute,
-                snapshot,
-                {},
-                evaluation_time=datetime.datetime.now(tz=datetime.UTC),
-                actor_kind=_ACTOR_KIND,
-                actor_id=_ACTOR_ID,
-            )
+            async with transaction() as transaction_execute:
+                await domain._actualize_subscription_transaction(
+                    command,
+                    transaction_execute,
+                    snapshot,
+                    evaluation_time=datetime.datetime.now(tz=datetime.UTC),
+                    actor_kind=_ACTOR_KIND,
+                    actor_id=_ACTOR_ID,
+                )
 
         message = str(exception_info.value)
         assert f"subscription_id={subscription_id}" in message
@@ -670,15 +674,16 @@ class TestActualizeOneTimePurchaseTransaction:
         entitlement_callbacks: list[Callable[[], None]] = [entitlement_callback]
         mocker.patch.object(domain, "_replace_benefit", return_value=entitlement_callbacks)
 
-        benefit_transaction, callbacks = await domain._actualize_one_time_purchase_transaction(
-            command,
-            execute,
-            snapshot,
-            {_QUANTITY_PARAMETER_ID: 100},
-            evaluation_time=datetime.datetime.now(tz=datetime.UTC),
-            actor_kind=_ACTOR_KIND,
-            actor_id=_ACTOR_ID,
-        )
+        async with transaction() as transaction_execute:
+            benefit_transaction, callbacks = await domain._actualize_one_time_purchase_transaction(
+                command,
+                transaction_execute,
+                snapshot,
+                {_QUANTITY_PARAMETER_ID: 100},
+                evaluation_time=datetime.datetime.now(tz=datetime.UTC),
+                actor_kind=_ACTOR_KIND,
+                actor_id=_ACTOR_ID,
+            )
 
         assert benefit_transaction == make_one_time_purchase_benefit_transaction(
             transaction_id=transaction_id,
@@ -693,9 +698,9 @@ class TestActualizeOneTimePurchaseTransaction:
             period_ends_at=snapshot.period_ends_at,
         )
         assert callbacks == [purchase_callback, entitlement_callback]
-        save_transaction.assert_awaited_once_with(execute, benefit_transaction)
+        save_transaction.assert_awaited_once_with(transaction_execute, benefit_transaction)
         save_purchase.assert_awaited_once_with(
-            execute,
+            transaction_execute,
             purchase_id,
             transaction_id,
             snapshot,
@@ -733,15 +738,16 @@ class TestActualizeOneTimePurchaseTransaction:
         replace = mocker.patch.object(domain, "_replace_benefit")
 
         with pytest.raises(errors.StaleBenefitTransaction) as exception_info:
-            await domain._actualize_one_time_purchase_transaction(
-                command,
-                execute,
-                snapshot,
-                {_QUANTITY_PARAMETER_ID: 100},
-                evaluation_time=datetime.datetime.now(tz=datetime.UTC),
-                actor_kind=_ACTOR_KIND,
-                actor_id=_ACTOR_ID,
-            )
+            async with transaction() as transaction_execute:
+                await domain._actualize_one_time_purchase_transaction(
+                    command,
+                    transaction_execute,
+                    snapshot,
+                    {_QUANTITY_PARAMETER_ID: 100},
+                    evaluation_time=datetime.datetime.now(tz=datetime.UTC),
+                    actor_kind=_ACTOR_KIND,
+                    actor_id=_ACTOR_ID,
+                )
 
         message = str(exception_info.value)
         assert f"one_time_purchase_id={purchase_id}" in message
@@ -831,7 +837,7 @@ class TestApplySubscriptionTransaction:
         assert_logs_has_no_business_event(logs, "one_time_purchase_changed")
 
     @pytest.mark.asyncio
-    async def test_materializes_arbitrary_quantity_in_composite_package(self, mocker: MockerFixture) -> None:
+    async def test_rejects_parameterized_package(self, mocker: MockerFixture) -> None:
         quantity = BenefitParameterDefinition(
             id=BenefitParameterId("quantity"),
             minimum=1,
@@ -849,38 +855,22 @@ class TestApplySubscriptionTransaction:
         command = make_transaction_command()
 
         async with (
-            TableSizeDelta("b_transactions", delta=1),
-            TableSizeDelta("sb_subscriptions", delta=1),
-            TableSizeDelta("en_source_entitlements", delta=2),
-            TableSizeDelta("en_entitlements", delta=2),
-            TableSizeDelta("a_records", delta=3),
+            TableSizeNotChanged("b_transactions"),
+            TableSizeNotChanged("sb_subscriptions"),
+            TableSizeNotChanged("en_source_entitlements"),
+            TableSizeNotChanged("en_entitlements"),
+            TableSizeNotChanged("a_records"),
         ):
-            result = await domain.apply_subscription_transaction(
-                snapshot,
-                {quantity.id: 25},
-                command,
-                actor_kind=_ACTOR_KIND,
-                actor_id=_ACTOR_ID,
-            )
+            with pytest.raises(errors.MissingBenefitParameter) as exception_info:
+                await domain.apply_subscription_transaction(
+                    snapshot,
+                    command,
+                    actor_kind=_ACTOR_KIND,
+                    actor_id=_ACTOR_ID,
+                )
 
-        day_source = await entitlement_helpers.load_source_entitlement(
-            execute,
-            snapshot.user_id,
-            EntitlementKindId.day_tokens,
-            domain.BENEFITS_ENTITLEMENT_SOURCE_ID,
-            result.transaction_id,
-        )
-        month_source = await entitlement_helpers.load_source_entitlement(
-            execute,
-            snapshot.user_id,
-            EntitlementKindId.month_tokens,
-            domain.BENEFITS_ENTITLEMENT_SOURCE_ID,
-            result.transaction_id,
-        )
-        assert day_source is not None
-        assert day_source.value == 10
-        assert month_source is not None
-        assert month_source.value == 25
+        attributes = cast(dict[str, object], vars(exception_info.value))
+        assert attributes["parameter_id"] == quantity.id
 
     @pytest.mark.asyncio
     async def test_revoke_is_inferred_from_status_and_replaces_complete_state(
@@ -1010,6 +1000,7 @@ class TestApplySubscriptionTransaction:
                 TableSizeNotChanged("b_transactions"),
                 TableSizeNotChanged("sb_subscriptions"),
                 TableSizeNotChanged("en_source_entitlements"),
+                TableSizeNotChanged("en_entitlements"),
                 TableSizeNotChanged("a_records"),
             ):
                 retry = await _apply(retry_snapshot, retry_command)
@@ -1760,5 +1751,353 @@ class TestApplyOneTimePurchaseTransaction:
         assert source is not None
         assert source.one_time_purchase_id == one_time_purchase_id
         assert_logs_has_no_business_event(logs, "one_time_purchase_changed")
+        assert sum(record.get("event") == "source_entitlement_changed" for record in logs) == 1
+        assert sum(record.get("event") == "entitlement_changed" for record in logs) == 1
+        assert_logs_has_business_event(logs, "source_entitlement_changed", user_id=purchase.user_id)
+        assert_logs_has_business_event(logs, "entitlement_changed", user_id=purchase.user_id)
+
+
+class TestRunBusinessEventCallbacks:
+    def test_runs_all_callbacks_in_order(self) -> None:
+        calls: list[str] = []
+
+        domain._run_business_event_callbacks(
+            [
+                lambda: calls.append("first"),
+                lambda: calls.append("second"),
+            ]
+        )
+
+        assert calls == ["first", "second"]
+
+    def test_callback_failure__runs_remaining_callbacks_and_raises_first_error(self) -> None:
+        calls: list[str] = []
+
+        def first() -> None:
+            calls.append("first")
+            raise RuntimeError("first callback failed")
+
+        def second() -> None:
+            calls.append("second")
+            raise ValueError("second callback failed")
+
+        with pytest.raises(RuntimeError, match="first callback failed"):
+            domain._run_business_event_callbacks([first, second, lambda: calls.append("third")])
+
+        assert calls == ["first", "second", "third"]
+
+
+class TestSubscriptionHasRequiredEntitlements:
+    def test_compares_current_and_future_projection_and_ignores_expired_history(self) -> None:
+        evaluation_time = datetime.datetime.now(tz=datetime.UTC)
+        snapshot = make_subscription_snapshot(
+            period_starts_at=evaluation_time - datetime.timedelta(days=2),
+            period_ends_at=evaluation_time + datetime.timedelta(days=2),
+        )
+        subscription_id = subscription_domain.new_subscription_id()
+        matching = make_source_entitlement(
+            source_id=domain.BENEFITS_ENTITLEMENT_SOURCE_ID,
+            user_id=snapshot.user_id,
+            subscription_id=subscription_id,
+            value=10,
+            starts_at=evaluation_time - datetime.timedelta(days=1),
+            expires_at=snapshot.period_ends_at,
+        )
+        expired = make_source_entitlement(
+            source_id=domain.BENEFITS_ENTITLEMENT_SOURCE_ID,
+            user_id=snapshot.user_id,
+            subscription_id=subscription_id,
+            value=99,
+            starts_at=evaluation_time - datetime.timedelta(days=2),
+            expires_at=evaluation_time,
+        )
+
+        assert domain._subscription_has_required_entitlements(
+            make_benefit_package(),
+            snapshot,
+            [matching, expired],
+            evaluation_time=evaluation_time,
+        )
+
+    def test_detects_wrong_value_and_duplicate_grants(self) -> None:
+        evaluation_time = datetime.datetime.now(tz=datetime.UTC)
+        snapshot = make_subscription_snapshot()
+        subscription_id = subscription_domain.new_subscription_id()
+        matching = make_source_entitlement(
+            source_id=domain.BENEFITS_ENTITLEMENT_SOURCE_ID,
+            user_id=snapshot.user_id,
+            subscription_id=subscription_id,
+            value=10,
+            starts_at=snapshot.period_starts_at,
+            expires_at=snapshot.period_ends_at,
+        )
+
+        assert not domain._subscription_has_required_entitlements(
+            make_benefit_package(),
+            snapshot,
+            [matching.replace(value=11)],
+            evaluation_time=evaluation_time,
+        )
+        assert not domain._subscription_has_required_entitlements(
+            make_benefit_package(),
+            snapshot,
+            [matching, matching.replace(grant_transaction_id=BenefitTransactionId(uuid.uuid4()))],
+            evaluation_time=evaluation_time,
+        )
+
+
+class TestRefreshSubscriptionEntitlements:
+    @staticmethod
+    def command(package: BenefitPackageTemplate) -> BenefitSubscriptionRefreshCommand:
+        return BenefitSubscriptionRefreshCommand(
+            source_id=ADMIN_BENEFIT_SOURCE_ID,
+            benefit_id=package.id,
+            effective_at=datetime.datetime.now(tz=datetime.UTC),
+        )
+
+    @pytest.mark.asyncio
+    async def test_no_eligible_subscriptions(self, mocker: MockerFixture) -> None:
+        package = make_benefit_package_template(benefit_id=BenefitId(f"refresh-{uuid.uuid4()}"))
+        mocker.patch.object(domain.settings, "package_templates", (package,))
+
+        with capture_logs() as logs:
+            async with (
+                TableSizeNotChanged("b_transactions"),
+                TableSizeNotChanged("sb_subscriptions"),
+                TableSizeNotChanged("en_source_entitlements"),
+                TableSizeNotChanged("en_entitlements"),
+                TableSizeNotChanged("a_records"),
+            ):
+                results = await domain.refresh_subscription_entitlements(
+                    self.command(package),
+                    actor_kind=_ACTOR_KIND,
+                    actor_id=_ACTOR_ID,
+                )
+
+        assert results == []
+        assert_logs_has_no_business_event(logs, "subscription_changed")
+        assert_logs_has_no_business_event(logs, "source_entitlement_changed")
+        assert_logs_has_no_business_event(logs, "entitlement_changed")
+
+    @pytest.mark.asyncio
+    async def test_matching_entitlements_create_no_transaction(
+        self,
+        mocker: MockerFixture,
+    ) -> None:
+        package = make_benefit_package_template(benefit_id=BenefitId(f"refresh-{uuid.uuid4()}"))
+        mocker.patch.object(domain.settings, "package_templates", (package,))
+        snapshot = make_subscription_snapshot(benefit_id=package.id)
+        applied = await _apply(snapshot, make_transaction_command())
+        command = self.command(package)
+
+        with capture_logs() as logs:
+            async with (
+                TableSizeNotChanged("b_transactions"),
+                TableSizeNotChanged("sb_subscriptions"),
+                TableSizeNotChanged("en_source_entitlements"),
+                TableSizeNotChanged("en_entitlements"),
+                TableSizeNotChanged("a_records"),
+            ):
+                results = await domain.refresh_subscription_entitlements(
+                    command,
+                    actor_kind=_ACTOR_KIND,
+                    actor_id=_ACTOR_ID,
+                )
+
+        assert results == [
+            BenefitSubscriptionRefreshResult(
+                subscription_id=applied.target_id,
+                outcome=BenefitSubscriptionRefreshOutcome.unchanged,
+            )
+        ]
+        assert_logs_has_no_business_event(logs, "subscription_changed")
+        assert_logs_has_no_business_event(logs, "source_entitlement_changed")
+        assert_logs_has_no_business_event(logs, "entitlement_changed")
+
+    @pytest.mark.asyncio
+    async def test_parameterized_package_is_not_supported(self, mocker: MockerFixture) -> None:
+        package = make_benefit_package_template(benefit_id=BenefitId(f"refresh-{uuid.uuid4()}"))
+        mocker.patch.object(domain.settings, "package_templates", (package,))
+        snapshot = make_subscription_snapshot(benefit_id=package.id)
+        await _apply(snapshot, make_transaction_command())
+        quantity = BenefitParameterDefinition(
+            id=BenefitParameterId("quantity"),
+            minimum=1,
+            maximum=100,
+        )
+        parameterized_package = make_benefit_package_template(
+            benefit_id=package.id,
+            parameters=(quantity,),
+            entitlements={
+                EntitlementKindId.month_tokens: ParameterReference(parameter_id=quantity.id),
+            },
+        )
+        mocker.patch.object(domain.settings, "package_templates", (parameterized_package,))
+
+        async with (
+            TableSizeNotChanged("b_transactions"),
+            TableSizeNotChanged("sb_subscriptions"),
+            TableSizeNotChanged("en_source_entitlements"),
+            TableSizeNotChanged("en_entitlements"),
+            TableSizeNotChanged("a_records"),
+        ):
+            with pytest.raises(errors.MissingBenefitParameter) as exception_info:
+                await domain.refresh_subscription_entitlements(
+                    self.command(parameterized_package),
+                    actor_kind=_ACTOR_KIND,
+                    actor_id=_ACTOR_ID,
+                )
+
+        attributes = cast(dict[str, object], vars(exception_info.value))
+        assert attributes["parameter_id"] == quantity.id
+
+    @pytest.mark.asyncio
+    async def test_changed_package_replaces_entitlements_without_changing_subscription(
+        self,
+        mocker: MockerFixture,
+    ) -> None:
+        package = make_benefit_package_template(benefit_id=BenefitId(f"refresh-{uuid.uuid4()}"))
+        mocker.patch.object(domain.settings, "package_templates", (package,))
+        snapshot = make_subscription_snapshot(benefit_id=package.id)
+        applied = await _apply(snapshot, make_transaction_command())
+        replacement_package = make_benefit_package_template(
+            benefit_id=package.id,
+            entitlements={EntitlementKindId.day_tokens: ParameterConstant(value=20)},
+        )
+        mocker.patch.object(domain.settings, "package_templates", (replacement_package,))
+        command = self.command(replacement_package)
+
+        with capture_logs() as logs:
+            async with (
+                TableSizeDelta("b_transactions", delta=1),
+                TableSizeNotChanged("sb_subscriptions"),
+                TableSizeDelta("en_source_entitlements", delta=1),
+                TableSizeNotChanged("en_entitlements"),
+                TableSizeDelta("a_records", delta=2),
+            ):
+                results = await domain.refresh_subscription_entitlements(
+                    command,
+                    actor_kind=_ACTOR_KIND,
+                    actor_id=_ACTOR_ID,
+                )
+
+        assert len(results) == 1
+        result = results[0]
+        assert result.outcome == BenefitSubscriptionRefreshOutcome.updated
+        assert result.transaction_id is not None
+        assert await subscription_domain.get_subscription(applied.target_id) == snapshot.with_identity(
+            subscription_id=applied.target_id,
+            state_transaction_id=applied.transaction_id,
+        )
+        previous_source = await entitlement_helpers.load_source_entitlement(
+            execute,
+            snapshot.user_id,
+            EntitlementKindId.day_tokens,
+            domain.BENEFITS_ENTITLEMENT_SOURCE_ID,
+            applied.transaction_id,
+        )
+        replacement_source = await entitlement_helpers.load_source_entitlement(
+            execute,
+            snapshot.user_id,
+            EntitlementKindId.day_tokens,
+            domain.BENEFITS_ENTITLEMENT_SOURCE_ID,
+            result.transaction_id,
+        )
+        assert previous_source is not None
+        assert previous_source.revoked_by_transaction_id == result.transaction_id
+        assert replacement_source is not None
+        assert replacement_source.value == 20
+        assert replacement_source.revoked_at is None
+        assert_logs_has_no_business_event(logs, "subscription_changed")
+        assert sum(record.get("event") == "source_entitlement_changed" for record in logs) == 2
+        assert sum(record.get("event") == "entitlement_changed" for record in logs) == 2
+        assert_logs_has_business_event(logs, "source_entitlement_changed", user_id=snapshot.user_id)
+        assert_logs_has_business_event(logs, "entitlement_changed", user_id=snapshot.user_id)
+
+        async with (
+            TableSizeNotChanged("b_transactions"),
+            TableSizeNotChanged("sb_subscriptions"),
+            TableSizeNotChanged("en_source_entitlements"),
+            TableSizeNotChanged("en_entitlements"),
+            TableSizeNotChanged("a_records"),
+        ):
+            retry = await domain.refresh_subscription_entitlements(
+                command,
+                actor_kind=_ACTOR_KIND,
+                actor_id=_ACTOR_ID,
+            )
+
+        assert retry == [
+            BenefitSubscriptionRefreshResult(
+                subscription_id=applied.target_id,
+                outcome=BenefitSubscriptionRefreshOutcome.unchanged,
+            )
+        ]
+
+    @pytest.mark.asyncio
+    async def test_ended_subscription_is_not_processed(self, mocker: MockerFixture) -> None:
+        package = make_benefit_package_template(benefit_id=BenefitId(f"refresh-{uuid.uuid4()}"))
+        mocker.patch.object(domain.settings, "package_templates", (package,))
+        snapshot = make_subscription_snapshot(
+            benefit_id=package.id,
+            status=SubscriptionStatusId.ended,
+            provider_status="ended",
+        )
+        applied = await _apply(snapshot, make_transaction_command())
+
+        async with (
+            TableSizeNotChanged("b_transactions"),
+            TableSizeNotChanged("sb_subscriptions"),
+            TableSizeNotChanged("en_source_entitlements"),
+            TableSizeNotChanged("en_entitlements"),
+            TableSizeNotChanged("a_records"),
+        ):
+            results = await domain.refresh_subscription_entitlements(
+                self.command(package),
+                actor_kind=_ACTOR_KIND,
+                actor_id=_ACTOR_ID,
+            )
+
+        assert results == [
+            BenefitSubscriptionRefreshResult(
+                subscription_id=applied.target_id,
+                outcome=BenefitSubscriptionRefreshOutcome.ineligible,
+            )
+        ]
+
+    @pytest.mark.asyncio
+    async def test_selected_subscription_disappeared(self, mocker: MockerFixture) -> None:
+        package = make_benefit_package_template(benefit_id=BenefitId(f"refresh-{uuid.uuid4()}"))
+        mocker.patch.object(domain.settings, "package_templates", (package,))
+        candidate = make_subscription_snapshot(benefit_id=package.id).with_identity(
+            subscription_id=subscription_domain.new_subscription_id(),
+            state_transaction_id=BenefitTransactionId(uuid.uuid4()),
+        )
+        subscription_ids: list[SubscriptionId] = [candidate.id]
+        mocker.patch.object(
+            subscription_domain,
+            "load_subscription_ids_by_benefit",
+            return_value=subscription_ids,
+        )
+
+        with capture_logs() as logs:
+            async with (
+                TableSizeNotChanged("b_transactions"),
+                TableSizeNotChanged("sb_subscriptions"),
+                TableSizeNotChanged("en_source_entitlements"),
+                TableSizeNotChanged("en_entitlements"),
+                TableSizeNotChanged("a_records"),
+            ):
+                with pytest.raises(errors.InvalidBenefitSubscription) as exception_info:
+                    await domain.refresh_subscription_entitlements(
+                        self.command(package),
+                        actor_kind=_ACTOR_KIND,
+                        actor_id=_ACTOR_ID,
+                    )
+
+        attributes = cast(dict[str, object], vars(exception_info.value))
+        assert attributes["subscription_id"] == str(candidate.id)
+        assert attributes["reason"] == "not found"
+        assert_logs_has_no_business_event(logs, "subscription_changed")
         assert_logs_has_no_business_event(logs, "source_entitlement_changed")
         assert_logs_has_no_business_event(logs, "entitlement_changed")

@@ -16,6 +16,8 @@ from ffun.benefits.entities import (
     BenefitParameterId,
     BenefitParameters,
     BenefitSourceTransactionId,
+    BenefitSubscriptionRefreshCommand,
+    BenefitSubscriptionRefreshOutcome,
     BenefitTransactionCommand,
     InternalTarget,
     NewTarget,
@@ -101,14 +103,12 @@ def purchase_status_from_name(raw_status: str) -> PurchaseStatus:
 
 async def run_apply_subscription(
     snapshot: SubscriptionSnapshot,
-    parameters: BenefitParameters,
     transaction: BenefitTransactionCommand[SubscriptionId],
     actor_id: SerializedId,
 ) -> None:
     async with with_app():
         result = await benefits_domain.apply_subscription_transaction(
             snapshot,
-            parameters,
             transaction,
             actor_kind=AuditEntityKind.admin,
             actor_id=actor_id,
@@ -147,6 +147,35 @@ async def run_apply_one_time_purchase(
     typer.echo(json.dumps(payload))
 
 
+async def run_refresh_subscriptions(
+    command: BenefitSubscriptionRefreshCommand,
+    actor_id: SerializedId,
+) -> None:
+    async with with_app():
+        results = await benefits_domain.refresh_subscription_entitlements(
+            command,
+            actor_kind=AuditEntityKind.admin,
+            actor_id=actor_id,
+        )
+
+    payload: dict[str, object] = {
+        "benefit_id": command.benefit_id,
+        "candidates": len(results),
+        "updated": sum(result.outcome == BenefitSubscriptionRefreshOutcome.updated for result in results),
+        "unchanged": sum(result.outcome == BenefitSubscriptionRefreshOutcome.unchanged for result in results),
+        "ineligible": sum(result.outcome == BenefitSubscriptionRefreshOutcome.ineligible for result in results),
+        "results": [
+            {
+                "subscription_id": str(result.subscription_id),
+                "outcome": result.outcome.value,
+                "transaction_id": str(result.transaction_id) if result.transaction_id is not None else None,
+            }
+            for result in results
+        ],
+    }
+    typer.echo(json.dumps(payload))
+
+
 @cli_app.command("apply-subscription")  # type: ignore[misc]
 def apply_subscription(  # noqa: CFQ002
     user_id: uuid.UUID = typer.Option(..., "--user-id"),
@@ -159,7 +188,6 @@ def apply_subscription(  # noqa: CFQ002
     provider_updated_at: datetime.datetime | None = typer.Option(None, "--provider-updated-at"),
     source_transaction_id: uuid.UUID | None = typer.Option(None, "--source-transaction-id"),
     actor_id: str = typer.Option(str(DEFAULT_ADMIN_ACTOR_ID), "--actor-id"),
-    parameters: list[str] | None = typer.Option(None, "--parameter"),
     subscription_id: uuid.UUID | None = typer.Option(None, "--subscription-id"),
     expected_renewal_at: datetime.datetime | None = typer.Option(None, "--expected-renewal-at"),
     ends_at: datetime.datetime | None = typer.Option(None, "--ends-at"),
@@ -214,7 +242,6 @@ def apply_subscription(  # noqa: CFQ002
                 creation_default=operation_time,
             ),
         )
-        normalized_parameters = benefit_parameters_from_options(parameters or [])
         transaction = BenefitTransactionCommand[SubscriptionId](
             source_id=ADMIN_BENEFIT_SOURCE_ID,
             source_transaction_id=BenefitSourceTransactionId(source_transaction_id or uuid.uuid4()),
@@ -227,9 +254,9 @@ def apply_subscription(  # noqa: CFQ002
         )
         normalized_actor_id = pydantic.TypeAdapter(SerializedId).validate_python(actor_id)
     except pydantic.ValidationError as error:
-        raise typer.BadParameter("invalid subscription benefit parameters") from error
+        raise typer.BadParameter("invalid subscription snapshot") from error
 
-    run_async_command(run_apply_subscription(snapshot, normalized_parameters, transaction, normalized_actor_id))
+    run_async_command(run_apply_subscription(snapshot, transaction, normalized_actor_id))
 
 
 @cli_app.command("apply-one-time-purchase")  # type: ignore[misc]
@@ -297,3 +324,21 @@ def apply_one_time_purchase(  # noqa: CFQ002
         raise typer.BadParameter("invalid one-time-purchase benefit parameters") from error
 
     run_async_command(run_apply_one_time_purchase(snapshot, normalized_parameters, transaction, normalized_actor_id))
+
+
+@cli_app.command("refresh-subscriptions")  # type: ignore[misc]
+def refresh_subscriptions(
+    benefit_id: str = typer.Option(..., "--benefit-id"),
+    actor_id: str = typer.Option(str(DEFAULT_ADMIN_ACTOR_ID), "--actor-id"),
+) -> None:
+    try:
+        command = BenefitSubscriptionRefreshCommand(
+            source_id=ADMIN_BENEFIT_SOURCE_ID,
+            benefit_id=BenefitId(benefit_id),
+            effective_at=core_utils.now(),
+        )
+        normalized_actor_id = pydantic.TypeAdapter(SerializedId).validate_python(actor_id)
+    except pydantic.ValidationError as error:
+        raise typer.BadParameter("invalid subscription refresh command") from error
+
+    run_async_command(run_refresh_subscriptions(command, normalized_actor_id))

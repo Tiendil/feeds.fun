@@ -1,6 +1,7 @@
+import contextlib
 import datetime
 import enum
-from collections.abc import Callable
+from collections.abc import AsyncIterator, Callable
 from functools import partial
 
 from ffun.audit import domain as audit_domain
@@ -25,6 +26,8 @@ from ffun.subscriptions.entities import (
 )
 
 get_subscription = run_in_transaction(operations.load_subscription)
+load_subscription_ids_by_benefit = operations.load_subscription_ids_by_benefit
+load_subscription = operations.load_subscription
 load_provider_subscription_reference = operations.load_provider_subscription_reference
 insert_provider_subscription_reference = operations.save_provider_subscription_reference
 new_subscription_id = operations.new_subscription_id
@@ -43,6 +46,12 @@ ALIVE_SUBSCRIPTION_STATUSES = [
 class _SaveSubscriptionCommand(enum.IntEnum):
     ignore = 1
     upsert = 2
+
+
+@contextlib.asynccontextmanager
+async def lock_subscription(execute: ExecuteType, subscription_id: SubscriptionId) -> AsyncIterator[None]:
+    async with Lock(execute, LockKind("subscription_state"), subscription_id):
+        yield
 
 
 def _empty_business_event_callback() -> None:
@@ -88,7 +97,7 @@ async def save_subscription(  # noqa: CCR001
         state_transaction_id=state_transaction_id,
     )
 
-    async with Lock(execute, LockKind("subscription_state"), subscription_id):
+    async with lock_subscription(execute, subscription_id):
         stored = await operations.load_subscription(execute, subscription_id)
         command, outcome = _decide_subscription_save(stored, snapshot)
 
