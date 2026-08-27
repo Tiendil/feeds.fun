@@ -49,7 +49,7 @@ WHERE one_time_purchase_id IS NOT NULL
 """
 
 sql_create_entitlements = """
--- Materialized effective entitlement intervals derived from the source entitlement table.
+-- Materialized current-and-future effective entitlement intervals derived from the source entitlement table.
 CREATE TABLE en_entitlements (
     user_id UUID NOT NULL,
     kind_id SMALLINT NOT NULL,

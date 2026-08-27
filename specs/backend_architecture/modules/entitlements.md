@@ -68,6 +68,10 @@ Effective entitlement intervals are half-open: their activation is inclusive and
 At most one effective interval MAY cover one user and entitlement kind at any time.
 Absence of a covering interval means that entitlement is not granted.
 
+Persisted effective entitlement intervals are a disposable current-and-future projection rather than an effective-state history.
+The projection MUST retain only intervals that can affect its evaluation time or a later time and MAY discard older effective intervals when it is rebuilt.
+Source entitlements and their revocation attribution remain the durable historical evidence for source state.
+
 ## Domain behavior
 
 ### Grant establishment
@@ -99,6 +103,9 @@ When no source entitlement is active, the entitlement MUST be not granted and ha
 Periods without an active source entitlement MUST be absent from the effective timeline.
 Adjacent periods with the same effective value MUST form one effective entitlement interval.
 
+After a source change, the module MUST rebuild the affected user's current-and-future projection from every source entitlement that remains unrevoked.
+The rebuild MAY replace the complete materialized projection and omit intervals that ended at or before the workflow's evaluation time.
+
 ### Source-change consistency
 
 Each grant or revocation that changes source state, its effective-state consequence, and its required audit evidence MUST succeed or fail together.
@@ -109,7 +116,8 @@ Every source change MUST use one evaluation time consistently for every time-dep
 
 ### Effective-state retrieval
 
-Callers MUST be able to determine whether any supported entitlement kind is effective for any user at a chosen evaluation time and, when granted, its value and effective interval.
+Callers MUST be able to determine whether any supported entitlement kind is effective for any user at one current evaluation time captured by the retrieval operation and, when granted, its value and effective interval.
+Historical effective-state retrieval is outside the module's current contract.
 Retrieval MUST NOT change entitlement state merely because time has passed.
 
 The benefits workflow MUST be able to retrieve source entitlements owned by one subscription through the entitlements domain boundary so it can compare that target's current or future grants with a newly materialized benefit package.
