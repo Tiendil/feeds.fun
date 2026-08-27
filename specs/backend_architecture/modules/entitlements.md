@@ -104,7 +104,8 @@ Periods without an active source entitlement MUST be absent from the effective t
 Adjacent periods with the same effective value MUST form one effective entitlement interval.
 
 After a source change, the module MUST rebuild the affected user's current-and-future projection from every source entitlement that remains unrevoked.
-The rebuild MAY replace the complete materialized projection and omit intervals that ended at or before the workflow's evaluation time.
+The rebuilt projection MUST contain exactly the effective intervals required by the effective-state rules at or after the workflow's evaluation time.
+**Rationale:** This developer-approved rebuild mechanism is an intentional architectural requirement: deriving the projection solely from durable source entitlements keeps them as the sole source of truth and prevents previously materialized projection state from influencing the result.
 
 ### Source-change consistency
 

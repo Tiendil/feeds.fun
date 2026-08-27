@@ -18,6 +18,8 @@ class TestResolveSubscriptionTarget:
         with pytest.raises(NotImplementedError, match="Unsupported subscription target"):
             await target_resolution.resolve_subscription_target(object(), execute)
 
+
+class TestResolveInternalSubscriptionTarget:
     @pytest.mark.asyncio
     async def test_preserves_internal_identity(self) -> None:
         subscription_id = subscription_domain.new_subscription_id()
@@ -30,12 +32,8 @@ class TestResolveSubscriptionTarget:
             == subscription_id
         )
 
-    @pytest.mark.asyncio
-    async def test_generates_identity_for_new_target(self) -> None:
-        subscription_id = await target_resolution.resolve_subscription_target(NewTarget(), execute)
 
-        assert isinstance(subscription_id, uuid.UUID)
-
+class TestResolveExternalSubscriptionTarget:
     @pytest.mark.asyncio
     async def test_creates_and_reuses_external_reference(self) -> None:
         target = make_external_target()
@@ -53,12 +51,22 @@ class TestResolveSubscriptionTarget:
         )
 
 
+class TestResolveNewSubscriptionTarget:
+    @pytest.mark.asyncio
+    async def test_generates_identity_for_new_target(self) -> None:
+        subscription_id = await target_resolution.resolve_subscription_target(NewTarget(), execute)
+
+        assert isinstance(subscription_id, uuid.UUID)
+
+
 class TestResolveOneTimePurchaseTarget:
     @pytest.mark.asyncio
     async def test_unsupported_target(self) -> None:
         with pytest.raises(NotImplementedError, match="Unsupported one-time purchase target"):
             await target_resolution.resolve_one_time_purchase_target(object(), execute)
 
+
+class TestResolveInternalOneTimePurchaseTarget:
     @pytest.mark.asyncio
     async def test_preserves_internal_identity(self) -> None:
         one_time_purchase_id = purchase_domain.new_purchase_id()
@@ -71,12 +79,8 @@ class TestResolveOneTimePurchaseTarget:
             == one_time_purchase_id
         )
 
-    @pytest.mark.asyncio
-    async def test_generates_identity_for_new_target(self) -> None:
-        one_time_purchase_id = await target_resolution.resolve_one_time_purchase_target(NewTarget(), execute)
 
-        assert isinstance(one_time_purchase_id, uuid.UUID)
-
+class TestResolveExternalOneTimePurchaseTarget:
     @pytest.mark.asyncio
     async def test_creates_and_reuses_external_reference(self) -> None:
         target = make_external_target(make_provider_purchase_reference())
@@ -89,3 +93,11 @@ class TestResolveOneTimePurchaseTarget:
 
         assert second_id == first_id
         assert await purchase_domain.load_provider_purchase_reference(execute, target.provider_reference) == first_id
+
+
+class TestResolveNewOneTimePurchaseTarget:
+    @pytest.mark.asyncio
+    async def test_generates_identity_for_new_target(self) -> None:
+        one_time_purchase_id = await target_resolution.resolve_one_time_purchase_target(NewTarget(), execute)
+
+        assert isinstance(one_time_purchase_id, uuid.UUID)

@@ -18,7 +18,6 @@ The following adjacent concerns are outside the module's responsibility:
 
 - `provider purchase identity` - the identity assigned by an external purchase authority, including the provider and account context needed to distinguish one purchase unambiguously.
 - `provider purchase reference` - the immutable association between one provider purchase identity and one internal one-time-purchase identity.
-- `purchase state` - the current provider-independent understanding of one purchase at one provider update time.
 - `purchase status` - one normalized provider-independent lifecycle category owned by this module.
 - `lifetime applicable interval` - the benefit-bearing interval derived from the purchase time and the project's stable lifetime interval-end marker.
 
@@ -200,5 +199,5 @@ The following cases MUST NOT produce notification:
 - a failed request.
 - retrieval.
 
-Notification delivery is best-effort and failure MUST NOT alter durable purchase or audit state.
+Notification delivery failure MUST NOT alter durable purchase or audit state.
 Repeating an idempotent request MUST NOT replay notification for the earlier change.

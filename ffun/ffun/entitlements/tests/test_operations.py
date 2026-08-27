@@ -375,7 +375,7 @@ class TestLoadSourceEntitlementsForSubscription:
             kind_id=EntitlementKindId.day_tokens,
             starts_at=now + datetime.timedelta(days=2),
             expires_at=now + datetime.timedelta(days=3),
-            revoked_at=now + datetime.timedelta(days=1),
+            revoked_at=now,
         )
         revoked = make_source_entitlement(
             subscription_id=subscription_id,
