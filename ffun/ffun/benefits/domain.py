@@ -130,17 +130,13 @@ def _subscription_has_required_entitlements(
 
 
 def _run_business_event_callbacks(callbacks: list[Callable[[], None]]) -> None:
-    first_error: Exception | None = None
-
     for callback in callbacks:
         try:
             callback()
-        except Exception as error:
-            if first_error is None:
-                first_error = error
-
-    if first_error is not None:
-        raise first_error
+        except Exception:  # noqa: S110
+            # Business events are best-effort logging performed after the durable state commits.
+            # A logging failure must not turn that successful operation into a caller-visible failure.
+            pass
 
 
 async def _revoke_owned_entitlements(  # noqa: CFQ002

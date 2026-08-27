@@ -1686,7 +1686,7 @@ class TestApplyOneTimePurchaseTransaction:
         assert_logs_has_no_business_event(logs, "entitlement_changed")
 
     @pytest.mark.asyncio
-    async def test_callback_failure_happens_after_commit(
+    async def test_callback_failure_is_ignored_after_commit(
         self,
         purchase_package: BenefitPackageTemplate,
         mocker: MockerFixture,
@@ -1707,12 +1707,11 @@ class TestApplyOneTimePurchaseTransaction:
                 TableSizeDelta("en_entitlements", delta=1),
                 TableSizeDelta("a_records", delta=2),
             ):
-                with pytest.raises(RuntimeError, match="event delivery failed"):
-                    await _apply_purchase(
-                        purchase,
-                        {_QUANTITY_PARAMETER_ID: 100},
-                        command,
-                    )
+                result = await _apply_purchase(
+                    purchase,
+                    {_QUANTITY_PARAMETER_ID: 100},
+                    command,
+                )
 
         stored_transaction = await operations.load_benefit_transaction_by_source(
             execute,
@@ -1720,6 +1719,8 @@ class TestApplyOneTimePurchaseTransaction:
             source_transaction_id=command.source_transaction_id,
         )
         assert stored_transaction is not None
+        assert result.transaction_id == stored_transaction.id
+        assert result.transaction_created
         one_time_purchase_id = stored_transaction.get_one_time_purchase_id_or_raise()
         assert await purchase_domain.get_purchase(one_time_purchase_id) == purchase.with_identity(
             one_time_purchase_id=one_time_purchase_id,
@@ -1753,7 +1754,7 @@ class TestRunBusinessEventCallbacks:
 
         assert calls == ["first", "second"]
 
-    def test_callback_failure__runs_remaining_callbacks_and_raises_first_error(self) -> None:
+    def test_callback_failure__runs_remaining_callbacks_and_ignores_errors(self) -> None:
         calls: list[str] = []
 
         def first() -> None:
@@ -1764,8 +1765,7 @@ class TestRunBusinessEventCallbacks:
             calls.append("second")
             raise ValueError("second callback failed")
 
-        with pytest.raises(RuntimeError, match="first callback failed"):
-            domain._run_business_event_callbacks([first, second, lambda: calls.append("third")])
+        domain._run_business_event_callbacks([first, second, lambda: calls.append("third")])
 
         assert calls == ["first", "second", "third"]
 
