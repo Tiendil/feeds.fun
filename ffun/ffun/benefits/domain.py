@@ -185,6 +185,9 @@ async def _replace_benefit(  # noqa: CFQ002
     actor_kind: AuditEntityKind,
     actor_id: SerializedId,
 ) -> list[Callable[[], None]]:
+    # Concurrent replacements for different targets of the same user can deadlock when
+    # revocations and grants acquire entitlement-kind locks in different orders. A fix
+    # must lock the sorted union of existing and desired kinds for the whole replacement.
     callbacks = await _revoke_owned_entitlements(
         execute,
         benefit_transaction,
