@@ -171,7 +171,7 @@ A benefit identifier MUST NOT be reused for an unrelated product.
 
 Benefit application MUST support an existing internal purchased-state target, a complete provider identity resolved through its owning module, or creation of a new internal target.
 When a previously unknown provider identity selects the target, the owning purchased-state module MUST establish its immutable association with the new internal target as part of the same application outcome.
-One provider identity MUST NOT resolve to multiple internal targets.
+Repeated or concurrent selection of one provider identity MUST resolve to the same internal target.
 
 Provider adapters and other trusted callers MUST obtain the benefit identifier from authoritative metadata.
 One-time-purchase application callers MUST also obtain normalized benefit parameters from authoritative metadata.

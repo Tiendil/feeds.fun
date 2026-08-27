@@ -3,6 +3,7 @@ import datetime
 import uuid
 from collections.abc import Callable
 from typing import cast
+from unittest.mock import AsyncMock
 
 import pytest
 from pytest_mock import MockerFixture
@@ -531,7 +532,11 @@ class TestActualizeSubscriptionTransaction:
         transaction_id = BenefitTransactionId(uuid.uuid4())
         subscription_callback: Callable[[], None] = mocker.stub(name="subscription_callback")
         entitlement_callback: Callable[[], None] = mocker.stub(name="entitlement_callback")
-        mocker.patch.object(target_resolution, "resolve_subscription_target", return_value=subscription_id)
+        mocker.patch.object(
+            target_resolution,
+            "resolve_subscription_target",
+            new=AsyncMock(return_value=subscription_id),
+        )
         mocker.patch.object(operations, "new_benefit_transaction_id", return_value=transaction_id)
         save_transaction = mocker.patch.object(operations, "save_benefit_transaction")
         save_subscription = mocker.patch.object(
@@ -600,7 +605,11 @@ class TestActualizeSubscriptionTransaction:
             subscription_id=subscription_id,
             state_transaction_id=BenefitTransactionId(uuid.uuid4()),
         )
-        mocker.patch.object(target_resolution, "resolve_subscription_target", return_value=subscription_id)
+        mocker.patch.object(
+            target_resolution,
+            "resolve_subscription_target",
+            new=AsyncMock(return_value=subscription_id),
+        )
         mocker.patch.object(operations, "new_benefit_transaction_id", return_value=transaction_id)
         mocker.patch.object(operations, "save_benefit_transaction")
         mocker.patch.object(
@@ -653,7 +662,11 @@ class TestActualizeOneTimePurchaseTransaction:
         transaction_id = BenefitTransactionId(uuid.uuid4())
         purchase_callback: Callable[[], None] = mocker.stub(name="purchase_callback")
         entitlement_callback: Callable[[], None] = mocker.stub(name="entitlement_callback")
-        mocker.patch.object(target_resolution, "resolve_one_time_purchase_target", return_value=purchase_id)
+        mocker.patch.object(
+            target_resolution,
+            "resolve_one_time_purchase_target",
+            new=AsyncMock(return_value=purchase_id),
+        )
         mocker.patch.object(operations, "new_benefit_transaction_id", return_value=transaction_id)
         save_transaction = mocker.patch.object(operations, "save_benefit_transaction")
         save_purchase = mocker.patch.object(
@@ -723,7 +736,11 @@ class TestActualizeOneTimePurchaseTransaction:
             one_time_purchase_id=purchase_id,
             state_transaction_id=BenefitTransactionId(uuid.uuid4()),
         )
-        mocker.patch.object(target_resolution, "resolve_one_time_purchase_target", return_value=purchase_id)
+        mocker.patch.object(
+            target_resolution,
+            "resolve_one_time_purchase_target",
+            new=AsyncMock(return_value=purchase_id),
+        )
         mocker.patch.object(operations, "new_benefit_transaction_id", return_value=transaction_id)
         mocker.patch.object(operations, "save_benefit_transaction")
         mocker.patch.object(

@@ -29,7 +29,7 @@ get_subscription = run_in_transaction(operations.load_subscription)
 load_subscription_ids_by_benefit = operations.load_subscription_ids_by_benefit
 load_subscription = operations.load_subscription
 load_provider_subscription_reference = operations.load_provider_subscription_reference
-insert_provider_subscription_reference = operations.save_provider_subscription_reference
+resolve_provider_subscription_reference = operations.resolve_provider_subscription_reference
 new_subscription_id = operations.new_subscription_id
 
 logger = logging.get_module_logger()

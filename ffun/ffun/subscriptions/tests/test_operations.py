@@ -1,14 +1,16 @@
+import asyncio
 import datetime
 import uuid
 from typing import cast
 
 import pytest
 from pydantic import ValidationError
+from pytest_mock import MockerFixture
 
-from ffun.core.postgresql import execute
-from ffun.core.tests.helpers import TableSizeDelta, TableSizeNotChanged
+from ffun.core.postgresql import ExecuteType, execute, transaction
+from ffun.core.tests.helpers import TableSizeDelta, TableSizeNotChanged, assert_pool_capacity_at_least
 from ffun.domain.domain import new_user_id
-from ffun.domain.entities import BenefitId, BenefitTransactionId, SubscriptionId
+from ffun.domain.entities import BenefitId, BenefitTransactionId, ProviderObjectReference, SubscriptionId
 from ffun.subscriptions import errors, operations
 from ffun.subscriptions.entities import SubscriptionStatusId
 from ffun.subscriptions.tests.make import make_provider_subscription_reference, make_subscription
@@ -76,91 +78,68 @@ class TestLoadProviderSubscriptionReference:
     @pytest.mark.asyncio
     async def test_loads_exact_external_identity(self) -> None:
         reference = make_provider_subscription_reference()
-        subscription_id = operations.new_subscription_id()
-        await operations.save_provider_subscription_reference(
-            execute,
-            reference,
-            subscription_id=subscription_id,
-        )
+        subscription_id = await operations.resolve_provider_subscription_reference(execute, reference)
 
         assert await operations.load_provider_subscription_reference(execute, reference) == subscription_id
 
 
-class TestSaveProviderSubscriptionReference:
+class TestResolveProviderSubscriptionReference:
     @pytest.mark.asyncio
-    async def test_saves_reference(self) -> None:
+    async def test_creates_and_returns_identity(self) -> None:
         reference = make_provider_subscription_reference()
-        subscription_id = operations.new_subscription_id()
 
         async with TableSizeDelta("sb_subscription_refs", delta=1):
-            await operations.save_provider_subscription_reference(
-                execute,
-                reference,
-                subscription_id=subscription_id,
-            )
+            subscription_id = await operations.resolve_provider_subscription_reference(execute, reference)
 
         assert await operations.load_provider_subscription_reference(execute, reference) == subscription_id
 
     @pytest.mark.asyncio
-    async def test_same_mapping_is_no_op(self) -> None:
+    async def test_returns_existing_identity_without_changes(self) -> None:
         reference = make_provider_subscription_reference()
-        subscription_id = operations.new_subscription_id()
-        await operations.save_provider_subscription_reference(
-            execute,
-            reference,
-            subscription_id=subscription_id,
-        )
+        subscription_id = await operations.resolve_provider_subscription_reference(execute, reference)
 
         async with TableSizeNotChanged("sb_subscription_refs"):
-            await operations.save_provider_subscription_reference(
-                execute,
-                reference,
-                subscription_id=subscription_id,
-            )
+            resolved_subscription_id = await operations.resolve_provider_subscription_reference(execute, reference)
 
-        assert await operations.load_provider_subscription_reference(execute, reference) == subscription_id
+        assert resolved_subscription_id == subscription_id
 
     @pytest.mark.asyncio
-    async def test_different_mapping_fails_without_changing_reference(self) -> None:
+    async def test_concurrent_creation_converges_on_one_identity(self, mocker: MockerFixture) -> None:
+        assert_pool_capacity_at_least(2)
         reference = make_provider_subscription_reference()
-        stored_subscription_id = operations.new_subscription_id()
-        await operations.save_provider_subscription_reference(
-            execute,
-            reference,
-            subscription_id=stored_subscription_id,
-        )
+        both_initial_loads_finished = asyncio.Event()
+        initial_load_count = 0
+        original_load = operations.load_provider_subscription_reference
 
-        async with TableSizeNotChanged("sb_subscription_refs"):
-            with pytest.raises(errors.ProviderSubscriptionReferenceConflict):
-                await operations.save_provider_subscription_reference(
-                    execute,
-                    reference,
-                    subscription_id=operations.new_subscription_id(),
-                )
+        async def synchronized_load(
+            transaction_execute: ExecuteType,
+            requested_reference: ProviderObjectReference,
+        ) -> SubscriptionId | None:
+            nonlocal initial_load_count
+            stored_subscription_id = await original_load(transaction_execute, requested_reference)
 
-        assert await operations.load_provider_subscription_reference(execute, reference) == stored_subscription_id
+            if stored_subscription_id is not None:
+                return stored_subscription_id
 
-    @pytest.mark.asyncio
-    async def test_same_subscription_different_reference_fails_without_creating_reference(self) -> None:
-        subscription_id = operations.new_subscription_id()
-        stored_reference = make_provider_subscription_reference()
-        requested_reference = make_provider_subscription_reference()
-        await operations.save_provider_subscription_reference(
-            execute,
-            stored_reference,
-            subscription_id=subscription_id,
-        )
+            initial_load_count += 1
 
-        async with TableSizeNotChanged("sb_subscription_refs"):
-            with pytest.raises(errors.ProviderSubscriptionReferenceConflict):
-                await operations.save_provider_subscription_reference(
-                    execute,
-                    requested_reference,
-                    subscription_id=subscription_id,
-                )
+            if initial_load_count == 2:
+                both_initial_loads_finished.set()
 
-        assert await operations.load_provider_subscription_reference(execute, stored_reference) == subscription_id
-        assert await operations.load_provider_subscription_reference(execute, requested_reference) is None
+            await both_initial_loads_finished.wait()
+            return None
+
+        async def resolve_once() -> SubscriptionId:
+            async with transaction() as transaction_execute:
+                return await operations.resolve_provider_subscription_reference(transaction_execute, reference)
+
+        mocker.patch.object(operations, "load_provider_subscription_reference", side_effect=synchronized_load)
+
+        async with TableSizeDelta("sb_subscription_refs", delta=1), asyncio.timeout(2):
+            first_id, second_id = await asyncio.gather(resolve_once(), resolve_once())
+
+        assert first_id == second_id
+        assert await original_load(execute, reference) == first_id
 
 
 class TestSaveSubscription:

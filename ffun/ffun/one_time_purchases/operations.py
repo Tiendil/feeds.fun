@@ -61,12 +61,16 @@ async def load_provider_purchase_reference(
     return cast(OneTimePurchaseId, rows[0]["one_time_purchase_id"])
 
 
-async def save_provider_purchase_reference(
+async def resolve_provider_purchase_reference(
     execute: ExecuteType,
     reference: ProviderObjectReference,
-    *,
-    one_time_purchase_id: OneTimePurchaseId,
-) -> None:
+) -> OneTimePurchaseId:
+    stored_purchase_id = await load_provider_purchase_reference(execute, reference)
+
+    if stored_purchase_id is not None:
+        return stored_purchase_id
+
+    one_time_purchase_id = new_purchase_id()
     sql = """
     INSERT INTO otp_purchase_refs (
         provider_id,
@@ -80,7 +84,7 @@ async def save_provider_purchase_reference(
         %(provider_object_id)s,
         %(one_time_purchase_id)s
     )
-    ON CONFLICT DO NOTHING
+    ON CONFLICT (provider_id, provider_account_id, provider_object_id) DO NOTHING
     RETURNING one_time_purchase_id
     """
     rows = await execute(
@@ -89,20 +93,11 @@ async def save_provider_purchase_reference(
     )
 
     if rows:
-        return
+        return one_time_purchase_id
 
     stored_purchase_id = await load_provider_purchase_reference(execute, reference)
-
-    if stored_purchase_id == one_time_purchase_id:
-        return
-
-    raise errors.ProviderPurchaseReferenceConflict(
-        provider_id=reference.provider_id,
-        provider_account_id=reference.provider_account_id,
-        provider_object_id=reference.provider_object_id,
-        stored_purchase_id=(str(stored_purchase_id) if stored_purchase_id is not None else None),
-        requested_purchase_id=str(one_time_purchase_id),
-    )
+    assert stored_purchase_id is not None
+    return stored_purchase_id
 
 
 async def save_purchase(execute: ExecuteType, purchase: Purchase) -> None:

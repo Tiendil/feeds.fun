@@ -24,7 +24,7 @@ from ffun.one_time_purchases.entities import (
 
 get_purchase = run_in_transaction(operations.load_purchase)
 load_provider_purchase_reference = operations.load_provider_purchase_reference
-save_provider_purchase_reference = operations.save_provider_purchase_reference
+resolve_provider_purchase_reference = operations.resolve_provider_purchase_reference
 new_purchase_id = operations.new_purchase_id
 
 logger = logging.get_module_logger()

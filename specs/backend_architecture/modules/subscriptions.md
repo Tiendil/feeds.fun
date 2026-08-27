@@ -118,14 +118,14 @@ When present, the subscription end MUST represent either the scheduled end of a 
 
 ### Provider subscription references
 
-Establishing a missing provider subscription reference MUST preserve its one-to-one association.
-Repeating the same association MUST have no additional effect.
-Attempting to associate either identity with a different counterpart MUST fail without changing the existing association.
+Resolving a provider subscription identity MUST return its existing internal subscription identity or establish and return a new internal identity when no reference exists.
+Repeated or concurrent resolution of the same provider identity MUST converge on one internal identity and MUST NOT create multiple references.
+The resolver MUST own internal identity creation; callers MUST NOT propose an internal identity for a provider subscription reference.
 
-Callers MUST be able to resolve one exact provider subscription identity to its associated internal subscription identity, with absence reported when no reference exists.
-Resolution MUST have no domain effects.
+Callers that only inspect one exact provider subscription identity MUST be able to load its associated internal identity, with absence reported when no reference exists.
+Inspection MUST have no domain effects.
 
-Provider adapters and higher-level workflows MUST resolve and establish provider subscription references through this module's domain boundary.
+Provider adapters and higher-level workflows MUST resolve provider subscription references through this module's domain boundary.
 They MUST NOT reproduce provider-to-local subscription identity behavior.
 
 ### State acceptance and causality

@@ -9,9 +9,5 @@ class PurchaseConflict(Error):
     pass
 
 
-class ProviderPurchaseReferenceConflict(Error):
-    pass
-
-
 class InvalidStoredPurchase(Error):
     pass

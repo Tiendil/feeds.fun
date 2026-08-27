@@ -61,12 +61,16 @@ async def load_provider_subscription_reference(
     return cast(SubscriptionId, rows[0]["subscription_id"])
 
 
-async def save_provider_subscription_reference(
+async def resolve_provider_subscription_reference(
     execute: ExecuteType,
     reference: ProviderObjectReference,
-    *,
-    subscription_id: SubscriptionId,
-) -> None:
+) -> SubscriptionId:
+    stored_subscription_id = await load_provider_subscription_reference(execute, reference)
+
+    if stored_subscription_id is not None:
+        return stored_subscription_id
+
+    subscription_id = new_subscription_id()
     sql = """
     INSERT INTO sb_subscription_refs (
         provider_id,
@@ -80,7 +84,7 @@ async def save_provider_subscription_reference(
         %(provider_object_id)s,
         %(subscription_id)s
     )
-    ON CONFLICT DO NOTHING
+    ON CONFLICT (provider_id, provider_account_id, provider_object_id) DO NOTHING
     RETURNING subscription_id
     """
     rows = await execute(
@@ -89,20 +93,11 @@ async def save_provider_subscription_reference(
     )
 
     if rows:
-        return
+        return subscription_id
 
     stored_subscription_id = await load_provider_subscription_reference(execute, reference)
-
-    if stored_subscription_id == subscription_id:
-        return
-
-    raise errors.ProviderSubscriptionReferenceConflict(
-        provider_id=reference.provider_id,
-        provider_account_id=reference.provider_account_id,
-        provider_object_id=reference.provider_object_id,
-        stored_subscription_id=(str(stored_subscription_id) if stored_subscription_id is not None else None),
-        requested_subscription_id=str(subscription_id),
-    )
+    assert stored_subscription_id is not None
+    return stored_subscription_id
 
 
 async def save_subscription(execute: ExecuteType, subscription: Subscription) -> None:

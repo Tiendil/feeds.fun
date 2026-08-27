@@ -225,8 +225,8 @@ async def _actualize_subscription_transaction(  # noqa: CFQ002
     package = materialize_benefit_package(subscription.benefit_id, {})
     _validate_package_for_interval(package, subscription.period_ends_at)
     subscription_id = await target_resolution.resolve_subscription_target(
-        execute,
         command.target,
+        execute,
     )
     benefit_transaction = BenefitTransaction(
         id=operations.new_benefit_transaction_id(),
@@ -282,8 +282,8 @@ async def _actualize_one_time_purchase_transaction(  # noqa: CFQ002
     package = materialize_benefit_package(purchase.benefit_id, parameters)
     _validate_package_for_interval(package, purchase.period_ends_at)
     one_time_purchase_id = await target_resolution.resolve_one_time_purchase_target(
-        execute,
         command.target,
+        execute,
     )
     benefit_transaction = BenefitTransaction(
         id=operations.new_benefit_transaction_id(),
