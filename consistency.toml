@@ -6,7 +6,7 @@ runtime_dir = ".session/inconsistency-check"
 comparison_base_refs = ["main", "origin/main"]
 allowed_file_relations = ["governed_by"]
 requires_branch_change = false
-# Maximum concurrent validator processes. Reviewers run only for validator-reported candidates.
+# Maximum concurrent relation-pair tasks. Each task runs a validator and, for a candidate, its reviewer.
 agent_jobs = 20
 # Maximum concurrent depmesh subprocesses in one dependency-discovery wave.
 discovery_jobs = 20

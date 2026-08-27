@@ -33,7 +33,7 @@ import sys
 import time
 import tomllib
 from collections import Counter, deque
-from concurrent.futures import ThreadPoolExecutor
+from concurrent.futures import Future, ThreadPoolExecutor
 from dataclasses import dataclass
 from datetime import UTC, datetime
 from enum import IntEnum
@@ -247,6 +247,48 @@ class RunningChildCheck:
     stdout_path: Path
     stderr_path: Path
     started_at: float
+
+
+@dataclass(frozen=True)
+class PairCheckDecision:
+    check_status: str
+    report: str
+    decision_source: str
+
+
+class RunningChildRegistry:
+    def __init__(self) -> None:
+        self._lock = Lock()
+        self._running: dict[str, RunningChildCheck] = {}
+        self._stopping = False
+
+    def add(self, running: RunningChildCheck) -> None:
+        pair_key = running.prepared.current_pair.identity.pair_key
+
+        with self._lock:
+            stopping = self._stopping
+
+            if not stopping:
+                self._running[pair_key] = running
+
+        if stopping:
+            kill_running_child(running)
+            raise CheckerFailureError("pair checking was cancelled")
+
+    def discard(self, running: RunningChildCheck) -> None:
+        pair_key = running.prepared.current_pair.identity.pair_key
+
+        with self._lock:
+            if self._running.get(pair_key) is running:
+                self._running.pop(pair_key)
+
+    def terminate_all(self) -> None:
+        with self._lock:
+            self._stopping = True
+            running_children = list(self._running.values())
+
+        for running in running_children:
+            kill_running_child(running)
 
 
 @dataclass(frozen=True)
@@ -1581,7 +1623,10 @@ def ensure_runtime_state() -> None:
     paths.prompt_dir.mkdir(parents=True, exist_ok=True)
     paths.schema_dir.mkdir(parents=True, exist_ok=True)
     paths.self_check_dir.mkdir(parents=True, exist_ok=True)
-    paths.taskrc_path.write_text(build_taskrc_content(paths), encoding="utf-8")
+    taskrc_content = build_taskrc_content(paths)
+
+    if not paths.taskrc_path.is_file() or paths.taskrc_path.read_text(encoding="utf-8") != taskrc_content:
+        paths.taskrc_path.write_text(taskrc_content, encoding="utf-8")
 
 
 def task_command_args(*args: str) -> list[str]:
@@ -2536,22 +2581,33 @@ def prepare_child_check(
     )
 
 
-def run_child_checker(prepared: PreparedChildCheck) -> str:
+def run_child_checker(
+    prepared: PreparedChildCheck,
+    *,
+    registry: RunningChildRegistry | None = None,
+) -> str:
     running = start_child_checker(prepared)
 
-    while running.process.poll() is None:
-        if child_checker_timed_out(running):
-            kill_running_child(running)
-            raise CheckerFailureError(
-                f"running {prepared.agent_name} child Codex checker for "
-                f"{pair_journal_subject(prepared.current_pair.identity)}: "
-                f"timed out after {prepared.agent_config.timeout_seconds} seconds: "
-                f"{format_argv(running.argv)}"
-            )
+    if registry is not None:
+        registry.add(running)
 
-        time.sleep(0.1)
+    try:
+        while running.process.poll() is None:
+            if child_checker_timed_out(running):
+                kill_running_child(running)
+                raise CheckerFailureError(
+                    f"running {prepared.agent_name} child Codex checker for "
+                    f"{pair_journal_subject(prepared.current_pair.identity)}: "
+                    f"timed out after {prepared.agent_config.timeout_seconds} seconds: "
+                    f"{format_argv(running.argv)}"
+                )
 
-    return finish_child_checker(running)
+            time.sleep(0.1)
+
+        return finish_child_checker(running)
+    finally:
+        if registry is not None:
+            registry.discard(running)
 
 
 def start_child_checker(prepared: PreparedChildCheck) -> RunningChildCheck:
@@ -2800,12 +2856,11 @@ def reviewed_report(
     ).strip()
 
 
-def update_record_from_reviewer_output(
-    current_pair: CurrentPair,
+def decision_from_reviewer_output(
     *,
     validator_report: str,
     reviewer_output: str,
-) -> CurrentPair:
+) -> PairCheckDecision:
     config = get_config()
     review_status, reviewer_report = validate_child_result(
         reviewer_output,
@@ -2817,8 +2872,7 @@ def update_record_from_reviewer_output(
     )
     check_status = "inconsistent" if review_status == "confirmed" else "consistent"
 
-    return update_record_from_decision(
-        current_pair,
+    return PairCheckDecision(
         check_status=check_status,
         report=reviewed_report(
             review_status=review_status,
@@ -2829,8 +2883,36 @@ def update_record_from_reviewer_output(
     )
 
 
-def update_record_from_validator_output(current_pair: CurrentPair, output: str) -> CurrentPair:
+def update_record_from_reviewer_output(
+    current_pair: CurrentPair,
+    *,
+    validator_report: str,
+    reviewer_output: str,
+) -> CurrentPair:
+    decision = decision_from_reviewer_output(
+        validator_report=validator_report,
+        reviewer_output=reviewer_output,
+    )
+
+    return update_record_from_decision(
+        current_pair,
+        check_status=decision.check_status,
+        report=decision.report,
+        decision_source=decision.decision_source,
+    )
+
+
+def run_pair_checker(
+    prepared_validator: PreparedChildCheck,
+    *,
+    child_runner: Callable[[PreparedChildCheck], str] = run_child_checker,
+) -> PairCheckDecision:
+    if prepared_validator.agent_name != "validator":
+        raise CheckerFailureError("pair checker must start with a prepared validator")
+
     config = get_config()
+    current_pair = prepared_validator.current_pair
+    output = child_runner(prepared_validator)
     check_status, validator_report = validate_child_result(
         output,
         agent_name="validator",
@@ -2841,8 +2923,7 @@ def update_record_from_validator_output(current_pair: CurrentPair, output: str) 
     )
 
     if check_status == "consistent":
-        return update_record_from_decision(
-            current_pair,
+        return PairCheckDecision(
             check_status="consistent",
             report=validator_report,
             decision_source="validator",
@@ -2854,51 +2935,34 @@ def update_record_from_validator_output(current_pair: CurrentPair, output: str) 
         agent_config=config.agent_reviewer,
         validator_report=validator_report,
     )
-    reviewer_output = run_child_checker(prepared_reviewer)
-    stale_reason = record_outdated_reason(current_pair.record)
+    reviewer_output = child_runner(prepared_reviewer)
 
-    if stale_reason is not None:
-        record = mark_record_outdated_during_processing(
-            current_pair.record,
-            f"pair changed during reviewer adjudication: {stale_reason}",
-        )
-        return CurrentPair(pair=current_pair.pair, identity=current_pair.identity, record=record)
-
-    return update_record_from_reviewer_output(
-        current_pair,
+    return decision_from_reviewer_output(
         validator_report=validator_report,
         reviewer_output=reviewer_output,
     )
 
 
-def wait_for_finished_children(running: dict[str, RunningChildCheck]) -> list[RunningChildCheck]:
+RunningPairCheck = tuple[CurrentPair, Future[PairCheckDecision]]
+
+
+def wait_for_finished_pair_checks(
+    running: dict[str, RunningPairCheck],
+) -> list[tuple[str, CurrentPair, Future[PairCheckDecision]]]:
     while True:
-        finished = [child for child in running.values() if child.process.poll() is not None]
+        finished = [
+            (pair_key, current_pair, future)
+            for pair_key, (current_pair, future) in running.items()
+            if future.done()
+        ]
 
         if finished:
-            return finished
-
-        timed_out = [child for child in running.values() if child_checker_timed_out(child)]
-
-        if timed_out:
-            timed_out_child = sorted(
-                timed_out,
-                key=lambda child: current_pair_sort_key(child.prepared.current_pair),
-            )[0]
-            kill_running_child(timed_out_child)
-            raise CheckerFailureError(
-                f"running {timed_out_child.prepared.agent_name} child Codex checker for "
-                f"{pair_journal_subject(timed_out_child.prepared.current_pair.identity)}: "
-                f"timed out after {timed_out_child.prepared.agent_config.timeout_seconds} seconds: "
-                f"{format_argv(timed_out_child.argv)}"
+            return sorted(
+                finished,
+                key=lambda item: current_pair_sort_key(item[1]),
             )
 
         time.sleep(0.1)
-
-
-def terminate_running_children(running: dict[str, RunningChildCheck]) -> None:
-    for child in running.values():
-        kill_running_child(child)
 
 
 def process_current_frontier(
@@ -2937,148 +3001,189 @@ def process_current_frontier(
         log_project_journal("step", f"{command_name} outcome: success after fresh no-work cycle")
         return ExitCode.SUCCESS
 
-    running: dict[str, RunningChildCheck] = {}
+    running: dict[str, RunningPairCheck] = {}
+    child_registry = RunningChildRegistry()
     inconsistency_found = False
     stale_found = False
     launched_child = False
     log_project_journal("step", f"{command_name} processing with agent-jobs:{agent_jobs}")
 
-    try:
-        while True:
+    def registered_child_runner(prepared: PreparedChildCheck) -> str:
+        return run_child_checker(prepared, registry=child_registry)
+
+    with ThreadPoolExecutor(max_workers=agent_jobs) as executor:
+        try:
             while True:
-                unchecked_pair = next_frontier_candidate(
-                    frontier_pairs,
-                    set(running),
-                    agent_jobs=agent_jobs,
-                    stop_launching=inconsistency_found or stale_found,
-                )
-
-                if unchecked_pair is None:
-                    break
-
-                checked_pair = mark_current_pair_outdated_if_needed(unchecked_pair)
-
-                if normalized_check_status(checked_pair.record) == "outdated":
-                    current_pairs = replace_current_pair(current_pairs, checked_pair)
-                    frontier_pairs = replace_current_pair(frontier_pairs, checked_pair)
-                    stale_found = True
-                    log_project_journal(
-                        "step",
-                        (
-                            f"{command_name} stale frontier detected before launch: "
-                            f"{pair_journal_subject(checked_pair.identity)}"
-                        ),
-                    )
-                    break
-
-                try:
-                    prepared = prepare_child_check(
-                        checked_pair,
-                        agent_name="validator",
-                        agent_config=get_config().agent_validator,
-                    )
-                except MissingArtifactError as error:
-                    updated_record = mark_record_outdated_during_processing(
-                        checked_pair.record,
-                        f"file is missing before child check: {error.path}",
-                    )
-                    current_pairs = replace_current_pair(
-                        current_pairs,
-                        CurrentPair(pair=checked_pair.pair, identity=checked_pair.identity, record=updated_record),
-                    )
-                    frontier_pairs = replace_current_pair(
+                while True:
+                    unchecked_pair = next_frontier_candidate(
                         frontier_pairs,
-                        CurrentPair(pair=checked_pair.pair, identity=checked_pair.identity, record=updated_record),
+                        set(running),
+                        agent_jobs=agent_jobs,
+                        stop_launching=inconsistency_found or stale_found,
                     )
-                    stale_found = True
-                    log_project_journal("step", f"{command_name} stale frontier detected before launch")
-                    break
-                except OutdatedPairError as error:
-                    updated_record = mark_record_outdated_during_processing(checked_pair.record, error.reason)
-                    current_pairs = replace_current_pair(
-                        current_pairs,
-                        CurrentPair(pair=checked_pair.pair, identity=checked_pair.identity, record=updated_record),
+
+                    if unchecked_pair is None:
+                        break
+
+                    checked_pair = mark_current_pair_outdated_if_needed(unchecked_pair)
+
+                    if normalized_check_status(checked_pair.record) == "outdated":
+                        current_pairs = replace_current_pair(current_pairs, checked_pair)
+                        frontier_pairs = replace_current_pair(frontier_pairs, checked_pair)
+                        stale_found = True
+                        log_project_journal(
+                            "step",
+                            (
+                                f"{command_name} stale frontier detected before launch: "
+                                f"{pair_journal_subject(checked_pair.identity)}"
+                            ),
+                        )
+                        break
+
+                    try:
+                        prepared = prepare_child_check(
+                            checked_pair,
+                            agent_name="validator",
+                            agent_config=get_config().agent_validator,
+                        )
+                    except MissingArtifactError as error:
+                        updated_record = mark_record_outdated_during_processing(
+                            checked_pair.record,
+                            f"file is missing before child check: {error.path}",
+                        )
+                        current_pairs = replace_current_pair(
+                            current_pairs,
+                            CurrentPair(pair=checked_pair.pair, identity=checked_pair.identity, record=updated_record),
+                        )
+                        frontier_pairs = replace_current_pair(
+                            frontier_pairs,
+                            CurrentPair(pair=checked_pair.pair, identity=checked_pair.identity, record=updated_record),
+                        )
+                        stale_found = True
+                        log_project_journal("step", f"{command_name} stale frontier detected before launch")
+                        break
+                    except OutdatedPairError as error:
+                        updated_record = mark_record_outdated_during_processing(checked_pair.record, error.reason)
+                        current_pairs = replace_current_pair(
+                            current_pairs,
+                            CurrentPair(pair=checked_pair.pair, identity=checked_pair.identity, record=updated_record),
+                        )
+                        frontier_pairs = replace_current_pair(
+                            frontier_pairs,
+                            CurrentPair(pair=checked_pair.pair, identity=checked_pair.identity, record=updated_record),
+                        )
+                        stale_found = True
+                        log_project_journal("step", f"{command_name} stale frontier detected before launch")
+                        break
+
+                    future = executor.submit(
+                        run_pair_checker,
+                        prepared,
+                        child_runner=registered_child_runner,
                     )
-                    frontier_pairs = replace_current_pair(
+                    running[checked_pair.identity.pair_key] = (checked_pair, future)
+                    launched_child = True
+
+                if not running:
+                    outcome = completed_frontier_exit_code(
                         frontier_pairs,
-                        CurrentPair(pair=checked_pair.pair, identity=checked_pair.identity, record=updated_record),
+                        launched_child=launched_child,
+                        stale_found=stale_found,
                     )
-                    stale_found = True
-                    log_project_journal("step", f"{command_name} stale frontier detected before launch")
-                    break
 
-                running[checked_pair.identity.pair_key] = start_child_checker(prepared)
-                launched_child = True
+                    if outcome == ExitCode.CONTINUE_CYCLE and stale_found:
+                        current_selection = select_frontier(graphs, current_pairs)
+                        print_frontier_summary(
+                            tracked_files,
+                            current_pairs,
+                            current_selection,
+                            fresh_cycle_required=True,
+                        )
+                        log_project_journal("step", f"{command_name} outcome: stale frontier requires rediscovery")
+                        return outcome
 
-            if not running:
-                outcome = completed_frontier_exit_code(
-                    frontier_pairs,
-                    launched_child=launched_child,
-                    stale_found=stale_found,
-                )
+                    if outcome == ExitCode.INCONSISTENCY_FOUND:
+                        inconsistent_pair = first_frontier_pair_with_status(frontier_pairs, "inconsistent")
 
-                if outcome == ExitCode.CONTINUE_CYCLE and stale_found:
-                    current_selection = select_frontier(graphs, current_pairs)
-                    print_frontier_summary(tracked_files, current_pairs, current_selection, fresh_cycle_required=True)
-                    log_project_journal("step", f"{command_name} outcome: stale frontier requires rediscovery")
-                    return outcome
+                        if inconsistent_pair is None:
+                            raise CheckerFailureError("frontier inconsistency outcome has no inconsistent pair")
 
-                if outcome == ExitCode.INCONSISTENCY_FOUND:
-                    inconsistent_pair = first_frontier_pair_with_status(frontier_pairs, "inconsistent")
+                        print_inconsistent_pair(inconsistent_pair)
+                        log_project_journal("step", f"{command_name} outcome: frontier pair task found inconsistency")
+                        return outcome
 
-                    if inconsistent_pair is None:
-                        raise CheckerFailureError("frontier inconsistency outcome has no inconsistent pair")
+                    if outcome == ExitCode.CONTINUE_CYCLE:
+                        current_selection = select_frontier(graphs, current_pairs)
+                        print_frontier_summary(
+                            tracked_files,
+                            current_pairs,
+                            current_selection,
+                            fresh_cycle_required=True,
+                        )
+                        log_project_journal("step", f"{command_name} frontier completed; fresh cycle required")
+                        log_project_journal("step", f"{command_name} outcome: continue after successful frontier")
+                        return outcome
 
-                    print_inconsistent_pair(inconsistent_pair)
-                    log_project_journal("step", f"{command_name} outcome: frontier child found inconsistency")
-                    return outcome
+                    raise CheckerFailureError(f"{command_name} produced unsupported frontier outcome: {outcome}")
 
-                if outcome == ExitCode.CONTINUE_CYCLE:
-                    current_selection = select_frontier(graphs, current_pairs)
-                    print_frontier_summary(tracked_files, current_pairs, current_selection, fresh_cycle_required=True)
-                    log_project_journal("step", f"{command_name} frontier completed; fresh cycle required")
-                    log_project_journal("step", f"{command_name} outcome: continue after successful frontier")
-                    return outcome
+                for pair_key, finished_pair, future in wait_for_finished_pair_checks(running):
+                    running.pop(pair_key)
+                    decision: PairCheckDecision | None = None
 
-                raise CheckerFailureError(f"{command_name} produced unsupported frontier outcome: {outcome}")
+                    try:
+                        decision = future.result()
+                    except MissingArtifactError as error:
+                        stale_reason = f"file is missing during pair check: {error.path}"
+                    except OutdatedPairError as error:
+                        stale_reason = error.reason
+                    else:
+                        stale_reason = record_outdated_reason(finished_pair.record)
 
-            for finished_child in wait_for_finished_children(running):
-                pair_key = finished_child.prepared.current_pair.identity.pair_key
-                running.pop(pair_key)
-                child_output = finish_child_checker(finished_child)
-                finished_pair = finished_child.prepared.current_pair
-                stale_reason = record_outdated_reason(finished_pair.record)
+                    if stale_reason is not None:
+                        updated_record = mark_record_outdated_during_processing(
+                            finished_pair.record,
+                            f"pair changed during child adjudication: {stale_reason}",
+                        )
+                        updated_pair = CurrentPair(
+                            pair=finished_pair.pair,
+                            identity=finished_pair.identity,
+                            record=updated_record,
+                        )
+                        stale_found = True
+                        log_project_journal(
+                            "step",
+                            (
+                                f"{command_name} stale frontier detected after pair-task completion: "
+                                f"{pair_journal_subject(finished_pair.identity)}"
+                            ),
+                        )
+                    else:
+                        if decision is None:
+                            raise CheckerFailureError("completed pair task produced no decision")
 
-                if stale_reason is not None:
-                    updated_record = mark_record_outdated_during_processing(finished_pair.record, stale_reason)
-                    updated_pair = CurrentPair(
-                        pair=finished_pair.pair,
-                        identity=finished_pair.identity,
-                        record=updated_record,
-                    )
-                    stale_found = True
-                    log_project_journal(
-                        "step",
-                        (
-                            f"{command_name} stale frontier detected after child completion: "
-                            f"{pair_journal_subject(finished_pair.identity)}"
-                        ),
-                    )
-                else:
-                    updated_pair = update_record_from_validator_output(finished_pair, child_output)
+                        updated_pair = update_record_from_decision(
+                            finished_pair,
+                            check_status=decision.check_status,
+                            report=decision.report,
+                            decision_source=decision.decision_source,
+                        )
 
-                current_pairs = replace_current_pair(current_pairs, updated_pair)
-                frontier_pairs = replace_current_pair(frontier_pairs, updated_pair)
+                    current_pairs = replace_current_pair(current_pairs, updated_pair)
+                    frontier_pairs = replace_current_pair(frontier_pairs, updated_pair)
 
-                updated_status = normalized_check_status(updated_pair.record)
+                    updated_status = normalized_check_status(updated_pair.record)
 
-                if updated_status == "inconsistent":
-                    inconsistency_found = True
-                elif updated_status == "outdated":
-                    stale_found = True
-    except CheckerFailureError:
-        terminate_running_children(running)
-        raise
+                    if updated_status == "inconsistent":
+                        inconsistency_found = True
+                    elif updated_status == "outdated":
+                        stale_found = True
+        except (CheckerFailureError, KeyboardInterrupt):
+            child_registry.terminate_all()
+
+            for _current_pair, future in running.values():
+                future.cancel()
+
+            raise
 
 
 def effective_agent_jobs(args: argparse.Namespace) -> int:
@@ -4561,14 +4666,31 @@ def run_self_check() -> ExitCode:
     selection = select_current_pair(current_pairs)
     assert_self_check(selection.unchecked is not None, "one unchecked pair must be selected")
     assert_self_check(selection.inconsistent is None, "unchecked selection must not report inconsistency")
-    consistent_pair = update_record_from_validator_output(
-        selection.unchecked,
-        self_check_child_output(
+    pair_task_agents: list[str] = []
+
+    def consistent_pair_child_runner(prepared: PreparedChildCheck) -> str:
+        pair_task_agents.append(prepared.agent_name)
+
+        return self_check_child_output(
             active_config.agent_validator,
             status_property="check_status",
             status="consistent",
             report="",
-        ),
+        )
+
+    consistent_decision = run_pair_checker(
+        prepared_validator,
+        child_runner=consistent_pair_child_runner,
+    )
+    assert_self_check(
+        pair_task_agents == ["validator"],
+        "a consistent pair task must finish without a reviewer",
+    )
+    consistent_pair = update_record_from_decision(
+        selection.unchecked,
+        check_status=consistent_decision.check_status,
+        report=consistent_decision.report,
+        decision_source=consistent_decision.decision_source,
     )
     current_pairs = replace_current_pair(current_pairs, consistent_pair)
     assert_self_check(
@@ -4586,15 +4708,39 @@ def run_self_check() -> ExitCode:
         preserved_raw_record_before == preserved_raw_record_after,
         "unchanged pair reconciliation must not rewrite its Taskwarrior record",
     )
-    inconsistent_pair = update_record_from_reviewer_output(
-        consistent_pair,
-        validator_report=validator_report,
-        reviewer_output=self_check_child_output(
+    pair_task_agents.clear()
+
+    def reviewed_pair_child_runner(prepared: PreparedChildCheck) -> str:
+        pair_task_agents.append(prepared.agent_name)
+
+        if prepared.agent_name == "validator":
+            return self_check_child_output(
+                active_config.agent_validator,
+                status_property="check_status",
+                status="inconsistent",
+                report=validator_report,
+            )
+
+        return self_check_child_output(
             active_config.agent_reviewer,
             status_property="review_status",
             status="confirmed",
             report="## Review rationale\n\nThe candidate is valid.",
-        ),
+        )
+
+    reviewed_decision = run_pair_checker(
+        prepared_validator,
+        child_runner=reviewed_pair_child_runner,
+    )
+    assert_self_check(
+        pair_task_agents == ["validator", "reviewer"],
+        "an inconsistent validator candidate must be reviewed within the same pair task",
+    )
+    inconsistent_pair = update_record_from_decision(
+        consistent_pair,
+        check_status=reviewed_decision.check_status,
+        report=reviewed_decision.report,
+        decision_source=reviewed_decision.decision_source,
     )
     current_pairs = replace_current_pair(preserved_pairs, inconsistent_pair)
     inconsistent_selection = select_current_pair(current_pairs)
@@ -4877,7 +5023,7 @@ def add_agent_jobs_argument(parser: argparse.ArgumentParser) -> None:
         "--jobs",
         dest="agent_jobs",
         type=int,
-        help="number of child agent checks to keep running; defaults to consistency.toml agent_jobs",
+        help="number of relation-pair tasks to keep running; defaults to consistency.toml agent_jobs",
     )
 
 
