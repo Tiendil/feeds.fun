@@ -25,7 +25,6 @@ from ffun.entitlements import errors, operations
 from ffun.entitlements.entities import (
     EntitlementGuarantee,
     EntitlementKindId,
-    EntitlementSourceId,
     MergePolicy,
     SourceEntitlement,
 )
@@ -44,8 +43,11 @@ from ffun.subscriptions.domain import new_subscription_id
 _DAY_TOKENS = EntitlementKindId.day_tokens
 _MONTH_TOKENS = EntitlementKindId.month_tokens
 _LIFETIME_TOKENS = EntitlementKindId.lifetime_tokens
-_SOURCE_ID = EntitlementSourceId("test")
-_GRANT_TRANSACTION_ID = BenefitTransactionId(uuid.UUID(int=1))
+
+
+def _ordered_transaction_ids(count: int) -> tuple[BenefitTransactionId, ...]:
+    base = uuid.uuid4().int & ~0xFFFF
+    return tuple(BenefitTransactionId(uuid.UUID(int=base + offset)) for offset in range(1, count + 1))
 
 
 class TestLoadSourceEntitlementsForSubscription:
@@ -145,14 +147,12 @@ class TestBuildEffectiveTimeline:
         now = datetime.datetime.now(tz=datetime.UTC)
         first = make_source_entitlement(
             user_id=user_id,
-            source_id=EntitlementSourceId("first"),
             value=10,
             starts_at=now - datetime.timedelta(days=2),
             expires_at=now + datetime.timedelta(days=2),
         )
         second = make_source_entitlement(
             user_id=user_id,
-            source_id=EntitlementSourceId("second"),
             value=20,
             starts_at=now + datetime.timedelta(days=1),
             expires_at=now + datetime.timedelta(days=3),
@@ -261,7 +261,6 @@ class TestRebuildAfterSourceChange:
     async def test_rebuilds_effective_state_and_records_complete_audit(self) -> None:
         evaluation_time = datetime.datetime.now(tz=datetime.UTC)
         source_state = make_source_entitlement(
-            grant_transaction_id=_GRANT_TRANSACTION_ID,
             subscription_id=new_subscription_id(),
             starts_at=evaluation_time - datetime.timedelta(days=1),
             expires_at=evaluation_time + datetime.timedelta(days=1),
@@ -298,7 +297,6 @@ class TestRebuildAfterSourceChange:
             subject_id=SerializedId(str(source_state.user_id)),
         )
         assert records[-1].attributes == {
-            "source_id": source_state.source_id,
             "subscription_id": str(source_state.subscription_id),
             "one_time_purchase_id": None,
             "grant_transaction_id": str(source_state.grant_transaction_id),
@@ -360,7 +358,6 @@ class TestApplySourceGrant:
                 execute,
                 source_state.user_id,
                 source_state.kind_id,
-                source_state.source_id,
                 source_state.grant_transaction_id,
             )
             == source_state
@@ -432,7 +429,6 @@ class TestApplySourceRevocation:
                     await domain._apply_source_revocation(
                         transaction_execute,
                         kind=domain.get_entitlement_kind(source_state.kind_id),
-                        source_id=source_state.source_id,
                         grant_transaction_id=source_state.grant_transaction_id,
                         revoked_by_transaction_id=_REVOKING_TRANSACTION_ID,
                         user_id=source_state.user_id,
@@ -454,7 +450,6 @@ class TestApplySourceRevocation:
             outcome = await domain._apply_source_revocation(
                 transaction_execute,
                 kind=domain.get_entitlement_kind(source_state.kind_id),
-                source_id=source_state.source_id,
                 grant_transaction_id=source_state.grant_transaction_id,
                 revoked_by_transaction_id=_REVOKING_TRANSACTION_ID,
                 user_id=source_state.user_id,
@@ -490,7 +485,6 @@ class TestApplySourceRevocation:
                 outcome = await domain._apply_source_revocation(
                     transaction_execute,
                     kind=domain.get_entitlement_kind(source_state.kind_id),
-                    source_id=source_state.source_id,
                     grant_transaction_id=source_state.grant_transaction_id,
                     revoked_by_transaction_id=BenefitTransactionId(uuid.uuid4()),
                     user_id=source_state.user_id,
@@ -514,7 +508,6 @@ class TestEmitSourceChangeEvents:
         granted: bool,
     ) -> None:
         source_state = make_source_entitlement(
-            grant_transaction_id=_GRANT_TRANSACTION_ID,
             subscription_id=new_subscription_id(),
             revoked_at=revoked_at,
             revoked_by_transaction_id=_REVOKING_TRANSACTION_ID if revoked_at is not None else None,
@@ -540,7 +533,6 @@ class TestEmitSourceChangeEvents:
             logs,
             "source_entitlement_changed",
             user_id=source_state.user_id,
-            source_id=source_state.source_id,
             subscription_id=str(source_state.subscription_id),
             one_time_purchase_id=None,
             grant_transaction_id=str(source_state.grant_transaction_id),
@@ -609,7 +601,6 @@ class TestGrantSourceEntitlement:
             transaction_execute: ExecuteType,
             loaded_user_id: UserId,
             kind_id: EntitlementKindId,
-            source_id: EntitlementSourceId,
             grant_transaction_id: BenefitTransactionId,
         ) -> SourceEntitlement | None:
             if grant_transaction_id == first.grant_transaction_id:
@@ -622,7 +613,6 @@ class TestGrantSourceEntitlement:
                 transaction_execute,
                 loaded_user_id,
                 kind_id,
-                source_id,
                 grant_transaction_id,
             )
 
@@ -658,7 +648,6 @@ class TestGrantSourceEntitlement:
     async def test_stores_grant_audit_and_returns_post_commit_events(self) -> None:
         evaluation_time = datetime.datetime.now(tz=datetime.UTC)
         source_entitlement = make_source_entitlement(
-            grant_transaction_id=_GRANT_TRANSACTION_ID,
             subscription_id=new_subscription_id(),
             starts_at=evaluation_time - datetime.timedelta(days=1),
             expires_at=evaluation_time + datetime.timedelta(days=1),
@@ -819,7 +808,6 @@ class TestRevokeSourceEntitlement:
             transaction_execute: ExecuteType,
             user_id: UserId,
             kind_id: EntitlementKindId,
-            source_id: EntitlementSourceId,
             grant_transaction_id: BenefitTransactionId,
         ) -> SourceEntitlement | None:
             nonlocal load_count
@@ -835,7 +823,6 @@ class TestRevokeSourceEntitlement:
                 transaction_execute,
                 user_id,
                 kind_id,
-                source_id,
                 grant_transaction_id,
             )
 
@@ -894,7 +881,6 @@ class TestRevokeSourceEntitlement:
     async def test_revokes_grant_and_records_complete_change(self) -> None:
         evaluation_time = datetime.datetime.now(tz=datetime.UTC)
         source_entitlement = make_source_entitlement(
-            grant_transaction_id=_GRANT_TRANSACTION_ID,
             starts_at=evaluation_time - datetime.timedelta(days=1),
             expires_at=evaluation_time + datetime.timedelta(days=1),
         )
@@ -935,7 +921,7 @@ class TestRevokeSourceEntitlement:
             logs,
             "source_entitlement_changed",
             user_id=source_entitlement.user_id,
-            grant_transaction_id=str(_GRANT_TRANSACTION_ID),
+            grant_transaction_id=str(source_entitlement.grant_transaction_id),
             revoked_by_transaction_id=str(_REVOKING_TRANSACTION_ID),
             granted=False,
         )
@@ -1024,7 +1010,6 @@ class TestRevokeSourceEntitlement:
             execute,
             source_entitlement.user_id,
             source_entitlement.kind_id,
-            source_entitlement.source_id,
             source_entitlement.grant_transaction_id,
         )
         assert stored == source_entitlement
@@ -1038,8 +1023,7 @@ class TestGrantSourceEntitlements:
         async with transaction() as transaction_execute:
             outcomes, callbacks = await domain.grant_source_entitlements(
                 transaction_execute,
-                source_id=_SOURCE_ID,
-                grant_transaction_id=_GRANT_TRANSACTION_ID,
+                grant_transaction_id=BenefitTransactionId(uuid.uuid4()),
                 user_id=new_user_id(),
                 subscription_id=None,
                 one_time_purchase_id=None,
@@ -1058,14 +1042,14 @@ class TestGrantSourceEntitlements:
     async def test_grants_sorted_guarantees_with_supplied_expiration_and_subscription(self) -> None:
         user_id = new_user_id()
         subscription_id = new_subscription_id()
+        grant_transaction_id = BenefitTransactionId(uuid.uuid4())
         now = datetime.datetime.now(tz=datetime.UTC)
 
         with capture_logs() as logs:
             async with transaction() as transaction_execute:
                 outcomes, callbacks = await domain.grant_source_entitlements(
                     transaction_execute,
-                    source_id=_SOURCE_ID,
-                    grant_transaction_id=_GRANT_TRANSACTION_ID,
+                    grant_transaction_id=grant_transaction_id,
                     user_id=user_id,
                     subscription_id=subscription_id,
                     one_time_purchase_id=None,
@@ -1087,7 +1071,7 @@ class TestGrantSourceEntitlements:
         assert [outcome.source_state.kind_id for outcome in outcomes] == [_DAY_TOKENS, _MONTH_TOKENS]
         assert all(outcome.source_state.expires_at == now + datetime.timedelta(days=1) for outcome in outcomes)
         assert all(outcome.source_state.subscription_id == subscription_id for outcome in outcomes)
-        assert all(outcome.source_state.grant_transaction_id == _GRANT_TRANSACTION_ID for outcome in outcomes)
+        assert all(outcome.source_state.grant_transaction_id == grant_transaction_id for outcome in outcomes)
         assert sum(record.get("event") == "source_entitlement_changed" for record in logs) == 2
         assert sum(record.get("event") == "entitlement_changed" for record in logs) == 2
 
@@ -1095,14 +1079,14 @@ class TestGrantSourceEntitlements:
     async def test_grants_one_time_purchase_owned_guarantee_with_audit_and_events(self) -> None:
         user_id = new_user_id()
         one_time_purchase_id = new_purchase_id()
+        grant_transaction_id = BenefitTransactionId(uuid.uuid4())
         now = datetime.datetime.now(tz=datetime.UTC)
 
         with capture_logs() as logs:
             async with transaction() as transaction_execute:
                 outcomes, callbacks = await domain.grant_source_entitlements(
                     transaction_execute,
-                    source_id=_SOURCE_ID,
-                    grant_transaction_id=_GRANT_TRANSACTION_ID,
+                    grant_transaction_id=grant_transaction_id,
                     user_id=user_id,
                     subscription_id=None,
                     one_time_purchase_id=one_time_purchase_id,
@@ -1151,8 +1135,7 @@ class TestGrantSourceEntitlements:
                 async with transaction() as transaction_execute:
                     await domain.grant_source_entitlements(
                         transaction_execute,
-                        source_id=_SOURCE_ID,
-                        grant_transaction_id=_GRANT_TRANSACTION_ID,
+                        grant_transaction_id=BenefitTransactionId(uuid.uuid4()),
                         user_id=user_id,
                         subscription_id=None,
                         one_time_purchase_id=None,
@@ -1186,17 +1169,18 @@ class TestRevokeSubscriptionEntitlements:
         user_id = new_user_id()
         subscription_id = new_subscription_id()
         now = datetime.datetime.now(tz=datetime.UTC)
+        expired_transaction_id, revoked_transaction_id = _ordered_transaction_ids(2)
         expired = make_source_entitlement(
             user_id=user_id,
             subscription_id=subscription_id,
-            grant_transaction_id=BenefitTransactionId(uuid.UUID(int=5)),
+            grant_transaction_id=expired_transaction_id,
             starts_at=now - datetime.timedelta(days=2),
             expires_at=now,
         )
         revoked = make_source_entitlement(
             user_id=user_id,
             subscription_id=subscription_id,
-            grant_transaction_id=BenefitTransactionId(uuid.UUID(int=6)),
+            grant_transaction_id=revoked_transaction_id,
             starts_at=now - datetime.timedelta(days=2),
             expires_at=now + datetime.timedelta(days=1),
         )
@@ -1235,12 +1219,11 @@ class TestRevokeSubscriptionEntitlements:
         user_id = new_user_id()
         subscription_id = new_subscription_id()
         now = datetime.datetime.now(tz=datetime.UTC)
-        future_transaction_id = BenefitTransactionId(uuid.UUID(int=3))
+        grant_transaction_id, future_transaction_id = _ordered_transaction_ids(2)
         async with transaction() as transaction_execute:
             granted, grant_callbacks = await domain.grant_source_entitlements(
                 transaction_execute,
-                source_id=_SOURCE_ID,
-                grant_transaction_id=_GRANT_TRANSACTION_ID,
+                grant_transaction_id=grant_transaction_id,
                 user_id=user_id,
                 subscription_id=subscription_id,
                 one_time_purchase_id=None,
@@ -1256,7 +1239,6 @@ class TestRevokeSubscriptionEntitlements:
             )
             future_granted, future_grant_callbacks = await domain.grant_source_entitlements(
                 transaction_execute,
-                source_id=_SOURCE_ID,
                 grant_transaction_id=future_transaction_id,
                 user_id=user_id,
                 subscription_id=subscription_id,
@@ -1286,9 +1268,9 @@ class TestRevokeSubscriptionEntitlements:
             callback()
 
         assert [(outcome.source_state.kind_id, outcome.source_state.grant_transaction_id) for outcome in outcomes] == [
-            (_DAY_TOKENS, _GRANT_TRANSACTION_ID),
+            (_DAY_TOKENS, grant_transaction_id),
             (_DAY_TOKENS, future_transaction_id),
-            (_MONTH_TOKENS, _GRANT_TRANSACTION_ID),
+            (_MONTH_TOKENS, grant_transaction_id),
         ]
         assert all(not outcome.source_state.granted for outcome in outcomes)
         assert all(outcome.source_state.revoked_by_transaction_id == _REVOKING_TRANSACTION_ID for outcome in outcomes)
@@ -1316,17 +1298,18 @@ class TestRevokeOneTimePurchaseEntitlements:
         user_id = new_user_id()
         one_time_purchase_id = new_purchase_id()
         now = datetime.datetime.now(tz=datetime.UTC)
+        expired_transaction_id, revoked_transaction_id = _ordered_transaction_ids(2)
         expired = make_source_entitlement(
             user_id=user_id,
             one_time_purchase_id=one_time_purchase_id,
-            grant_transaction_id=BenefitTransactionId(uuid.UUID(int=5)),
+            grant_transaction_id=expired_transaction_id,
             starts_at=now - datetime.timedelta(days=2),
             expires_at=now,
         )
         revoked = make_source_entitlement(
             user_id=user_id,
             one_time_purchase_id=one_time_purchase_id,
-            grant_transaction_id=BenefitTransactionId(uuid.UUID(int=6)),
+            grant_transaction_id=revoked_transaction_id,
             starts_at=now - datetime.timedelta(days=2),
             expires_at=now + datetime.timedelta(days=1),
         )
@@ -1366,11 +1349,10 @@ class TestRevokeOneTimePurchaseEntitlements:
         one_time_purchase_id = new_purchase_id()
         other_purchase_id = new_purchase_id()
         now = datetime.datetime.now(tz=datetime.UTC)
-        future_transaction_id = BenefitTransactionId(uuid.UUID(int=3))
-        other_transaction_id = BenefitTransactionId(uuid.UUID(int=4))
+        grant_transaction_id, future_transaction_id, other_transaction_id = _ordered_transaction_ids(3)
 
         grants = (
-            (_GRANT_TRANSACTION_ID, one_time_purchase_id, 100, -1),
+            (grant_transaction_id, one_time_purchase_id, 100, -1),
             (future_transaction_id, one_time_purchase_id, 50, 1),
             (other_transaction_id, other_purchase_id, 250, -1),
         )
@@ -1379,7 +1361,6 @@ class TestRevokeOneTimePurchaseEntitlements:
             for transaction_id, purchase_id, value, starts_in_days in grants:
                 _, callbacks = await domain.grant_source_entitlements(
                     transaction_execute,
-                    source_id=_SOURCE_ID,
                     grant_transaction_id=transaction_id,
                     user_id=user_id,
                     subscription_id=None,
@@ -1412,7 +1393,7 @@ class TestRevokeOneTimePurchaseEntitlements:
                 callback()
 
         assert [outcome.source_state.grant_transaction_id for outcome in outcomes] == [
-            _GRANT_TRANSACTION_ID,
+            grant_transaction_id,
             future_transaction_id,
         ]
         assert all(not outcome.source_state.granted for outcome in outcomes)
@@ -1424,7 +1405,7 @@ class TestRevokeOneTimePurchaseEntitlements:
 
         source_entitlements = await operations.load_source_entitlements(execute, user_id, _LIFETIME_TOKENS)
         assert {source.grant_transaction_id: source.granted for source in source_entitlements} == {
-            _GRANT_TRANSACTION_ID: False,
+            grant_transaction_id: False,
             future_transaction_id: False,
             other_transaction_id: True,
         }

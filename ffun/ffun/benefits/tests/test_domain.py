@@ -458,7 +458,6 @@ class TestReplaceBenefit:
         )
         grant.assert_awaited_once_with(
             transaction_execute,
-            source_id=domain.BENEFITS_ENTITLEMENT_SOURCE_ID,
             grant_transaction_id=benefit_transaction.id,
             user_id=benefit_transaction.user_id,
             subscription_id=benefit_transaction.subscription_id,
@@ -796,14 +795,12 @@ class TestApplySubscriptionTransaction:
             execute,
             snapshot.user_id,
             EntitlementKindId.day_tokens,
-            domain.BENEFITS_ENTITLEMENT_SOURCE_ID,
             result.transaction_id,
         )
         month_source = await entitlement_helpers.load_source_entitlement(
             execute,
             snapshot.user_id,
             EntitlementKindId.month_tokens,
-            domain.BENEFITS_ENTITLEMENT_SOURCE_ID,
             result.transaction_id,
         )
         assert day_source is not None
@@ -827,7 +824,6 @@ class TestApplySubscriptionTransaction:
             logs,
             "source_entitlement_changed",
             user_id=snapshot.user_id,
-            source_id=domain.BENEFITS_ENTITLEMENT_SOURCE_ID,
             grant_transaction_id=str(result.transaction_id),
         )
         assert_logs_has_business_event(logs, "entitlement_changed", user_id=snapshot.user_id)
@@ -928,7 +924,6 @@ class TestApplySubscriptionTransaction:
                 execute,
                 original_snapshot.user_id,
                 kind_id,
-                domain.BENEFITS_ENTITLEMENT_SOURCE_ID,
                 grant.transaction_id,
             )
             assert source is not None
@@ -941,7 +936,6 @@ class TestApplySubscriptionTransaction:
                 execute,
                 original_snapshot.user_id,
                 EntitlementKindId.day_tokens,
-                domain.BENEFITS_ENTITLEMENT_SOURCE_ID,
                 revocation.transaction_id,
             )
             is None
@@ -1143,7 +1137,6 @@ class TestApplySubscriptionTransaction:
             execute,
             current_snapshot.user_id,
             EntitlementKindId.day_tokens,
-            domain.BENEFITS_ENTITLEMENT_SOURCE_ID,
             current_grant.transaction_id,
         )
         assert current_source is not None
@@ -1191,14 +1184,12 @@ class TestApplySubscriptionTransaction:
             execute,
             snapshot.user_id,
             EntitlementKindId.day_tokens,
-            domain.BENEFITS_ENTITLEMENT_SOURCE_ID,
             first.transaction_id,
         )
         replacement_source = await entitlement_helpers.load_source_entitlement(
             execute,
             snapshot.user_id,
             EntitlementKindId.day_tokens,
-            domain.BENEFITS_ENTITLEMENT_SOURCE_ID,
             replacement.transaction_id,
         )
         assert previous_source is not None
@@ -1256,7 +1247,6 @@ class TestApplySubscriptionTransaction:
             execute,
             snapshot.user_id,
             EntitlementKindId.day_tokens,
-            domain.BENEFITS_ENTITLEMENT_SOURCE_ID,
             grant.transaction_id,
         )
         assert source is not None
@@ -1306,7 +1296,6 @@ class TestApplyOneTimePurchaseTransaction:
             execute,
             purchase.user_id,
             EntitlementKindId.lifetime_tokens,
-            domain.BENEFITS_ENTITLEMENT_SOURCE_ID,
             result.transaction_id,
         )
         assert source is not None
@@ -1384,14 +1373,12 @@ class TestApplyOneTimePurchaseTransaction:
             execute,
             first_purchase.user_id,
             EntitlementKindId.lifetime_tokens,
-            domain.BENEFITS_ENTITLEMENT_SOURCE_ID,
             first.transaction_id,
         )
         second_source = await entitlement_helpers.load_source_entitlement(
             execute,
             second_purchase.user_id,
             EntitlementKindId.lifetime_tokens,
-            domain.BENEFITS_ENTITLEMENT_SOURCE_ID,
             second.transaction_id,
         )
         assert first_source is not None
@@ -1570,7 +1557,6 @@ class TestApplyOneTimePurchaseTransaction:
             execute,
             current_purchase.user_id,
             EntitlementKindId.lifetime_tokens,
-            domain.BENEFITS_ENTITLEMENT_SOURCE_ID,
             current.transaction_id,
         )
         assert source is not None
@@ -1625,14 +1611,12 @@ class TestApplyOneTimePurchaseTransaction:
             execute,
             purchase.user_id,
             EntitlementKindId.lifetime_tokens,
-            domain.BENEFITS_ENTITLEMENT_SOURCE_ID,
             original.transaction_id,
         )
         corrected_source = await entitlement_helpers.load_source_entitlement(
             execute,
             purchase.user_id,
             EntitlementKindId.lifetime_tokens,
-            domain.BENEFITS_ENTITLEMENT_SOURCE_ID,
             correction.transaction_id,
         )
         assert original_source is not None
@@ -1745,7 +1729,6 @@ class TestApplyOneTimePurchaseTransaction:
             execute,
             purchase.user_id,
             EntitlementKindId.lifetime_tokens,
-            domain.BENEFITS_ENTITLEMENT_SOURCE_ID,
             stored_transaction.id,
         )
         assert source is not None
@@ -1796,7 +1779,6 @@ class TestSubscriptionHasRequiredEntitlements:
         )
         subscription_id = subscription_domain.new_subscription_id()
         matching = make_source_entitlement(
-            source_id=domain.BENEFITS_ENTITLEMENT_SOURCE_ID,
             user_id=snapshot.user_id,
             subscription_id=subscription_id,
             value=10,
@@ -1804,7 +1786,6 @@ class TestSubscriptionHasRequiredEntitlements:
             expires_at=snapshot.period_ends_at,
         )
         expired = make_source_entitlement(
-            source_id=domain.BENEFITS_ENTITLEMENT_SOURCE_ID,
             user_id=snapshot.user_id,
             subscription_id=subscription_id,
             value=99,
@@ -1824,7 +1805,6 @@ class TestSubscriptionHasRequiredEntitlements:
         snapshot = make_subscription_snapshot()
         subscription_id = subscription_domain.new_subscription_id()
         matching = make_source_entitlement(
-            source_id=domain.BENEFITS_ENTITLEMENT_SOURCE_ID,
             user_id=snapshot.user_id,
             subscription_id=subscription_id,
             value=10,
@@ -1993,14 +1973,12 @@ class TestRefreshSubscriptionEntitlements:
             execute,
             snapshot.user_id,
             EntitlementKindId.day_tokens,
-            domain.BENEFITS_ENTITLEMENT_SOURCE_ID,
             applied.transaction_id,
         )
         replacement_source = await entitlement_helpers.load_source_entitlement(
             execute,
             snapshot.user_id,
             EntitlementKindId.day_tokens,
-            domain.BENEFITS_ENTITLEMENT_SOURCE_ID,
             result.transaction_id,
         )
         assert previous_source is not None

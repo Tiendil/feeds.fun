@@ -29,13 +29,11 @@ from ffun.domain.entities import (
     SubscriptionId,
 )
 from ffun.entitlements import domain as entitlement_domain
-from ffun.entitlements.entities import EntitlementSourceId, SourceEntitlement
+from ffun.entitlements.entities import SourceEntitlement
 from ffun.one_time_purchases import domain as purchase_domain
 from ffun.one_time_purchases.entities import PurchaseSnapshot
 from ffun.subscriptions import domain as subscription_domain
 from ffun.subscriptions.entities import SubscriptionSnapshot
-
-BENEFITS_ENTITLEMENT_SOURCE_ID = EntitlementSourceId("benefits")
 
 _ActualizeTransaction = Callable[
     [TransactionExecuteType, datetime.datetime],
@@ -111,7 +109,6 @@ def _subscription_has_required_entitlements(
 ) -> bool:
     expected = sorted(
         (
-            BENEFITS_ENTITLEMENT_SOURCE_ID,
             guarantee.kind_id,
             guarantee.value,
             max(subscription.period_starts_at, evaluation_time),
@@ -121,7 +118,6 @@ def _subscription_has_required_entitlements(
     )
     current = sorted(
         (
-            entitlement.source_id,
             entitlement.kind_id,
             entitlement.value,
             max(entitlement.starts_at, evaluation_time),
@@ -202,7 +198,6 @@ async def _replace_benefit(  # noqa: CFQ002
 
     _, grant_callbacks = await entitlement_domain.grant_source_entitlements(
         execute,
-        source_id=BENEFITS_ENTITLEMENT_SOURCE_ID,
         grant_transaction_id=benefit_transaction.id,
         user_id=benefit_transaction.user_id,
         subscription_id=benefit_transaction.subscription_id,

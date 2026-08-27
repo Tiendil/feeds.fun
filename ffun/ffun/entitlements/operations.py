@@ -12,7 +12,6 @@ from ffun.entitlements import errors
 from ffun.entitlements.entities import (
     EffectiveEntitlementInterval,
     EntitlementKindId,
-    EntitlementSourceId,
     SourceEntitlement,
 )
 
@@ -39,7 +38,6 @@ async def load_source_entitlement(
     execute: ExecuteType,
     user_id: UserId,
     kind_id: EntitlementKindId,
-    source_id: EntitlementSourceId,
     grant_transaction_id: BenefitTransactionId,
 ) -> SourceEntitlement | None:
     sql = """
@@ -47,7 +45,6 @@ async def load_source_entitlement(
     FROM en_source_entitlements
     WHERE user_id = %(user_id)s
       AND kind_id = %(kind_id)s
-      AND source_id = %(source_id)s
       AND grant_transaction_id = %(grant_transaction_id)s
     """
 
@@ -56,7 +53,6 @@ async def load_source_entitlement(
         {
             "user_id": user_id,
             "kind_id": kind_id,
-            "source_id": source_id,
             "grant_transaction_id": grant_transaction_id,
         },
     )
@@ -70,7 +66,6 @@ async def load_source_entitlement(
 async def insert_source_entitlement(execute: ExecuteType, entitlement: SourceEntitlement) -> None:
     sql = """
     INSERT INTO en_source_entitlements (
-        source_id,
         grant_transaction_id,
         user_id,
         subscription_id,
@@ -83,7 +78,6 @@ async def insert_source_entitlement(execute: ExecuteType, entitlement: SourceEnt
         revoked_by_transaction_id
     )
     VALUES (
-        %(source_id)s,
         %(grant_transaction_id)s,
         %(user_id)s,
         %(subscription_id)s,
@@ -101,7 +95,6 @@ async def insert_source_entitlement(execute: ExecuteType, entitlement: SourceEnt
         await execute(
             sql,
             {
-                "source_id": entitlement.source_id,
                 "grant_transaction_id": entitlement.grant_transaction_id,
                 "user_id": entitlement.user_id,
                 "subscription_id": entitlement.subscription_id,
@@ -118,7 +111,6 @@ async def insert_source_entitlement(execute: ExecuteType, entitlement: SourceEnt
         raise errors.SourceEntitlementConflict(
             user_id=str(entitlement.user_id),
             kind_id=entitlement.kind_id,
-            source_id=entitlement.source_id,
             grant_transaction_id=str(entitlement.grant_transaction_id),
         ) from exception
 
@@ -137,7 +129,6 @@ async def revoke_source_entitlement(
         updated_at = CURRENT_TIMESTAMP
     WHERE user_id = %(user_id)s
       AND kind_id = %(kind_id)s
-      AND source_id = %(source_id)s
       AND grant_transaction_id = %(grant_transaction_id)s
       AND revoked_at IS NULL
     RETURNING *
@@ -148,7 +139,6 @@ async def revoke_source_entitlement(
         {
             "user_id": entitlement.user_id,
             "kind_id": entitlement.kind_id,
-            "source_id": entitlement.source_id,
             "grant_transaction_id": entitlement.grant_transaction_id,
             "revoked_at": revoked_at,
             "revoked_by_transaction_id": revoked_by_transaction_id,
@@ -160,7 +150,6 @@ async def revoke_source_entitlement(
             execute,
             entitlement.user_id,
             entitlement.kind_id,
-            entitlement.source_id,
             entitlement.grant_transaction_id,
         )
 
@@ -183,7 +172,7 @@ async def load_source_entitlements_for_subscription(
     SELECT *
     FROM en_source_entitlements
     WHERE subscription_id = %(subscription_id)s
-    ORDER BY user_id, kind_id, source_id, grant_transaction_id
+    ORDER BY user_id, kind_id, grant_transaction_id
     """
     rows = await execute(sql, {"subscription_id": subscription_id})
     return [row_to_source_entitlement(row) for row in rows]
@@ -197,7 +186,7 @@ async def load_source_entitlements_for_one_time_purchase(
     SELECT *
     FROM en_source_entitlements
     WHERE one_time_purchase_id = %(one_time_purchase_id)s
-    ORDER BY user_id, kind_id, source_id, grant_transaction_id
+    ORDER BY user_id, kind_id, grant_transaction_id
     """
     rows = await execute(sql, {"one_time_purchase_id": one_time_purchase_id})
     return [row_to_source_entitlement(row) for row in rows]
@@ -211,7 +200,7 @@ async def load_source_entitlements(
     FROM en_source_entitlements
     WHERE user_id = %(user_id)s
       AND kind_id = %(kind_id)s
-    ORDER BY starts_at, expires_at, source_id, grant_transaction_id
+    ORDER BY starts_at, expires_at, grant_transaction_id
     """
 
     rows = await execute(sql, {"user_id": user_id, "kind_id": kind_id})

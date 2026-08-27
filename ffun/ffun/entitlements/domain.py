@@ -17,7 +17,6 @@ from ffun.entitlements.entities import (
     EntitlementGuarantee,
     EntitlementKind,
     EntitlementKindId,
-    EntitlementSourceId,
     MergePolicy,
     SourceEntitlement,
     SourceEntitlementChange,
@@ -166,7 +165,6 @@ async def _rebuild_after_source_change(  # noqa: CFQ002
         subject_kind=AuditEntityKind.user,
         subject_id=SerializedId(str(new_source_state.user_id)),
         attributes={
-            "source_id": new_source_state.source_id,
             "subscription_id": (
                 str(new_source_state.subscription_id) if new_source_state.subscription_id is not None else None
             ),
@@ -231,7 +229,6 @@ async def _apply_source_grant(
         execute,
         source_state.user_id,
         source_state.kind_id,
-        source_state.source_id,
         source_state.grant_transaction_id,
     )
     previous_effective_intervals = await operations.load_effective_intervals(
@@ -248,7 +245,6 @@ async def _apply_source_grant(
         raise errors.SourceEntitlementConflict(
             user_id=str(source_state.user_id),
             kind_id=source_state.kind_id,
-            source_id=source_state.source_id,
             grant_transaction_id=str(source_state.grant_transaction_id),
         )
 
@@ -269,7 +265,6 @@ async def _apply_source_revocation(  # noqa: CFQ002
     execute: ExecuteType,
     *,
     kind: EntitlementKind,
-    source_id: EntitlementSourceId,
     grant_transaction_id: BenefitTransactionId,
     revoked_by_transaction_id: BenefitTransactionId,
     user_id: UserId,
@@ -281,7 +276,6 @@ async def _apply_source_revocation(  # noqa: CFQ002
         execute,
         user_id,
         kind.id,
-        source_id,
         grant_transaction_id,
     )
 
@@ -296,7 +290,6 @@ async def _apply_source_revocation(  # noqa: CFQ002
         raise errors.SourceEntitlementNotFound(
             user_id=str(user_id),
             kind_id=kind.id,
-            source_id=source_id,
             grant_transaction_id=str(grant_transaction_id),
         )
 
@@ -326,7 +319,6 @@ def _emit_source_change_events(outcome: SourceEntitlementChange) -> None:
     logger.business_event(
         "source_entitlement_changed",
         user_id=source_state.user_id,
-        source_id=source_state.source_id,
         subscription_id=source_state.subscription_id,
         one_time_purchase_id=source_state.one_time_purchase_id,
         grant_transaction_id=source_state.grant_transaction_id,
@@ -395,7 +387,6 @@ async def grant_source_entitlement(
 async def revoke_source_entitlement(  # noqa: CFQ002
     execute: TransactionExecuteType,
     *,
-    source_id: EntitlementSourceId,
     grant_transaction_id: BenefitTransactionId,
     revoked_by_transaction_id: BenefitTransactionId,
     user_id: UserId,
@@ -410,7 +401,6 @@ async def revoke_source_entitlement(  # noqa: CFQ002
         outcome = await _apply_source_revocation(
             execute,
             kind=kind,
-            source_id=source_id,
             grant_transaction_id=grant_transaction_id,
             revoked_by_transaction_id=revoked_by_transaction_id,
             user_id=user_id,
@@ -432,7 +422,6 @@ async def revoke_source_entitlement(  # noqa: CFQ002
 async def grant_source_entitlements(  # noqa: CFQ002
     execute: TransactionExecuteType,
     *,
-    source_id: EntitlementSourceId,
     grant_transaction_id: BenefitTransactionId,
     user_id: UserId,
     subscription_id: SubscriptionId | None,
@@ -450,7 +439,6 @@ async def grant_source_entitlements(  # noqa: CFQ002
     for guarantee in sorted(guarantees, key=_guarantee_kind_id):
         try:
             entitlement = SourceEntitlement(
-                source_id=source_id,
                 grant_transaction_id=grant_transaction_id,
                 user_id=user_id,
                 subscription_id=subscription_id,
@@ -496,7 +484,6 @@ async def revoke_subscription_entitlements(  # noqa: CFQ002
     for source_entitlement in source_entitlements:
         outcome, callback = await revoke_source_entitlement(
             execute,
-            source_id=source_entitlement.source_id,
             grant_transaction_id=source_entitlement.grant_transaction_id,
             revoked_by_transaction_id=revoked_by_transaction_id,
             user_id=source_entitlement.user_id,
@@ -533,7 +520,6 @@ async def revoke_one_time_purchase_entitlements(  # noqa: CFQ002
     for source_entitlement in source_entitlements:
         outcome, callback = await revoke_source_entitlement(
             execute,
-            source_id=source_entitlement.source_id,
             grant_transaction_id=source_entitlement.grant_transaction_id,
             revoked_by_transaction_id=revoked_by_transaction_id,
             user_id=source_entitlement.user_id,

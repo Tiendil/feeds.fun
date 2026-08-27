@@ -14,7 +14,6 @@ from ffun.entitlements.entities import (
     EntitlementGuarantee,
     EntitlementKind,
     EntitlementKindId,
-    EntitlementSourceId,
     MergePolicy,
     SourceEntitlement,
 )
@@ -211,7 +210,6 @@ class TestSourceEntitlement:
     @pytest.mark.parametrize(
         "field_name",
         [
-            "source_id",
             "grant_transaction_id",
             "user_id",
             "subscription_id",
@@ -225,7 +223,6 @@ class TestSourceEntitlement:
     def test_has_same_grant_as__detects_changed_immutable_field(self, field_name: str) -> None:
         entitlement = make_source_entitlement(value=10)
         changed_values: dict[str, object] = {
-            "source_id": EntitlementSourceId("changed-source"),
             "grant_transaction_id": BenefitTransactionId(uuid.uuid4()),
             "user_id": make_source_entitlement().user_id,
             "subscription_id": new_subscription_id(),

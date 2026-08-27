@@ -6,7 +6,7 @@ This document describes the responsibility and observable entitlement behavior o
 
 ## Scope
 
-This specification applies to source-owned entitlement grants and the effective entitlement state derived from them by `ffun.entitlements`.
+This specification applies to entitlement grants and the effective entitlement state derived from them by `ffun.entitlements`.
 The following adjacent concerns are outside the module's responsibility:
 
 - purchased-state lifecycles.
@@ -18,19 +18,18 @@ The following adjacent concerns are outside the module's responsibility:
 ## Dictionary
 
 - `entitlement kind` - a stable category of capability or limit with one rule for combining active grant values and one lifetime status.
-- `source` - one entitlement-granting system that owns and may change its own grants.
-- `source entitlement` - one durable grant made by one source for one user and entitlement kind as part of one benefit transaction.
+- `source entitlement` - one durable grant for one user and entitlement kind caused by one benefit transaction.
 - `purchased-state owner` - the optional subscription or one-time purchase whose entitlement state includes a source entitlement.
 - `active source entitlement` - an unrevoked source entitlement whose effective period covers the evaluation time.
 - `effective entitlement interval` - a maximal period during which active source entitlements grant one entitlement kind to one user with one unchanged combined value.
 
 ## Module responsibility
 
-The module owns the supported entitlement kinds, each source's grants and revocations, and the rules that determine every user's effective entitlement state.
-Entitlement-granting callers own the meaning of their source identities and their decisions to establish or revoke grants.
+The module owns the supported entitlement kinds, grants and revocations, and the rules that determine every user's effective entitlement state.
+`ffun.benefits` owns the meaning of benefit-transaction source identities and its decisions to establish or revoke grants.
 Purchased-state modules own subscription and one-time-purchase lifecycles rather than the entitlement module.
 
-Sources MUST change grants through the module's domain boundary and MUST NOT change another source's grants.
+Callers MUST change grants through the module's domain boundary.
 Callers making entitlement decisions MUST use the module's effective state and MUST NOT independently combine source grants.
 
 ## Special module rules
@@ -48,9 +47,9 @@ The supported set is intentionally closed and consists of:
 - monthly token entitlements, which use the largest active grant value and are not lifetime.
 - lifetime token entitlements, which use the sum of all active grant values and are lifetime.
 
-A source entitlement is the durable record of one source's grant to one user for one entitlement kind, caused by one benefit transaction.
-Its stable identity combines the source, granting benefit transaction, user, and entitlement kind.
-Source entitlements with different identities MUST coexist, including future grants and multiple grants from one source, when their establishment satisfies the value and effective-state validity rules below.
+A source entitlement is the durable record of one grant to one user for one entitlement kind, caused by one benefit transaction.
+Its stable identity combines the globally unique granting benefit transaction and entitlement kind.
+Source entitlements with different identities MUST coexist, including future and multiple grants, when their establishment satisfies the value and effective-state validity rules below.
 
 A source entitlement MAY belong to one subscription, one one-time purchase, or no purchased-state owner, but MUST NOT belong to both owner kinds.
 Ownerless grants MAY represent explicitly supported administrative or system entitlements.

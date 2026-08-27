@@ -5,14 +5,9 @@ from typing import Annotated, TypeAlias
 import pydantic
 
 from ffun.core import utils
-from ffun.core.entities import BaseEntity, NonEmptyString
+from ffun.core.entities import BaseEntity
 from ffun.domain.datetime_intervals import LIFETIME_INTERVAL_END_MARKER
 from ffun.domain.entities import BenefitTransactionId, OneTimePurchaseId, SubscriptionId, UserId
-
-
-class EntitlementSourceId(NonEmptyString):
-    __slots__ = ()
-
 
 EffectiveEntitlementState: TypeAlias = tuple[bool, int | None]
 
@@ -69,7 +64,6 @@ ENTITLEMENT_KINDS: tuple[EntitlementKind, ...] = (
 
 
 class SourceEntitlement(BaseEntity):
-    source_id: EntitlementSourceId
     grant_transaction_id: BenefitTransactionId
     user_id: UserId
     subscription_id: SubscriptionId | None = None
@@ -132,8 +126,7 @@ class SourceEntitlement(BaseEntity):
 
     def has_same_grant_as(self, other: "SourceEntitlement") -> bool:
         return (
-            self.source_id == other.source_id
-            and self.grant_transaction_id == other.grant_transaction_id
+            self.grant_transaction_id == other.grant_transaction_id
             and self.user_id == other.user_id
             and self.subscription_id == other.subscription_id
             and self.one_time_purchase_id == other.one_time_purchase_id

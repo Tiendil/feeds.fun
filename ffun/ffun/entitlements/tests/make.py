@@ -6,7 +6,6 @@ from ffun.domain.entities import BenefitTransactionId, OneTimePurchaseId, Subscr
 from ffun.entitlements.entities import (
     EffectiveEntitlementInterval,
     EntitlementKindId,
-    EntitlementSourceId,
     SourceEntitlement,
 )
 
@@ -32,7 +31,6 @@ def make_effective_entitlement_interval(
 def make_source_entitlement(  # noqa: CFQ002
     *,
     user_id: UserId | None = None,
-    source_id: EntitlementSourceId = EntitlementSourceId("test"),
     grant_transaction_id: BenefitTransactionId | None = None,
     subscription_id: SubscriptionId | None = None,
     one_time_purchase_id: OneTimePurchaseId | None = None,
@@ -45,7 +43,6 @@ def make_source_entitlement(  # noqa: CFQ002
 ) -> SourceEntitlement:
     now = datetime.datetime.now(tz=datetime.UTC)
     return SourceEntitlement(
-        source_id=source_id,
         grant_transaction_id=grant_transaction_id or BenefitTransactionId(uuid.uuid4()),
         user_id=user_id or new_user_id(),
         subscription_id=subscription_id,

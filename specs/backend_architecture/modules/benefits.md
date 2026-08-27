@@ -262,8 +262,8 @@ A subscription whose current period begins in the future MAY be refreshed.
 
 Before accepting a refresh transaction, the workflow MUST materialize the current package from an empty parameter collection and compare its complete desired grants with the subscription-owned, unrevoked source entitlements that can affect the evaluation time or a later time.
 A parameterized template MUST therefore fail refresh before a transaction is accepted.
-The comparison MUST use the future projection of source, kind, value, and interval.
-It MUST ignore expired and revoked history and MUST NOT use merged effective entitlements, because another source could hide an incorrect subscription-owned grant.
+The comparison MUST use the future projection of kind, value, and interval.
+It MUST ignore expired and revoked history and MUST NOT use merged effective entitlements, because grants owned by other purchased-state targets could hide an incorrect subscription-owned grant.
 
 An ineligible subscription or a subscription whose relevant source entitlements already match the desired package MUST produce no benefit transaction, purchased-state change, entitlement change, audit evidence, or business event.
 When relevant source entitlements differ, the workflow MUST accept one new grant transaction and replace the target's owned entitlements through the normal actualization behavior.

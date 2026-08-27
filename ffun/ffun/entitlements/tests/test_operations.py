@@ -12,7 +12,7 @@ from ffun.core.tests.helpers import TableSizeDelta, TableSizeNotChanged
 from ffun.domain.domain import new_user_id
 from ffun.domain.entities import BenefitTransactionId, UserId
 from ffun.entitlements import errors, operations
-from ffun.entitlements.entities import EntitlementKindId, EntitlementSourceId
+from ffun.entitlements.entities import EntitlementKindId
 from ffun.entitlements.tests.helpers import load_effective_interval_timestamps, load_source_entitlement_timestamps
 from ffun.entitlements.tests.make import make_effective_entitlement_interval, make_source_entitlement
 from ffun.one_time_purchases.domain import new_purchase_id
@@ -21,6 +21,11 @@ from ffun.subscriptions.domain import new_subscription_id
 
 def _transaction_id(value: int) -> BenefitTransactionId:
     return BenefitTransactionId(uuid.UUID(int=value))
+
+
+def _ordered_transaction_ids(count: int) -> tuple[BenefitTransactionId, ...]:
+    base = uuid.uuid4().int & ~0xFFFF
+    return tuple(BenefitTransactionId(uuid.UUID(int=base + offset)) for offset in range(1, count + 1))
 
 
 class TestRowToSourceEntitlement:
@@ -61,15 +66,14 @@ class TestLoadSourceEntitlement:
             execute,
             new_user_id(),
             EntitlementKindId.day_tokens,
-            EntitlementSourceId("missing"),
-            _transaction_id(1),
+            BenefitTransactionId(uuid.uuid4()),
         )
 
         assert loaded is None
 
     @pytest.mark.asyncio
     async def test_identity_includes_grant_transaction(self) -> None:
-        entitlement = make_source_entitlement(grant_transaction_id=_transaction_id(1))
+        entitlement = make_source_entitlement()
         await operations.insert_source_entitlement(execute, entitlement)
 
         assert (
@@ -77,7 +81,6 @@ class TestLoadSourceEntitlement:
                 execute,
                 entitlement.user_id,
                 entitlement.kind_id,
-                entitlement.source_id,
                 entitlement.grant_transaction_id,
             )
             == entitlement
@@ -87,8 +90,7 @@ class TestLoadSourceEntitlement:
                 execute,
                 entitlement.user_id,
                 entitlement.kind_id,
-                entitlement.source_id,
-                _transaction_id(2),
+                BenefitTransactionId(uuid.uuid4()),
             )
             is None
         )
@@ -106,7 +108,6 @@ class TestInsertSourceEntitlement:
             execute,
             entitlement.user_id,
             entitlement.kind_id,
-            entitlement.source_id,
             entitlement.grant_transaction_id,
         )
         assert loaded == entitlement
@@ -125,7 +126,6 @@ class TestInsertSourceEntitlement:
                 execute,
                 entitlement.user_id,
                 entitlement.kind_id,
-                entitlement.source_id,
                 entitlement.grant_transaction_id,
             )
             == entitlement
@@ -144,7 +144,6 @@ class TestInsertSourceEntitlement:
                 await execute(
                     """
                     INSERT INTO en_source_entitlements (
-                        source_id,
                         grant_transaction_id,
                         user_id,
                         subscription_id,
@@ -157,7 +156,6 @@ class TestInsertSourceEntitlement:
                         revoked_by_transaction_id
                     )
                     VALUES (
-                        %(source_id)s,
                         %(grant_transaction_id)s,
                         %(user_id)s,
                         %(subscription_id)s,
@@ -174,9 +172,10 @@ class TestInsertSourceEntitlement:
                 )
 
     @pytest.mark.asyncio
-    async def test_same_source_can_insert_multiple_grant_transactions(self) -> None:
-        first = make_source_entitlement(grant_transaction_id=_transaction_id(1))
-        second = first.replace(grant_transaction_id=_transaction_id(2), value=20)
+    async def test_inserts_multiple_grant_transactions(self) -> None:
+        first_transaction_id, second_transaction_id = _ordered_transaction_ids(2)
+        first = make_source_entitlement(grant_transaction_id=first_transaction_id)
+        second = first.replace(grant_transaction_id=second_transaction_id, value=20)
 
         async with TableSizeDelta("en_source_entitlements", delta=2):
             await operations.insert_source_entitlement(execute, first)
@@ -201,7 +200,6 @@ class TestInsertSourceEntitlement:
                 execute,
                 entitlement.user_id,
                 entitlement.kind_id,
-                entitlement.source_id,
                 entitlement.grant_transaction_id,
             )
             == entitlement
@@ -250,7 +248,6 @@ class TestRevokeSourceEntitlement:
                 execute,
                 entitlement.user_id,
                 entitlement.kind_id,
-                entitlement.source_id,
                 entitlement.grant_transaction_id,
             )
             == revoked
@@ -286,7 +283,6 @@ class TestRevokeSourceEntitlement:
                 execute,
                 entitlement.user_id,
                 entitlement.kind_id,
-                entitlement.source_id,
                 entitlement.grant_transaction_id,
             )
             == revoked
@@ -320,7 +316,6 @@ class TestRevokeSourceEntitlement:
                 execute,
                 entitlement.user_id,
                 entitlement.kind_id,
-                entitlement.source_id,
                 entitlement.grant_transaction_id,
             )
             == stored
@@ -342,16 +337,17 @@ class TestLoadSourceEntitlementsForSubscription:
     async def test_returns_all_linked_grants_in_kind_and_transaction_order(self) -> None:
         subscription_id = new_subscription_id()
         now = datetime.datetime.now(tz=datetime.UTC)
+        transaction_ids = _ordered_transaction_ids(6)
         active_month = make_source_entitlement(
             subscription_id=subscription_id,
-            grant_transaction_id=_transaction_id(2),
+            grant_transaction_id=transaction_ids[1],
             kind_id=EntitlementKindId.month_tokens,
             starts_at=now - datetime.timedelta(days=1),
             expires_at=now + datetime.timedelta(days=1),
         )
         active_day = make_source_entitlement(
             subscription_id=subscription_id,
-            grant_transaction_id=_transaction_id(1),
+            grant_transaction_id=transaction_ids[0],
             user_id=active_month.user_id,
             kind_id=EntitlementKindId.day_tokens,
             starts_at=now - datetime.timedelta(days=1),
@@ -359,14 +355,14 @@ class TestLoadSourceEntitlementsForSubscription:
         )
         expired = make_source_entitlement(
             subscription_id=subscription_id,
-            grant_transaction_id=_transaction_id(3),
+            grant_transaction_id=transaction_ids[2],
             user_id=active_month.user_id,
             starts_at=now - datetime.timedelta(days=2),
             expires_at=now,
         )
         future_day = make_source_entitlement(
             subscription_id=subscription_id,
-            grant_transaction_id=_transaction_id(4),
+            grant_transaction_id=transaction_ids[3],
             user_id=active_month.user_id,
             kind_id=EntitlementKindId.day_tokens,
             starts_at=now + datetime.timedelta(days=1),
@@ -374,7 +370,7 @@ class TestLoadSourceEntitlementsForSubscription:
         )
         never_active_future = make_source_entitlement(
             subscription_id=subscription_id,
-            grant_transaction_id=_transaction_id(5),
+            grant_transaction_id=transaction_ids[4],
             user_id=active_month.user_id,
             kind_id=EntitlementKindId.day_tokens,
             starts_at=now + datetime.timedelta(days=2),
@@ -383,7 +379,7 @@ class TestLoadSourceEntitlementsForSubscription:
         )
         revoked = make_source_entitlement(
             subscription_id=subscription_id,
-            grant_transaction_id=_transaction_id(6),
+            grant_transaction_id=transaction_ids[5],
             user_id=active_month.user_id,
             starts_at=now - datetime.timedelta(days=1),
             expires_at=now + datetime.timedelta(days=1),
@@ -426,16 +422,17 @@ class TestLoadSourceEntitlementsForOneTimePurchase:
     async def test_returns_all_linked_grants_in_kind_and_transaction_order(self) -> None:
         one_time_purchase_id = new_purchase_id()
         now = datetime.datetime.now(tz=datetime.UTC)
+        transaction_ids = _ordered_transaction_ids(5)
         active_month = make_source_entitlement(
             one_time_purchase_id=one_time_purchase_id,
-            grant_transaction_id=_transaction_id(2),
+            grant_transaction_id=transaction_ids[1],
             kind_id=EntitlementKindId.month_tokens,
             starts_at=now - datetime.timedelta(days=1),
             expires_at=now + datetime.timedelta(days=1),
         )
         active_day = make_source_entitlement(
             one_time_purchase_id=one_time_purchase_id,
-            grant_transaction_id=_transaction_id(1),
+            grant_transaction_id=transaction_ids[0],
             user_id=active_month.user_id,
             kind_id=EntitlementKindId.day_tokens,
             starts_at=now - datetime.timedelta(days=1),
@@ -443,7 +440,7 @@ class TestLoadSourceEntitlementsForOneTimePurchase:
         )
         future_day = make_source_entitlement(
             one_time_purchase_id=one_time_purchase_id,
-            grant_transaction_id=_transaction_id(4),
+            grant_transaction_id=transaction_ids[3],
             user_id=active_month.user_id,
             kind_id=EntitlementKindId.day_tokens,
             starts_at=now + datetime.timedelta(days=1),
@@ -451,14 +448,14 @@ class TestLoadSourceEntitlementsForOneTimePurchase:
         )
         expired = make_source_entitlement(
             one_time_purchase_id=one_time_purchase_id,
-            grant_transaction_id=_transaction_id(3),
+            grant_transaction_id=transaction_ids[2],
             user_id=active_month.user_id,
             starts_at=now - datetime.timedelta(days=2),
             expires_at=now,
         )
         revoked = make_source_entitlement(
             one_time_purchase_id=one_time_purchase_id,
-            grant_transaction_id=_transaction_id(5),
+            grant_transaction_id=transaction_ids[4],
             user_id=active_month.user_id,
             starts_at=now - datetime.timedelta(days=1),
             expires_at=now + datetime.timedelta(days=1),
@@ -498,15 +495,11 @@ class TestLoadSourceEntitlements:
         now = datetime.datetime.now(tz=datetime.UTC)
         later = make_source_entitlement(
             user_id=user_id,
-            source_id=EntitlementSourceId("later"),
-            grant_transaction_id=_transaction_id(2),
             starts_at=now,
             expires_at=now + datetime.timedelta(days=2),
         )
         earlier = make_source_entitlement(
             user_id=user_id,
-            source_id=EntitlementSourceId("earlier"),
-            grant_transaction_id=_transaction_id(1),
             starts_at=now - datetime.timedelta(days=1),
             expires_at=now + datetime.timedelta(days=1),
         )

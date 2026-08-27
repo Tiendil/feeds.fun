@@ -9,7 +9,7 @@ from ffun.domain.entities import BenefitTransactionId, SerializedId, UserId
 from ffun.entitlements import domain
 from ffun.entitlements import entities as entitlement_entities
 from ffun.entitlements import operations
-from ffun.entitlements.entities import EntitlementKindId, EntitlementSourceId, SourceEntitlement
+from ffun.entitlements.entities import EntitlementKindId, SourceEntitlement
 
 _REVOKING_TRANSACTION_ID = BenefitTransactionId(uuid.UUID(int=2))
 _ACTOR_KIND = AuditEntityKind.admin
@@ -53,7 +53,6 @@ async def _revoke(
     async with transaction() as transaction_execute:
         outcome, callback = await domain.revoke_source_entitlement(
             transaction_execute,
-            source_id=source_entitlement.source_id,
             grant_transaction_id=source_entitlement.grant_transaction_id,
             revoked_by_transaction_id=revoked_by_transaction_id,
             user_id=source_entitlement.user_id,
@@ -73,14 +72,12 @@ async def load_source_entitlement(
     execute: ExecuteType,
     user_id: UserId,
     kind_id: EntitlementKindId,
-    source_id: EntitlementSourceId,
     grant_transaction_id: BenefitTransactionId,
 ) -> SourceEntitlement | None:
     return await operations.load_source_entitlement(
         execute,
         user_id,
         kind_id,
-        source_id,
         grant_transaction_id,
     )
 
@@ -91,7 +88,6 @@ async def load_source_entitlement_timestamps(
     arguments: dict[str, object] = {
         "user_id": entitlement.user_id,
         "kind_id": entitlement.kind_id,
-        "source_id": entitlement.source_id,
         "grant_transaction_id": entitlement.grant_transaction_id,
     }
     rows = cast(
@@ -102,7 +98,6 @@ async def load_source_entitlement_timestamps(
             FROM en_source_entitlements
             WHERE user_id = %(user_id)s
               AND kind_id = %(kind_id)s
-              AND source_id = %(source_id)s
               AND grant_transaction_id = %(grant_transaction_id)s
             """,
             arguments,
