@@ -10,11 +10,10 @@ files still fail loudly rather than cache a pair as checked when exact current
 working-tree text bytes are unavailable.
 
 Project journal logging belongs in ``log_project_journal``. Relation-pair
-queue records must use the isolated Taskwarrior database under
+state and operation history use the isolated SQLite database under
 ``.session/inconsistency-check``; project journal entries must use
 ``bin/taskwarior.sh`` through ``log_project_journal`` and carry the
-``+consistency`` tag. Structured pair-operation history is stored separately
-in ``.session/inconsistency-check/operations.jsonl``.
+``+consistency`` tag.
 """
 
 # TODO: depmesh does not support missed files detection => we may miss some inconsistencies
@@ -27,25 +26,27 @@ import copy
 import hashlib
 import json
 import shlex
-import shutil
+import sqlite3
 import subprocess  # noqa: S404
 import sys
 import time
 import tomllib
-from collections import Counter, deque
+import uuid
+from collections import Counter
 from concurrent.futures import Future, ThreadPoolExecutor
+from contextlib import contextmanager
 from dataclasses import dataclass
 from datetime import UTC, datetime
 from enum import IntEnum
 from pathlib import Path, PurePosixPath
 from threading import Barrier, Lock
 from types import SimpleNamespace
-from typing import Any, Callable, Iterable
+from typing import Any, Callable, Iterable, Iterator
 
 
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
 CONFIG_PATH = PROJECT_ROOT / "consistency.toml"
-TASKWARRIOR_BIN = "task"
+SQLITE_SCHEMA_VERSION = 1
 VALID_CHECK_STATUSES = {"unchecked", "consistent", "inconsistent", "outdated"}
 VALID_PAIR_OPERATIONS = {"queued", "dispatched", "checked", "marked", "status_changed"}
 
@@ -84,17 +85,15 @@ class ConsistencyConfig:
 class RuntimePaths:
     relative_runtime_dir: Path
     runtime_dir: Path
-    relative_taskrc_path: Path
-    taskrc_path: Path
-    task_data_dir: Path
+    database_path: Path
     agent_output_dir: Path
     prompt_dir: Path
     schema_dir: Path
     self_check_dir: Path
-    operation_log_path: Path
 
 
 ACTIVE_CONFIG: ConsistencyConfig | None = None
+INITIALIZED_DATABASES: set[Path] = set()
 
 
 class ExitCode(IntEnum):
@@ -658,43 +657,12 @@ def runtime_paths() -> RuntimePaths:
     return RuntimePaths(
         relative_runtime_dir=relative_runtime_dir,
         runtime_dir=runtime_dir,
-        relative_taskrc_path=relative_runtime_dir / "taskrc",
-        taskrc_path=runtime_dir / "taskrc",
-        task_data_dir=runtime_dir / "taskwarrior",
+        database_path=runtime_dir / "state.sqlite3",
         agent_output_dir=runtime_dir / "agent-output",
         prompt_dir=runtime_dir / "prompts",
         schema_dir=runtime_dir / "schemas",
         self_check_dir=runtime_dir / "self-check",
-        operation_log_path=runtime_dir / "operations.jsonl",
     )
-
-
-def build_taskrc_content(paths: RuntimePaths) -> str:
-    return f"""data.location={paths.relative_runtime_dir / "taskwarrior"}
-confirmation=no
-
-uda.pair_key.type=string
-uda.pair_key.label=Relation Pair Key
-uda.file_pair.type=string
-uda.file_pair.label=File Pair
-uda.changed_path.type=string
-uda.changed_path.label=Changed Path
-uda.related_path.type=string
-uda.related_path.label=Related Path
-uda.relation.type=string
-uda.relation.label=Relation
-uda.checksum_changed.type=string
-uda.checksum_changed.label=Changed Checksum
-uda.checksum_related.type=string
-uda.checksum_related.label=Related Checksum
-uda.check_status.type=string
-uda.check_status.label=Check Status
-uda.check_status.values=unchecked,consistent,inconsistent,outdated,
-uda.report.type=string
-uda.report.label=Report
-uda.checked_at.type=string
-uda.checked_at.label=Checked At
-"""
 
 
 def format_argv(argv: Iterable[str]) -> str:
@@ -1544,28 +1512,252 @@ def raw_pair_operation(record: dict[str, Any], *, context: str) -> PairOperation
     return operation
 
 
-def append_pair_operation_record(path: Path, record: PairOperation) -> None:
-    raw_pair_operation(pair_operation_values(record), context="writing pair operation")
-    serialized = json.dumps(pair_operation_values(record), separators=(",", ":"), sort_keys=True) + "\n"
+@contextmanager
+def database_connection() -> Iterator[sqlite3.Connection]:
+    path = runtime_paths().database_path
 
     try:
-        path.parent.mkdir(parents=True, exist_ok=True)
+        connection = sqlite3.connect(path, timeout=30)
+    except sqlite3.Error as error:
+        raise CheckerFailureError(f"opening inconsistency-check SQLite database failed: {path}: {error}") from error
 
-        with path.open("a", encoding="utf-8") as operation_log:
-            operation_log.write(serialized)
-    except OSError as error:
-        raise CheckerFailureError(f"writing pair-operation log failed: {path}: {error}") from error
+    try:
+        connection.row_factory = sqlite3.Row
+        connection.execute("PRAGMA busy_timeout = 30000")
+        connection.execute("PRAGMA foreign_keys = ON")
+        yield connection
+    except sqlite3.Error as error:
+        raise CheckerFailureError(f"inconsistency-check SQLite operation failed: {path}: {error}") from error
+    finally:
+        connection.close()
 
 
-def record_pair_operation(
+def create_database_schema(connection: sqlite3.Connection) -> None:
+    version = int(connection.execute("PRAGMA user_version").fetchone()[0])
+
+    if version not in {0, SQLITE_SCHEMA_VERSION}:
+        raise CheckerFailureError(
+            f"unsupported inconsistency-check SQLite schema version: {version}; expected {SQLITE_SCHEMA_VERSION}"
+        )
+
+    connection.executescript(
+        """
+        CREATE TABLE IF NOT EXISTS pair_checks (
+            pair_key TEXT PRIMARY KEY,
+            uuid TEXT NOT NULL UNIQUE,
+            file_pair TEXT NOT NULL,
+            changed_path TEXT NOT NULL,
+            related_path TEXT NOT NULL,
+            relation TEXT NOT NULL,
+            checksum_changed TEXT NOT NULL,
+            checksum_related TEXT NOT NULL,
+            check_status TEXT NOT NULL CHECK (
+                check_status IN ('unchecked', 'consistent', 'inconsistent', 'outdated')
+            ),
+            report TEXT NOT NULL,
+            checked_at TEXT NOT NULL
+        );
+
+        CREATE INDEX IF NOT EXISTS pair_checks_relation_idx
+        ON pair_checks (relation);
+
+        CREATE INDEX IF NOT EXISTS pair_checks_paths_idx
+        ON pair_checks (changed_path, related_path);
+
+        CREATE TABLE IF NOT EXISTS pair_operations (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            occurred_at TEXT NOT NULL,
+            operation TEXT NOT NULL CHECK (
+                operation IN ('queued', 'dispatched', 'checked', 'marked', 'status_changed')
+            ),
+            pair_key TEXT NOT NULL,
+            changed_path TEXT NOT NULL,
+            related_path TEXT NOT NULL,
+            relation TEXT NOT NULL,
+            previous_status TEXT NOT NULL CHECK (
+                previous_status IN ('', 'unchecked', 'consistent', 'inconsistent', 'outdated')
+            ),
+            next_status TEXT NOT NULL CHECK (
+                next_status IN ('unchecked', 'consistent', 'inconsistent', 'outdated')
+            ),
+            source TEXT NOT NULL
+        );
+
+        CREATE INDEX IF NOT EXISTS pair_operations_occurred_at_idx
+        ON pair_operations (occurred_at, id);
+        """
+    )
+    connection.execute(f"PRAGMA user_version = {SQLITE_SCHEMA_VERSION}")
+
+
+def check_record_values(record: CheckRecord) -> tuple[str, ...]:
+    return (
+        record.pair_key,
+        record.uuid,
+        record.file_pair,
+        record.changed_path,
+        record.related_path,
+        record.relation,
+        record.checksum_changed,
+        record.checksum_related,
+        record.check_status,
+        record.report,
+        record.checked_at,
+    )
+
+
+def check_record_from_row(row: sqlite3.Row) -> CheckRecord:
+    return CheckRecord(
+        uuid=str(row["uuid"]),
+        pair_key=str(row["pair_key"]),
+        file_pair=str(row["file_pair"]),
+        changed_path=str(row["changed_path"]),
+        related_path=str(row["related_path"]),
+        relation=str(row["relation"]),
+        checksum_changed=str(row["checksum_changed"]),
+        checksum_related=str(row["checksum_related"]),
+        check_status=str(row["check_status"]),
+        report=str(row["report"]),
+        checked_at=str(row["checked_at"]),
+    )
+
+
+def insert_check_record_row(connection: sqlite3.Connection, record: CheckRecord) -> None:
+    connection.execute(
+        """
+        INSERT INTO pair_checks (
+            pair_key, uuid, file_pair, changed_path, related_path, relation,
+            checksum_changed, checksum_related, check_status, report, checked_at
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        """,
+        check_record_values(record),
+    )
+
+
+def update_check_record_row(connection: sqlite3.Connection, record: CheckRecord) -> None:
+    cursor = connection.execute(
+        """
+        UPDATE pair_checks
+        SET uuid = ?, file_pair = ?, changed_path = ?, related_path = ?, relation = ?,
+            checksum_changed = ?, checksum_related = ?, check_status = ?, report = ?, checked_at = ?
+        WHERE pair_key = ?
+        """,
+        (
+            record.uuid,
+            record.file_pair,
+            record.changed_path,
+            record.related_path,
+            record.relation,
+            record.checksum_changed,
+            record.checksum_related,
+            record.check_status,
+            record.report,
+            record.checked_at,
+            record.pair_key,
+        ),
+    )
+
+    if cursor.rowcount != 1:
+        raise CheckerFailureError(f"cannot update missing pair record: {record_journal_subject(record)}")
+
+
+def insert_pair_operation_row(connection: sqlite3.Connection, record: PairOperation) -> None:
+    operation = raw_pair_operation(pair_operation_values(record), context="writing pair operation")
+    connection.execute(
+        """
+        INSERT INTO pair_operations (
+            occurred_at, operation, pair_key, changed_path, related_path, relation,
+            previous_status, next_status, source
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+        """,
+        (
+            operation.occurred_at,
+            operation.operation,
+            operation.pair_key,
+            operation.changed_path,
+            operation.related_path,
+            operation.relation,
+            operation.previous_status,
+            operation.next_status,
+            operation.source,
+        ),
+    )
+
+
+def initialize_database() -> None:
+    path = runtime_paths().database_path
+
+    if path in INITIALIZED_DATABASES:
+        return
+
+    with database_connection() as connection:
+        connection.execute("PRAGMA journal_mode = WAL")
+        create_database_schema(connection)
+
+    INITIALIZED_DATABASES.add(path)
+
+
+def ensure_runtime_state() -> None:
+    paths = runtime_paths()
+    paths.runtime_dir.mkdir(parents=True, exist_ok=True)
+    paths.agent_output_dir.mkdir(parents=True, exist_ok=True)
+    paths.prompt_dir.mkdir(parents=True, exist_ok=True)
+    paths.schema_dir.mkdir(parents=True, exist_ok=True)
+    paths.self_check_dir.mkdir(parents=True, exist_ok=True)
+    initialize_database()
+
+
+def load_check_records() -> list[CheckRecord]:
+    ensure_runtime_state()
+
+    with database_connection() as connection:
+        rows = connection.execute(
+            """
+            SELECT pair_key, uuid, file_pair, changed_path, related_path, relation,
+                   checksum_changed, checksum_related, check_status, report, checked_at
+            FROM pair_checks
+            ORDER BY pair_key
+            """
+        ).fetchall()
+
+    return [check_record_from_row(row) for row in rows]
+
+
+def find_check_record_by_pair_key(pair_key: str) -> CheckRecord | None:
+    ensure_runtime_state()
+
+    with database_connection() as connection:
+        row = connection.execute(
+            """
+            SELECT pair_key, uuid, file_pair, changed_path, related_path, relation,
+                   checksum_changed, checksum_related, check_status, report, checked_at
+            FROM pair_checks
+            WHERE pair_key = ?
+            """,
+            (pair_key,),
+        ).fetchone()
+
+    return check_record_from_row(row) if row is not None else None
+
+
+def load_allowed_check_records() -> list[CheckRecord]:
+    allowed_relations = set(get_config().allowed_file_relations)
+    return [record for record in load_check_records() if record.relation in allowed_relations]
+
+
+def load_allowed_check_records_read_only() -> list[CheckRecord]:
+    return load_allowed_check_records()
+
+
+def build_pair_operation(
     identity: PairIdentity,
     *,
     operation: str,
     previous_status: str,
     next_status: str,
     source: str,
-) -> None:
-    record = PairOperation(
+) -> PairOperation:
+    return PairOperation(
         occurred_at=utc_timestamp(),
         operation=operation,
         pair_key=identity.pair_key,
@@ -1576,144 +1768,49 @@ def record_pair_operation(
         next_status=next_status,
         source=source,
     )
-    append_pair_operation_record(runtime_paths().operation_log_path, record)
 
 
-def load_pair_operations(path: Path, *, last: int) -> list[PairOperation]:
+def record_pair_operation(
+    identity: PairIdentity,
+    *,
+    operation: str,
+    previous_status: str,
+    next_status: str,
+    source: str,
+) -> None:
+    record = build_pair_operation(
+        identity,
+        operation=operation,
+        previous_status=previous_status,
+        next_status=next_status,
+        source=source,
+    )
+
+    with database_connection() as connection, connection:
+        insert_pair_operation_row(connection, record)
+
+
+def load_pair_operations(*, last: int) -> list[PairOperation]:
     if last <= 0:
         raise CheckerFailureError("list-operations --last must be positive")
 
-    if not path.is_file():
-        return []
-
-    recent_operations: deque[PairOperation] = deque(maxlen=last)
-
-    try:
-        with path.open(encoding="utf-8") as operation_log:
-            for line_number, line in enumerate(operation_log, start=1):
-                if not line.strip():
-                    continue
-
-                try:
-                    raw_record = json.loads(line)
-                except json.JSONDecodeError as error:
-                    raise CheckerFailureError(
-                        f"reading pair-operation log: invalid JSON on line {line_number}: {error}"
-                    ) from error
-
-                if not isinstance(raw_record, dict):
-                    raise CheckerFailureError(
-                        f"reading pair-operation log: JSON line {line_number} is not an object"
-                    )
-
-                recent_operations.append(
-                    raw_pair_operation(raw_record, context=f"reading pair-operation log line {line_number}")
-                )
-    except OSError as error:
-        raise CheckerFailureError(f"reading pair-operation log failed: {path}: {error}") from error
-
-    return list(recent_operations)
-
-
-def ensure_runtime_state() -> None:
-    paths = runtime_paths()
-    paths.runtime_dir.mkdir(parents=True, exist_ok=True)
-    paths.task_data_dir.mkdir(parents=True, exist_ok=True)
-    paths.agent_output_dir.mkdir(parents=True, exist_ok=True)
-    paths.prompt_dir.mkdir(parents=True, exist_ok=True)
-    paths.schema_dir.mkdir(parents=True, exist_ok=True)
-    paths.self_check_dir.mkdir(parents=True, exist_ok=True)
-    taskrc_content = build_taskrc_content(paths)
-
-    if not paths.taskrc_path.is_file() or paths.taskrc_path.read_text(encoding="utf-8") != taskrc_content:
-        paths.taskrc_path.write_text(taskrc_content, encoding="utf-8")
-
-
-def task_command_args(*args: str) -> list[str]:
-    return [
-        TASKWARRIOR_BIN,
-        f"rc:{runtime_paths().relative_taskrc_path.as_posix()}",
-        "rc.confirmation:no",
-        "rc.verbose:nothing",
-        *args,
-    ]
-
-
-def load_taskwarrior_records() -> list[dict[str, Any]]:
     ensure_runtime_state()
-    result = run_command(
-        task_command_args("export"),
-        check=True,
-        failure_context="exporting isolated inconsistency-check Taskwarrior records",
-    )
 
-    try:
-        records = json.loads(result.stdout or "[]")
-    except json.JSONDecodeError as error:
-        raise CheckerFailureError(f"invalid Taskwarrior export JSON: {error}") from error
-
-    if not isinstance(records, list):
-        raise CheckerFailureError("Taskwarrior export did not return a JSON list")
-
-    for record in records:
-        if not isinstance(record, dict):
-            raise CheckerFailureError(f"Taskwarrior export contained a non-object record: {record}")
-
-    return records
-
-
-def raw_record_to_check_record(record: dict[str, Any]) -> CheckRecord:
-    return CheckRecord(
-        uuid=str(record.get("uuid") or ""),
-        pair_key=str(record.get("pair_key") or ""),
-        file_pair=str(record.get("file_pair") or ""),
-        changed_path=str(record.get("changed_path") or ""),
-        related_path=str(record.get("related_path") or ""),
-        relation=str(record.get("relation") or ""),
-        checksum_changed=str(record.get("checksum_changed") or ""),
-        checksum_related=str(record.get("checksum_related") or ""),
-        check_status=str(record.get("check_status") or ""),
-        report=str(record.get("report") or ""),
-        checked_at=str(record.get("checked_at") or ""),
-    )
-
-
-def load_allowed_check_records() -> list[CheckRecord]:
-    allowed_relations = set(get_config().allowed_file_relations)
+    with database_connection() as connection:
+        rows = connection.execute(
+            """
+            SELECT occurred_at, operation, pair_key, changed_path, related_path, relation,
+                   previous_status, next_status, source
+            FROM pair_operations
+            ORDER BY occurred_at DESC, id DESC
+            LIMIT ?
+            """,
+            (last,),
+        ).fetchall()
 
     return [
-        raw_record_to_check_record(record)
-        for record in load_taskwarrior_records()
-        if record.get("pair_key") and record.get("relation") in allowed_relations
-    ]
-
-
-def load_allowed_check_records_read_only() -> list[CheckRecord]:
-    paths = runtime_paths()
-
-    if not paths.taskrc_path.is_file() or not paths.task_data_dir.is_dir():
-        return []
-
-    result = run_command(
-        task_command_args("export"),
-        check=True,
-        failure_context="exporting isolated inconsistency-check Taskwarrior records read-only",
-    )
-
-    try:
-        records = json.loads(result.stdout or "[]")
-    except json.JSONDecodeError as error:
-        raise CheckerFailureError(f"invalid Taskwarrior export JSON: {error}") from error
-
-    if not isinstance(records, list) or any(not isinstance(record, dict) for record in records):
-        raise CheckerFailureError("Taskwarrior export did not return a JSON object list")
-
-    allowed_relations = set(get_config().allowed_file_relations)
-
-    return [
-        raw_record_to_check_record(record)
-        for record in records
-        if record.get("pair_key") and record.get("relation") in allowed_relations
+        raw_pair_operation(dict(row), context="reading SQLite pair-operation history")
+        for row in reversed(rows)
     ]
 
 
@@ -1741,7 +1838,7 @@ def current_pairs_read_only(
 
     for record in records:
         if record.pair_key in records_by_key:
-            raise CheckerFailureError("isolated Taskwarrior DB has duplicate pair_key records")
+            raise CheckerFailureError("inconsistency-check SQLite DB has duplicate pair_key records")
 
         records_by_key[record.pair_key] = record
 
@@ -1771,59 +1868,27 @@ def current_pairs_read_only(
     return current_pairs
 
 
-def find_raw_record_by_pair_key(records: list[dict[str, Any]], pair_key: str) -> dict[str, Any] | None:
-    matches = [record for record in records if record.get("pair_key") == pair_key]
-
-    if len(matches) > 1:
-        raise CheckerFailureError("isolated Taskwarrior DB has duplicate pair_key records")
-
-    return matches[0] if matches else None
-
-
-def identity_task_args(identity: PairIdentity) -> list[str]:
-    return [
-        f"description:{identity.changed_path} -> {identity.related_path} [{identity.relation}]",
-        f"pair_key:{identity.pair_key}",
-        f"file_pair:{identity.file_pair}",
-        f"changed_path:{identity.changed_path}",
-        f"related_path:{identity.related_path}",
-        f"relation:{identity.relation}",
-        f"checksum_changed:{identity.checksum_changed}",
-        f"checksum_related:{identity.checksum_related}",
-    ]
-
-
-def write_task_record(
+def new_check_record(
     identity: PairIdentity,
     *,
-    uuid: str | None,
+    record_uuid: str,
     check_status: str,
     report: str,
     checked_at: str,
 ) -> CheckRecord:
-    status_args = [
-        f"check_status:{check_status}",
-        f"report:{report}",
-        f"checked_at:{checked_at}",
-    ]
-
-    if uuid:
-        args = [uuid, "modify", *identity_task_args(identity), *status_args]
-    else:
-        args = ["add", *identity_task_args(identity), *status_args]
-
-    run_command(
-        task_command_args(*args),
-        check=True,
-        failure_context="writing isolated inconsistency-check Taskwarrior record",
+    return CheckRecord(
+        uuid=record_uuid,
+        pair_key=identity.pair_key,
+        file_pair=identity.file_pair,
+        changed_path=identity.changed_path,
+        related_path=identity.related_path,
+        relation=identity.relation,
+        checksum_changed=identity.checksum_changed,
+        checksum_related=identity.checksum_related,
+        check_status=check_status,
+        report=report,
+        checked_at=checked_at,
     )
-
-    raw_record = find_raw_record_by_pair_key(load_taskwarrior_records(), identity.pair_key)
-
-    if raw_record is None:
-        raise CheckerFailureError(f"Taskwarrior record was not found after write: {pair_journal_subject(identity)}")
-
-    return raw_record_to_check_record(raw_record)
 
 
 def upsert_unchecked_record(
@@ -1833,15 +1898,26 @@ def upsert_unchecked_record(
     existing = records_by_pair_key.get(identity.pair_key)
 
     if existing is None:
-        record = write_task_record(identity, uuid=None, check_status="unchecked", report="", checked_at="")
-        records_by_pair_key[identity.pair_key] = record
-        record_pair_operation(
+        record = new_check_record(
+            identity,
+            record_uuid=str(uuid.uuid4()),
+            check_status="unchecked",
+            report="",
+            checked_at="",
+        )
+        operation = build_pair_operation(
             identity,
             operation="queued",
             previous_status="",
-            next_status=record.check_status or "unchecked",
+            next_status="unchecked",
             source="queue",
         )
+
+        with database_connection() as connection, connection:
+            insert_check_record_row(connection, record)
+            insert_pair_operation_row(connection, operation)
+
+        records_by_pair_key[identity.pair_key] = record
         log_pair_queued(identity, record.check_status or "unchecked")
 
         return record
@@ -1852,28 +1928,22 @@ def upsert_unchecked_record(
     if not should_reset_outdated:
         return existing
 
-    record = write_task_record(
+    record = update_check_record(
+        existing,
         identity,
-        uuid=existing.uuid,
         check_status="unchecked",
         report="",
         checked_at="",
-    )
-    records_by_pair_key[identity.pair_key] = record
-
-    record_pair_operation(
-        identity,
         operation="status_changed",
-        previous_status="outdated",
-        next_status="unchecked",
         source="reconciliation",
     )
-    log_pair_state_change(identity, "outdated", "unchecked")
+    records_by_pair_key[identity.pair_key] = record
 
     return record
 
 
 def update_check_record(
+    existing: CheckRecord,
     identity: PairIdentity,
     *,
     check_status: str,
@@ -1882,27 +1952,29 @@ def update_check_record(
     operation: str,
     source: str,
 ) -> CheckRecord:
-    raw_record = find_raw_record_by_pair_key(load_taskwarrior_records(), identity.pair_key)
+    if existing.pair_key != identity.pair_key:
+        raise CheckerFailureError("cannot update a pair record with a different identity")
 
-    if raw_record is None:
-        raise CheckerFailureError(f"cannot update missing pair record: {pair_journal_subject(identity)}")
-
-    existing = raw_record_to_check_record(raw_record)
     previous_status = existing.check_status or "unchecked"
-    record = write_task_record(
+    record = new_check_record(
         identity,
-        uuid=existing.uuid,
+        record_uuid=existing.uuid,
         check_status=check_status,
         report=report,
         checked_at=checked_at,
     )
-    record_pair_operation(
+    pair_operation = build_pair_operation(
         identity,
         operation=operation,
         previous_status=previous_status,
         next_status=check_status,
         source=source,
     )
+
+    with database_connection() as connection, connection:
+        update_check_record_row(connection, record)
+        insert_pair_operation_row(connection, pair_operation)
+
     log_pair_state_change(identity, previous_status, check_status)
 
     return record
@@ -1939,21 +2011,15 @@ def mark_record_outdated(record: CheckRecord, reason: str) -> CheckRecord:
         return record
 
     identity = record_identity(record)
-    updated_record = write_task_record(
+    updated_record = update_check_record(
+        record,
         identity,
-        uuid=record.uuid,
         check_status="outdated",
         report=record.report,
         checked_at=utc_timestamp(),
-    )
-    record_pair_operation(
-        identity,
         operation="status_changed",
-        previous_status=record.check_status or "unchecked",
-        next_status="outdated",
         source="reconciliation",
     )
-    log_pair_state_change(identity, record.check_status or "unchecked", "outdated")
     log_project_journal("step", f"outdated pair detected for {record_journal_subject(record)}: {single_line(reason)}")
 
     return updated_record
@@ -2042,10 +2108,11 @@ def set_relation_pair_check_status(
 
     identity = build_pair_identity(pair)
     existing_records = load_allowed_check_records()
-    upsert_unchecked_record(identity, {record.pair_key: record for record in existing_records})
+    existing = upsert_unchecked_record(identity, {record.pair_key: record for record in existing_records})
     normalized_report = "" if check_status == "unchecked" else normalize_explicit_report(check_status, report)
     checked_at = "" if check_status == "unchecked" else utc_timestamp()
     record = update_check_record(
+        existing,
         identity,
         check_status=check_status,
         report=normalized_report,
@@ -2820,6 +2887,7 @@ def update_record_from_decision(
     decision_source: str,
 ) -> CurrentPair:
     record = update_check_record(
+        current_pair.record,
         current_pair.identity,
         check_status=check_status,
         report=report,
@@ -3484,10 +3552,10 @@ def build_progress_report(path: str) -> str:
     artifact_path = normalize_input_path(path)
     allowed_relations = set(get_config().allowed_file_relations)
     records = [
-        raw_record_to_check_record(record)
-        for record in load_taskwarrior_records()
-        if record.get("changed_path") == artifact_path or record.get("related_path") == artifact_path
-        if record.get("relation") in allowed_relations
+        record
+        for record in load_check_records()
+        if record.changed_path == artifact_path or record.related_path == artifact_path
+        if record.relation in allowed_relations
     ]
     records.sort(key=lambda record: (record.changed_path, record.relation, record.related_path, record.pair_key))
     counts = Counter(record.check_status or "unknown" for record in records)
@@ -3700,7 +3768,7 @@ def list_operations(args: argparse.Namespace) -> ExitCode:
     ensure_runtime_state()
     last = int(args.last)
     log_project_journal("step", f"list-operations command started last:{last}")
-    operations = load_pair_operations(runtime_paths().operation_log_path, last=last)
+    operations = load_pair_operations(last=last)
     print(build_pair_operations_report(operations))
 
     return ExitCode.SUCCESS
@@ -3793,14 +3861,10 @@ def enqueue_files(paths: list[str]) -> ExitCode:
 
 def clear_queue() -> ExitCode:
     ensure_runtime_state()
-    records = load_taskwarrior_records()
-    count = len(records)
-    paths = runtime_paths()
+    with database_connection() as connection, connection:
+        count = int(connection.execute("SELECT COUNT(*) FROM pair_checks").fetchone()[0])
+        connection.execute("DELETE FROM pair_checks")
 
-    if paths.task_data_dir.exists():
-        shutil.rmtree(paths.task_data_dir)
-
-    ensure_runtime_state()
     log_project_journal("change", f"inconsistency-check cleared queue records:{count}")
     print(f"Cleared inconsistency-check queue records: {count}")
 
@@ -3813,25 +3877,25 @@ def assert_self_check(condition: bool, message: str) -> None:
 
 
 def reset_self_check_record(identity: PairIdentity) -> None:
-    raw_record = find_raw_record_by_pair_key(load_taskwarrior_records(), identity.pair_key)
+    existing = find_check_record_by_pair_key(identity.pair_key)
 
-    if raw_record is None:
+    if existing is None:
         return
 
-    existing = raw_record_to_check_record(raw_record)
     previous_status = existing.check_status or "unchecked"
-    write_task_record(identity, uuid=existing.uuid, check_status="unchecked", report="", checked_at="")
 
-    if previous_status != "unchecked":
-        record_pair_operation(
-            identity,
-            operation="status_changed",
-            previous_status=previous_status,
-            next_status="unchecked",
-            source="self-check",
-        )
+    if previous_status == "unchecked":
+        return
 
-    log_pair_state_change(identity, previous_status, "unchecked")
+    update_check_record(
+        existing,
+        identity,
+        check_status="unchecked",
+        report="",
+        checked_at="",
+        operation="status_changed",
+        source="self-check",
+    )
 
 
 def runtime_artifact_path(*parts: str) -> str:
@@ -3979,14 +4043,19 @@ def run_dependency_scheduler_self_checks() -> None:
         == mixed_depth_pairs[2],
         "a shallower inconsistency must be selected before a deeper inconsistency",
     )
+    launchable_mixed_depth_pairs = [
+        synthetic_current_pair(current_pair.pair.changed_path, status="unchecked")
+        for current_pair in mixed_depth_ordered_pairs
+    ]
     assert_self_check(
         next_frontier_candidate(
-            mixed_depth_ordered_pairs,
+            launchable_mixed_depth_pairs,
             set(),
             agent_jobs=get_config().agent_jobs,
             stop_launching=False,
         )
-        == mixed_depth_pairs[2],
+        == launchable_mixed_depth_pairs[0]
+        and launchable_mixed_depth_pairs[0].pair.changed_path == shallow_spec,
         "shallower frontier work must launch before deeper frontier work",
     )
 
@@ -4385,8 +4454,13 @@ def run_self_check() -> ExitCode:
     assert_self_check(all(path.startswith("@/") for path in changed_files), "changed files must be artifact ids")
 
     paths = runtime_paths()
-    self_check_operation_log = paths.self_check_dir / "operations.jsonl"
-    self_check_operation_log.unlink(missing_ok=True)
+    with database_connection() as connection:
+        schema_version = int(connection.execute("PRAGMA user_version").fetchone()[0])
+
+    assert_self_check(
+        schema_version == SQLITE_SCHEMA_VERSION,
+        "SQLite state must use the current schema version",
+    )
     self_check_operations = (
         PairOperation(
             occurred_at="2026-01-01T00:00:00+00:00",
@@ -4445,14 +4519,7 @@ def run_self_check() -> ExitCode:
         ),
     )
 
-    for operation_record in self_check_operations:
-        append_pair_operation_record(self_check_operation_log, operation_record)
-
-    recent_self_check_operations = load_pair_operations(self_check_operation_log, last=4)
-    assert_self_check(
-        recent_self_check_operations == list(self_check_operations[-3:]),
-        "operation log must retain the requested tail in chronological order",
-    )
+    recent_self_check_operations = list(self_check_operations[-4:])
     operation_report = build_pair_operations_report(recent_self_check_operations)
     report_lines = operation_report.splitlines()
     rendered_header_columns = report_lines[0].split(" | ")
@@ -4513,20 +4580,6 @@ def run_self_check() -> ExitCode:
         operation_report.endswith("operations: 4"),
         "operation report must show the selected operation count",
     )
-    self_check_operation_log.write_text("{not json}\n", encoding="utf-8")
-
-    try:
-        load_pair_operations(self_check_operation_log, last=1)
-    except CheckerFailureError as error:
-        malformed_operation_error = str(error)
-    else:
-        raise CheckerFailureError("self-check failed: malformed operation JSON must fail")
-
-    assert_self_check(
-        "invalid JSON on line 1" in malformed_operation_error,
-        "malformed operation JSON must identify its line",
-    )
-    self_check_operation_log.unlink(missing_ok=True)
     changed_path = runtime_artifact_path("self-check", "changed.txt")
     related_path = runtime_artifact_path("self-check", "related.txt")
     second_related_path = runtime_artifact_path("self-check", "second-related.txt")
@@ -4697,16 +4750,16 @@ def run_self_check() -> ExitCode:
         has_unchecked_pair(current_pairs),
         "one processed pair must leave later unchecked pairs for exit 20",
     )
-    preserved_raw_record_before = find_raw_record_by_pair_key(load_taskwarrior_records(), consistent_pair.identity.pair_key)
+    preserved_record_before = find_check_record_by_pair_key(consistent_pair.identity.pair_key)
     preserved_pairs = reconcile_queue([pair, second_pair])
-    preserved_raw_record_after = find_raw_record_by_pair_key(load_taskwarrior_records(), consistent_pair.identity.pair_key)
+    preserved_record_after = find_check_record_by_pair_key(consistent_pair.identity.pair_key)
     preserved_record = next(
         item.record for item in preserved_pairs if item.identity.pair_key == consistent_pair.identity.pair_key
     )
     assert_self_check(preserved_record.check_status == "consistent", "unchanged pair key must preserve cached status")
     assert_self_check(
-        preserved_raw_record_before == preserved_raw_record_after,
-        "unchanged pair reconciliation must not rewrite its Taskwarrior record",
+        preserved_record_before == preserved_record_after,
+        "unchanged pair reconciliation must not rewrite its SQLite record",
     )
     pair_task_agents.clear()
 
@@ -4811,9 +4864,9 @@ def run_self_check() -> ExitCode:
         "a checksum change after a child snapshot must make its result stale",
     )
     checked_count, marked_count = mark_outdated_records()
-    outdated_raw_record = find_raw_record_by_pair_key(load_taskwarrior_records(), identity.pair_key)
-    assert_self_check(outdated_raw_record is not None, "outdated source pair record must still exist")
-    outdated_record = raw_record_to_check_record(outdated_raw_record)
+    outdated_record = find_check_record_by_pair_key(identity.pair_key)
+    if outdated_record is None:
+        raise CheckerFailureError("self-check failed: outdated source pair record must still exist")
     assert_self_check(checked_count > 0, "mark-outdated helper must check pair records")
     assert_self_check(marked_count > 0, "mark-outdated helper must mark stale pair records")
     assert_self_check(outdated_record.check_status == "outdated", "changed checksum must mark old pair outdated")
@@ -4829,9 +4882,9 @@ def run_self_check() -> ExitCode:
     reset_self_check_record(changed_identity)
     changed_current_pair = reconcile_queue([pair])[0]
     assert_self_check(changed_current_pair.record.check_status == "unchecked", "changed checksum must force unchecked")
-    superseded_raw_record = find_raw_record_by_pair_key(load_taskwarrior_records(), identity.pair_key)
-    assert_self_check(superseded_raw_record is not None, "superseded checksum record must remain as history")
-    superseded_record = raw_record_to_check_record(superseded_raw_record)
+    superseded_record = find_check_record_by_pair_key(identity.pair_key)
+    if superseded_record is None:
+        raise CheckerFailureError("self-check failed: superseded checksum record must remain as history")
     assert_self_check(
         superseded_record.check_status == "outdated",
         "reconciliation must eagerly mark an older checksum version outdated",
@@ -4876,7 +4929,7 @@ def run_self_check() -> ExitCode:
         check_status="inconsistent",
         report="Manual self-check inconsistency note.",
     )
-    latest_operation = load_pair_operations(paths.operation_log_path, last=1)[0]
+    latest_operation = load_pair_operations(last=1)[0]
     assert_self_check(
         latest_operation.operation == "marked"
         and latest_operation.pair_key == changed_identity.pair_key
@@ -4947,13 +5000,14 @@ def run_self_check() -> ExitCode:
     )
     assert_self_check(checked_current_records == 1, "queue synchronization must check active pair records")
     assert_self_check(marked_removed_records == 1, "queue synchronization must mark removed relations outdated")
-    removed_raw_record = find_raw_record_by_pair_key(load_taskwarrior_records(), changed_identity.pair_key)
-    assert_self_check(removed_raw_record is not None, "removed relation record must remain as history")
+    removed_record = find_check_record_by_pair_key(changed_identity.pair_key)
+    if removed_record is None:
+        raise CheckerFailureError("self-check failed: removed relation record must remain as history")
     assert_self_check(
-        raw_record_to_check_record(removed_raw_record).check_status == "outdated",
+        removed_record.check_status == "outdated",
         "removed relation record must be outdated",
     )
-    pair_records = load_taskwarrior_records()
+    pair_records = load_check_records()
     project_journal = json.loads(
         run_command(
             ["./bin/taskwarior.sh", "rc.verbose:nothing", "+journal", "export"],
@@ -4962,8 +5016,8 @@ def run_self_check() -> ExitCode:
         ).stdout
     )
     assert_self_check(
-        any(record.get("pair_key") == changed_identity.pair_key for record in pair_records),
-        "pair record must exist in isolated Taskwarrior DB",
+        any(record.pair_key == changed_identity.pair_key for record in pair_records),
+        "pair record must exist in isolated SQLite DB",
     )
     assert_self_check(
         not any(record.get("pair_key") == changed_identity.pair_key for record in project_journal),
@@ -4973,10 +5027,6 @@ def run_self_check() -> ExitCode:
         active_config.journal_cmd is None
         or any(record.get("description") == "self-check command started" for record in project_journal),
         "script operations must log to the project journal when journaling is configured",
-    )
-    assert_self_check(
-        all("journal" not in record.get("tags", []) for record in pair_records if record.get("pair_key")),
-        "relation-pair records must not use project journal tags",
     )
     log_project_journal("step", "self-check command completed")
     print("Self-check passed")

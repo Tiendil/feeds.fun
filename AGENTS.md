@@ -105,11 +105,11 @@ Use a classic line-oriented diff, such as `git --no-pager diff --no-ext-diff` or
 Use this script only when the developer explicitly asks you to run it, or when an active workflow explicitly instructs
 you to run it. Do not run it opportunistically as a general dependency or consistency check.
 
-The queue is an isolated Taskwarrior database of relation-pair checks. Each queued record represents one oriented
-`depmesh` relation from a changed or manually selected file to one related artifact, plus the current SHA-256 checksums
-of both files, the relation id, the check status, and an optional markdown report. Pair keys include the relation and
-both file checksums, so old records remain as history while changed file content creates a fresh unchecked pair.
-Reconciliation immediately marks older checksum versions of the same oriented relation pair as `outdated`.
+The queue is an isolated SQLite database of relation-pair checks. Each queued record represents one oriented `depmesh`
+relation from a changed or manually selected file to one related artifact, plus the current SHA-256 checksums of both
+files, the relation id, the check status, and an optional markdown report. Pair keys include the relation and both file
+checksums, so old records remain as history while changed file content creates a fresh unchecked pair. Reconciliation
+immediately marks older checksum versions of the same oriented relation pair as `outdated`.
 
 The `run-cycle` command reconciles all non-outdated queue pairs against current files, `depmesh` relations, and the
 active mode. A mode that requires branch changes marks a pair `outdated` when its changed-side file is outside the
@@ -152,7 +152,9 @@ Main commands:
 - `python ./bin/inconsistency-check.py self-check` — run deterministic script verification without spawning a child Codex checker.
 
 The script stores its relation-pair queue and runtime files only under `@/.session/inconsistency-check/`.
-Structured pair-operation history is stored in `@/.session/inconsistency-check/operations.jsonl`.
+Relation-pair state and structured pair-operation history are stored in
+`@/.session/inconsistency-check/state.sqlite3`. The previously migrated `taskwarrior/` database and `operations.jsonl`
+remain as recoverable artifacts; the script does not read, write, or delete them.
 
 ### `ast-grep`
 
