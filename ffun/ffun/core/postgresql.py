@@ -30,8 +30,11 @@ SQL_ARGUMENTS = dict[str, Any] | tuple[list[Any]]
 
 
 class ExecuteType(Protocol):
-    async def __call__(self, command: str, arguments: SQL_ARGUMENTS | None = None) -> DB_RESULT:
+    def __call__(self, command: str, arguments: SQL_ARGUMENTS | None = None) -> Awaitable[DB_RESULT]:
         pass
+
+
+TransactionExecuteType = functools.partial[Awaitable[DB_RESULT]]
 
 
 class PGAsyncCursor(psycopg.AsyncCursor):
@@ -117,7 +120,7 @@ async def destroy_pool() -> None:
 
 
 @contextlib.asynccontextmanager
-async def transaction(autocommit: bool = False) -> AsyncGenerator[ExecuteType, None]:
+async def _executor(autocommit: bool) -> AsyncGenerator[ExecuteType, None]:
     if POOL is None:
         raise RuntimeError("POOL MUST be initialized before any operations with database")
 
@@ -129,16 +132,24 @@ async def transaction(autocommit: bool = False) -> AsyncGenerator[ExecuteType, N
             yield cursor.execute_and_extract  # type: ignore
 
 
+@contextlib.asynccontextmanager
+async def transaction() -> AsyncGenerator[TransactionExecuteType, None]:
+    async with _executor(autocommit=False) as execute:
+        yield functools.partial(execute)
+
+
 async def execute(command: str, arguments: SQL_ARGUMENTS | None = None) -> DB_RESULT:
-    async with transaction(autocommit=True) as execute:
-        return await execute(command, arguments)
+    async with _executor(autocommit=True) as autocommit_execute:
+        return await autocommit_execute(command, arguments)
 
 
 P = ParamSpec("P")
 T = TypeVar("T")
 
 
-def run_in_transaction(func: Callable[Concatenate[ExecuteType, P], Awaitable[T]]) -> Callable[P, Awaitable[T]]:
+def run_in_transaction(
+    func: Callable[Concatenate[ExecuteType, P], Awaitable[T]],
+) -> Callable[P, Awaitable[T]]:
     @functools.wraps(func)
     async def wrapper(*argv: P.args, **kwargs: P.kwargs) -> T:
         async with transaction() as execute:

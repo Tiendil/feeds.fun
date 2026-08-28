@@ -1,3 +1,4 @@
+import asyncio
 import datetime
 from importlib import metadata
 from typing import Iterable, Mapping
@@ -18,6 +19,7 @@ from ffun.core.errors import APIError
 from ffun.data_protection import domain as dp_domain
 from ffun.domain.entities import FeedId, TagId, TagUid, UserId
 from ffun.domain.urls import url_to_uid
+from ffun.entitlements import domain as en_domain
 from ffun.feeds import domain as f_domain
 from ffun.feeds import entities as f_entities
 from ffun.feeds_collections import domain as fc_domain
@@ -33,9 +35,12 @@ from ffun.meta import domain as meta_domain
 from ffun.ontology import domain as o_domain
 from ffun.parsers import domain as p_domain
 from ffun.parsers import entities as p_entities
+from ffun.product import credits as product_credits
 from ffun.resources import domain as r_domain
+from ffun.resources import entities as r_entities
 from ffun.scores import domain as s_domain
 from ffun.scores import entities as s_entities
+from ffun.subscriptions import domain as sub_domain
 from ffun.user_settings import domain as us_domain
 from ffun.user_settings import entities as us_entities
 
@@ -318,6 +323,57 @@ async def api_refresh_auth(request: entities.RefreshAuthRequest, user: User) -> 
 @api_private.post("/get-user")  # type: ignore
 async def api_get_user(request: entities.GetUserRequest, user: User) -> entities.GetUserResponse:
     return entities.GetUserResponse(userId=user.id)
+
+
+@api_private.post("/get-product-state")  # type: ignore
+async def api_get_product_state(
+    request: entities.GetProductStateRequest, user: User
+) -> entities.GetProductStateResponse:
+    credit_windows = product_credits.credit_usage_windows(utils.now())
+    internal_entitlement_kinds = {kind: kind.to_internal() for kind in entities.EntitlementKind}
+    resource_identities = r_entities.ResourceIdentity.for_user(
+        user.id,
+        [
+            r_entities.ResourceKey(
+                kind=r_entities.ResourceKind(window.definition.resource_kind),
+                interval_started_at=window.resource_interval_started_at,
+            )
+            for window in credit_windows
+        ],
+    )
+    resource_identities_by_credit = {
+        window.definition.kind: resource_identity
+        for window, resource_identity in zip(credit_windows, resource_identities, strict=True)
+    }
+
+    entitlements_by_user, resources_by_identity, internal_subscriptions = await asyncio.gather(
+        en_domain.get_entitlements([user.id], list(internal_entitlement_kinds.values())),
+        r_domain.load_resources(resource_identities),
+        sub_domain.get_alive_subscriptions_for_user(user.id),
+    )
+
+    internal_entitlements = entitlements_by_user[user.id]
+    entitlements = {
+        kind: entities.ProductStateEntitlement.from_internal(internal_entitlements[internal_kind])
+        for kind, internal_kind in internal_entitlement_kinds.items()
+    }
+    tokens = {
+        entities.TokenKind.from_internal(window.definition.kind): entities.ProductStateToken.from_internal(
+            entitlement=internal_entitlements[window.definition.entitlement_kind],
+            resource=resources_by_identity[resource_identities_by_credit[window.definition.kind]],
+            period_started_at=window.period_started_at,
+            period_ends_at=window.period_ends_at,
+        )
+        for window in credit_windows
+    }
+
+    return entities.GetProductStateResponse(
+        subscriptions=[
+            entities.ProductStateSubscription.from_internal(subscription) for subscription in internal_subscriptions
+        ],
+        entitlements=entitlements,
+        tokens=tokens,
+    )
 
 
 async def _external_feeds(
@@ -630,6 +686,32 @@ async def api_get_resource_history(
 
     return entities.GetResourceHistoryResponse(
         history=[entities.ResourceHistoryRecord.from_internal(resource) for resource in history]
+    )
+
+
+@api_private.post("/get-resource-statistics")  # type: ignore
+async def api_get_resource_statistics(
+    request: entities.GetResourceStatisticsRequest, user: User
+) -> entities.GetResourceStatisticsResponse:
+    statistics = await r_domain.load_resource_statistics(
+        user_id=user.id,
+        kinds=[kind.to_internal() for kind in request.kinds],
+        interval=request.interval.to_internal(),
+    )
+
+    external_statistics: dict[entities.ResourceKind, entities.ResourceStatisticsSeries] = {}
+
+    for internal_kind, series in statistics.items():
+        kind = entities.ResourceKind.from_internal(internal_kind)
+
+        external_statistics[kind] = entities.ResourceStatisticsSeries.from_internal(
+            kind=kind,
+            series=series,
+        )
+
+    return entities.GetResourceStatisticsResponse(
+        interval=request.interval,
+        statistics=external_statistics,
     )
 
 

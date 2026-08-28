@@ -72,6 +72,11 @@ Shared entity defaults SHOULD:
 
 Entities SHOULD use Pydantic field metadata and validators for local field constraints, default factories, discriminators, and model invariants.
 
+Pydantic validators SHOULD be atomic: each validator SHOULD enforce one cohesive invariant or one closely related family of constraints.
+Independent concerns, such as field representation, cross-field interval validity, and conditional references, SHOULD use separate validators instead of one branching validator that coordinates unrelated rules.
+A single validator MAY inspect or validate multiple fields when those fields jointly define one invariant.
+Separating independent validation concerns keeps invariants locally understandable, independently testable, and easier to diagnose.
+
 Entities SHOULD use Pydantic serialization methods at boundaries that need model dumps or JSON.
 
 The shared base entity MUST provide a copy-with-changes operation.
@@ -114,6 +119,8 @@ Shared semantic primitive types SHOULD belong to the domain module.
 
 Module-specific semantic primitive types SHOULD belong to the owning module.
 
+A semantic identifier shared by independent domain modules MAY belong to the domain module when placing it in a narrower owning module would reverse the intended dependency direction or create a circular dependency.
+
 `ffun.domain.entities.SerializedId` MUST represent the canonical string form of an entity identifier at shared boundaries that accept identifiers owned by different domain modules. It is a universal domain primitive rather than an identifier owned by any one subsystem. Code within an owning module SHOULD retain the identifier's more specific semantic type until it reaches such a boundary.
 
 ## Entity ownership
@@ -138,7 +145,7 @@ The core module MUST contain only shared entity infrastructure.
 
 Core entity infrastructure MUST NOT contain domain-specific Feeds Fun concepts such as feeds, entries, rules, tags, users, or provider keys.
 
-The domain layer MUST contain only universal entities for concepts shared by all or most other backend modules.
+The domain layer MUST contain only universal entities for concepts shared by all or most other backend modules and dependency-neutral semantic identifiers shared across independent domain modules.
 
 Domain entities MUST model universal Feeds Fun concepts independently from the concrete interface that created or renders them.
 

@@ -20,6 +20,7 @@ from ffun.library.tests.fixtures import *  # noqa
 from ffun.llms_framework.tests.fixtures import *  # noqa
 from ffun.ontology.tests.fixtures import *  # noqa
 from ffun.parsers.tests.fixtures import *  # noqa
+from ffun.resources.tests.fixtures import *  # noqa
 from ffun.users.tests.fixtures import *  # noqa
 
 

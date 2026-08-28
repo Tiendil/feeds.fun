@@ -25,23 +25,29 @@
       off-text="no" />
 
     <template v-else-if="!editing">
-      <button
-        class="ffun-form-button short ml-1"
+      <ui-button
+        variant="quiet"
+        size="compact"
+        class="ml-1"
         @click.prevent="startEditing()"
-        >Edit</button
+        >Change</ui-button
       >
     </template>
 
     <template v-else>
-      <button
+      <ui-button
+        variant="primary"
+        size="compact"
         @click.prevent="save()"
-        class="ffun-form-button short ml-1"
-        >Save</button
+        class="ml-1"
+        >Save</ui-button
       >
-      <button
+      <ui-button
+        variant="secondary"
+        size="compact"
         @click.prevent="cancel()"
-        class="ffun-form-button short ml-1"
-        >Cancel</button
+        class="ml-1"
+        >Cancel</ui-button
       >
     </template>
   </div>

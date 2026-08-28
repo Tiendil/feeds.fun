@@ -20,9 +20,10 @@ from ffun.domain.entities import (
     TagId,
     TagUid,
     UnknownUrl,
-    USDCost,
     UserId,
 )
+from ffun.entitlements import domain as en_domain
+from ffun.entitlements import entities as en_entities
 from ffun.feeds import entities as f_entities
 from ffun.feeds_collections import entities as fc_entities
 from ffun.library import entities as l_entities
@@ -34,6 +35,7 @@ from ffun.parsers import entities as p_entities
 from ffun.product import entities as product_entities
 from ffun.resources import entities as r_entities
 from ffun.scores import entities as s_entities
+from ffun.subscriptions import entities as sub_entities
 from ffun.tags import entities as t_entities
 from ffun.user_settings import domain as us_domain
 from ffun.user_settings import entities as us_entities
@@ -313,10 +315,127 @@ class ResourceKind(enum.StrEnum):
         real_kind = product_entities.Resource(kind)
         return ResourceKind(real_kind.name)
 
-    def to_internal(self) -> int:
+    def to_internal(self) -> r_entities.ResourceKind:
         value: object = getattr(product_entities.Resource, self.name)
         assert isinstance(value, int)
-        return value
+        return r_entities.ResourceKind(value)
+
+    def amount_from_internal(self, amount: int) -> Decimal:
+        if self == ResourceKind.tokens_cost:
+            return Decimal(llms_domain.cost_points_to_usd_cost(LLMCostPoints(amount)))
+
+        return Decimal(amount)
+
+
+class EntitlementKind(enum.StrEnum):
+    day_tokens = "day_tokens"  # noqa: S105
+    month_tokens = "month_tokens"  # noqa: S105
+    lifetime_tokens = "lifetime_tokens"  # noqa: S105
+
+    @classmethod
+    def from_internal(cls, kind: en_entities.EntitlementKindId) -> "EntitlementKind":
+        return cls(kind.name)
+
+    def to_internal(self) -> en_entities.EntitlementKindId:
+        return en_entities.EntitlementKindId[self.name]
+
+
+class TokenKind(enum.StrEnum):
+    day = "day"
+    month = "month"
+    lifetime = "lifetime"
+
+    @classmethod
+    def from_internal(cls, kind: product_entities.Credit) -> "TokenKind":
+        return cls[kind.name]
+
+
+class ProductStateEntitlement(pydantic.BaseModel):
+    granted: bool
+    value: int | None
+    startsAt: datetime.datetime | None
+    expiresAt: datetime.datetime | None
+
+    @classmethod
+    def from_internal(
+        cls,
+        entitlement: en_entities.EffectiveEntitlementInterval | None,
+    ) -> "ProductStateEntitlement":
+        is_lifetime = entitlement is not None and en_domain.get_entitlement_kind(entitlement.kind_id).is_lifetime
+
+        return cls(
+            granted=entitlement is not None,
+            value=entitlement.value if entitlement is not None else None,
+            startsAt=entitlement.starts_at if entitlement is not None else None,
+            expiresAt=entitlement.expires_at if entitlement is not None and not is_lifetime else None,
+        )
+
+
+class ProductStateToken(pydantic.BaseModel):
+    limit: int | None
+    balance: int
+    periodStartsAt: datetime.datetime | None
+    periodEndsAt: datetime.datetime | None
+
+    @classmethod
+    def from_internal(
+        cls,
+        *,
+        entitlement: en_entities.EffectiveEntitlementInterval | None,
+        resource: r_entities.Resource,
+        period_started_at: datetime.datetime | None,
+        period_ends_at: datetime.datetime | None,
+    ) -> "ProductStateToken":
+        is_lifetime = entitlement is not None and en_domain.get_entitlement_kind(entitlement.kind_id).is_lifetime
+
+        return cls(
+            limit=entitlement.value if entitlement is not None and not is_lifetime else None,
+            balance=max(entitlement.value - resource.total, 0) if entitlement is not None else 0,
+            periodStartsAt=period_started_at,
+            periodEndsAt=period_ends_at,
+        )
+
+
+class SubscriptionStatus(enum.StrEnum):
+    pending = "pending"
+    trialing = "trialing"
+    active = "active"
+    past_due = "past_due"
+    paused = "paused"
+    ended = "ended"
+
+    @classmethod
+    def from_internal(cls, status: sub_entities.SubscriptionStatusId) -> "SubscriptionStatus":
+        return cls[status.name]
+
+
+class ProductStateSubscription(pydantic.BaseModel):
+    status: SubscriptionStatus
+    startedAt: datetime.datetime
+    periodStartsAt: datetime.datetime
+    periodEndsAt: datetime.datetime
+    expectedRenewalAt: datetime.datetime | None
+    endsAt: datetime.datetime | None
+
+    @classmethod
+    def from_internal(cls, subscription: sub_entities.Subscription) -> "ProductStateSubscription":
+        return cls(
+            status=SubscriptionStatus.from_internal(subscription.status),
+            startedAt=subscription.started_at,
+            periodStartsAt=subscription.period_starts_at,
+            periodEndsAt=subscription.period_ends_at,
+            expectedRenewalAt=subscription.expected_renewal_at,
+            endsAt=subscription.ends_at,
+        )
+
+
+class ResourceStatisticsInterval(enum.StrEnum):
+    day = "day"
+    month = "month"
+    year = "year"
+
+    def to_internal(self) -> r_entities.ResourceStatisticsInterval:
+        return r_entities.ResourceStatisticsInterval(self.value)
 
 
 class ResourceHistoryRecord(pydantic.BaseModel):
@@ -326,20 +445,29 @@ class ResourceHistoryRecord(pydantic.BaseModel):
 
     @classmethod
     def from_internal(cls, record: r_entities.Resource) -> "ResourceHistoryRecord":
-        if record.kind == product_entities.Resource.tokens_cost:
-
-            def transformer(points: int) -> USDCost:
-                return llms_domain.cost_points_to_usd_cost(LLMCostPoints(points))
-
-        else:
-
-            def transformer(points: int) -> USDCost:
-                return USDCost(Decimal(points))
+        kind = ResourceKind.from_internal(record.kind)
 
         return cls(
             intervalStartedAt=record.interval_started_at,
-            used=transformer(record.used),
-            reserved=transformer(record.reserved),
+            used=kind.amount_from_internal(record.used),
+            reserved=kind.amount_from_internal(record.reserved),
+        )
+
+
+class ResourceStatisticsSeries(pydantic.BaseModel):
+    firstDate: datetime.date
+    values: list[Decimal]
+
+    @classmethod
+    def from_internal(
+        cls,
+        *,
+        kind: ResourceKind,
+        series: r_entities.ResourceStatisticsSeries,
+    ) -> "ResourceStatisticsSeries":
+        return cls(
+            firstDate=series.first_date,
+            values=[kind.amount_from_internal(value) for value in series.values],
         )
 
 
@@ -621,6 +749,16 @@ class GetResourceHistoryResponse(api.APISuccess):
     history: list[ResourceHistoryRecord]
 
 
+class GetResourceStatisticsRequest(api.APIRequest):
+    kinds: list[ResourceKind]
+    interval: ResourceStatisticsInterval
+
+
+class GetResourceStatisticsResponse(api.APISuccess):
+    interval: ResourceStatisticsInterval
+    statistics: dict[ResourceKind, ResourceStatisticsSeries]
+
+
 class GetInfoRequest(api.APIRequest):
     pass
 
@@ -660,3 +798,13 @@ class GetUserRequest(api.APIRequest):
 
 class GetUserResponse(api.APISuccess):
     userId: UserId
+
+
+class GetProductStateRequest(api.APIRequest):
+    pass
+
+
+class GetProductStateResponse(api.APISuccess):
+    subscriptions: list[ProductStateSubscription]
+    entitlements: dict[EntitlementKind, ProductStateEntitlement]
+    tokens: dict[TokenKind, ProductStateToken]

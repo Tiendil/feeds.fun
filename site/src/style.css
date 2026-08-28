@@ -3,6 +3,7 @@
 @import "tailwindcss/utilities";
 
 @import "./css/base.css";
+@import "./css/plots.css";
 @import "./css/side_panel_layout.css";
 @import "./css/tags.css";
 @import "./css/inputs.css";

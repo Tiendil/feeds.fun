@@ -4,23 +4,23 @@
 
     <div
       v-if="collections.collectionsOrder.length > 0"
-      class="ffun-info-common">
+      class="ui-reading-content mb-4">
       <p>We've prepared thematic collections just for you.</p>
       <p>News from collections are always tagged, ensuring you get the full power of Feeds Fun!</p>
     </div>
 
-    <div
-      v-else
-      class="ffun-info-common">
+    <ui-empty-state v-else>
       <p>There are no collections.</p>
       <p>Ask the server administrator to create some.</p>
-    </div>
+    </ui-empty-state>
 
-    <div
-      v-for="collectionId in collections.collectionsOrder"
-      :key="collectionId"
-      class="collection-block pb-4">
-      <collections-detailed-item :collectionId="collectionId" />
+    <div class="ui-content-rail">
+      <div
+        v-for="collectionId in collections.collectionsOrder"
+        :key="collectionId"
+        class="collection-block py-4 first:pt-0">
+        <collections-detailed-item :collectionId="collectionId" />
+      </div>
     </div>
   </side-panel-layout>
 </template>

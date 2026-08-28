@@ -27,6 +27,36 @@ Code MUST still validate semantic constraints that type annotations cannot expre
 Code that constructs a semantically specific typed value from raw or untyped data MUST validate the semantic invariants of that type at the construction boundary.
 Functions and methods that receive the constructed typed value MUST assume those invariants hold and MUST NOT repeat their validation.
 
+## Temporary implementation code
+
+Production code intentionally introduced as a temporary bridge MUST include an adjacent `TODO` comment.
+Keeping the explanation next to the bridge makes the exception discoverable during maintenance and review and couples its removal to the code it qualifies; a separate tracked work item alone does not preserve that local context.
+The comment MUST explain why the temporary code is currently necessary and identify the concrete condition, milestone, or tracked work item after which it MUST be removed.
+Vague comments such as "remove later" are insufficient.
+The comment MUST be removed together with the temporary code.
+
+## Closed value sets
+
+Project-owned closed sets of named values SHOULD use enums instead of `typing.Literal`.
+`Literal` MAY be used when exact literal values are required by an external or framework-defined interface, as discriminators for typed unions, or when the values do not represent independently named project concepts.
+Enums give project concepts one nominal runtime type with discoverable members, reducing duplicated literal unions and raw constants across typed interfaces.
+
+Explicit values keep member identities independent from declaration order or generated naming rules.
+Project-owned enum members MUST use explicit values and MUST NOT use `enum.auto()`.
+Project-owned enum values persisted in application-owned storage MUST be fixed integers.
+Fixed integers decouple persisted identities from human-readable names, align with the project's categorical persistence conventions, and allow names to change without changing stored values.
+Assigned persisted integer values MUST NOT be changed or reused.
+
+Project-owned enum values that are not persisted MAY use another explicit representation when it makes their runtime semantics clearer or represents an intentional boundary protocol token.
+API-boundary enums MAY use explicit string values when human-readable wire values are an intentional part of the API contract.
+Such string values MUST be treated as stable compatibility identifiers and MUST NOT be changed or reused without an explicit compatibility transition.
+Non-persisted enum values that participate in serialization, configuration, an external-system protocol, or another compatibility contract MUST use an explicit stable representation appropriate to that boundary.
+When internal and boundary representations have independent compatibility lifecycles, code SHOULD convert between them explicitly instead of relying on shared underlying values.
+
+Code that exhaustively branches over an enum or another statically closed union SHOULD pass the unreachable value to `typing.assert_never()` instead of raising `AssertionError` directly.
+This makes the exhaustiveness requirement visible to static type checkers and causes newly added unhandled variants to fail type checking.
+Ordinary domain or validation exceptions remain appropriate when an unsupported value can legitimately arrive through an untyped or external boundary.
+
 ## Validation and resolution
 
 Validation functions and methods MUST only verify invariants.

@@ -2,196 +2,144 @@
 
 ## Goal of the document
 
-This document describes the public contract and observable behavior of the `ffun.entitlements` backend module.
+This document describes the responsibility and observable entitlement behavior of the `ffun.entitlements` backend module.
 
 ## Scope
 
-This specification covers entitlement kinds, source-owned grants, effective entitlement intervals, grant and revocation behavior, effective-state queries, cleanup, audit records, and business events.
+This specification applies to entitlement grants and the effective entitlement state derived from them by `ffun.entitlements`.
+The following adjacent concerns are outside the module's responsibility:
 
-Purchased-subscription lifecycles, payment-service-provider protocols, product pricing, frontend behavior, token consumption, and the concrete set of entitlement sources are out of scope.
+- purchased-state lifecycles.
+- product policy.
+- payment-provider protocols.
+- entitlement consumption.
+- presentation.
 
 ## Dictionary
 
-- `entitlement kind` - a predefined capability or limit with a stable identifier, merge policy, and lifetime status.
-- `source` - a semantic identifier for one system allowed to maintain its own entitlement state.
-- `transaction id` - a stable source-supplied identifier for one grant to one user and entitlement kind.
-- `source entitlement` - one durable grant recorded by one source and transaction id for one user and entitlement kind.
-- `active source entitlement` - a source entitlement whose activation time has arrived and whose expiration and optional revocation times have not arrived at the evaluation time.
-- `effective entitlement interval` - a time interval during which merged source state grants one entitlement kind to one user with one value.
-- `merge policy` - the operation used to combine values from active source entitlements of the same kind.
+- `entitlement kind` - a stable category of capability or limit with one rule for combining active grant values and one lifetime status.
+- `source entitlement` - one durable grant for one user and entitlement kind caused by one benefit transaction.
+- `purchased-state owner` - the optional subscription or one-time purchase whose entitlement state includes a source entitlement.
+- `active source entitlement` - an unrevoked source entitlement whose effective period covers the evaluation time.
+- `effective entitlement interval` - a maximal period during which active source entitlements grant one entitlement kind to one user with one unchanged combined value.
 
 ## Module responsibility
 
-The module MUST own entitlement-kind metadata, source-owned entitlement state, effective-state derivation, grant and revocation workflows, effective-state queries, and expired-effective-state cleanup.
+The module owns the supported entitlement kinds, grants and revocations, and the rules that determine every user's effective entitlement state.
+`ffun.benefits` owns the meaning of benefit-transaction source identities and its decisions to establish or revoke grants.
+Purchased-state modules own subscription and one-time-purchase lifecycles rather than the entitlement module.
 
-Sources MUST change entitlements through the public module boundary.
-They MUST NOT change another source's state.
+Callers MUST change grants through the module's domain boundary.
+Callers making entitlement decisions MUST use the module's effective state and MUST NOT independently combine source grants.
 
-Callers that check entitlements MUST use the module's effective-state queries.
-They MUST NOT independently reproduce merge behavior or derive access from source-owned grants.
+## Special module rules
+
+Entitlement state changes MAY participate in atomic domain workflows owned by `ffun.benefits`.
+When they do, entitlement and purchased-state effects MUST succeed or fail together.
+This participation is limited to entitlement-owned state and effects and MUST NOT transfer ownership of purchased-state policy or workflow decisions from `ffun.benefits`.
+
+## Domain model
+
+An entitlement kind is a stable category whose meaning, value-combination rule, and lifetime status MUST NOT change while grants or callers depend on them.
+The supported set is intentionally closed and consists of:
+
+- daily token entitlements, which use the largest active grant value and are not lifetime.
+- monthly token entitlements, which use the largest active grant value and are not lifetime.
+- lifetime token entitlements, which use the sum of all active grant values and are lifetime.
+
+A source entitlement is the durable record of one grant to one user for one entitlement kind, caused by one benefit transaction.
+Its stable identity combines the globally unique granting benefit transaction and entitlement kind.
+Source entitlements with different identities MUST coexist, including future and multiple grants, when their establishment satisfies the value and effective-state validity rules below.
+
+A source entitlement MAY belong to one subscription, one one-time purchase, or no purchased-state owner, but MUST NOT belong to both owner kinds.
+Ownerless grants MAY represent explicitly supported administrative or system entitlements.
+A grant's meaning and purchased-state ownership MUST remain unchanged after establishment; correcting either requires a distinct grant.
+
+Every source-entitlement value MUST be a positive whole quantity no greater than `2**63 - 1`.
+This explicit upper bound is developer-approved because source and materialized effective values use a durable signed-64-bit contract; without it, a source change could establish source state whose required effective state cannot be represented atomically.
+A non-lifetime grant MUST have a finite effective period.
+A lifetime grant MUST use the project's stable lifetime interval-end marker and does not semantically expire.
+
+Revocation is the only lifecycle transition of an established grant.
+It is terminal, occurs immediately at the workflow's current evaluation time, and MUST NOT be scheduled for a future time.
+Its recorded time describes the completed transition, which remains attributable to the benefit transaction that caused it.
+
+Effective entitlement intervals are half-open: their activation is inclusive and their expiration is exclusive.
+At most one effective interval MAY cover one user and entitlement kind at any time.
+Absence of a covering interval means that entitlement is not granted.
+
+Persisted effective entitlement intervals are a disposable current-and-future projection rather than an effective-state history.
+The projection MUST retain only intervals that can affect its evaluation time or a later time and MAY discard older effective intervals when it is rebuilt.
+Source entitlements and their revocation attribution remain the durable historical evidence for source state.
 
 ## Domain behavior
 
-### Entitlement kinds
+### Grant establishment
 
-Entitlement kinds MUST form a closed set of stable identifiers.
-Each kind MUST define one merge policy and whether grants of that kind are lifetime grants.
+A grant whose effective period has already ended MAY be established as source history but MUST be immediately inactive.
 
-The supported kinds MUST be:
+Repeating a grant with the same identity and meaning MUST have no additional effect.
+This remains true after that grant has been revoked and MUST NOT reactivate it.
+Reusing the identity with a different meaning MUST fail without changing entitlement state.
 
-- `day_tokens`, stable value `1`, merged using `max`, and not lifetime.
-- `month_tokens`, stable value `2`, merged using `max`, and not lifetime.
-- `lifetime_tokens`, stable value `3`, merged using `sum`, and lifetime.
+### Revocation
 
-Stable kind values MUST NOT be changed or reused.
+Revoking an existing grant MUST make it permanently inactive immediately at the workflow's current evaluation time.
+Revoking an already revoked grant MUST have no additional effect and MUST preserve the meaning of the original revocation.
+Attempting to revoke a missing grant MUST fail without changing entitlement state.
 
-The supported merge policies MUST be:
+A subscription-owned revocation MUST revoke every unrevoked grant belonging to that subscription, including grants whose effective periods have ended.
+A one-time-purchase-owned revocation MUST apply the same rule within that purchase's ownership scope.
+An owner-scoped revocation MUST leave grants belonging to every other purchased-state owner unchanged and MUST have no effect when its owner has no unrevoked grants.
 
-- `max`, which selects the largest active value.
-- `min`, which selects the smallest active value.
-- `sum`, which adds all active values.
+### Effective state
 
-Merging an empty value collection MUST fail.
+The effective state for one user and entitlement kind at any time MUST be derived from every source entitlement active at that time.
+Daily and monthly token entitlements MUST use the largest active grant value, while lifetime token entitlements MUST use the sum of all active grant values.
+The combined effective value MUST NOT exceed `2**63 - 1`.
+A source change whose required combined value would exceed that bound MUST fail without changing source state, effective state, or audit history.
+When no source entitlement is active, the entitlement MUST be not granted and have no effective value.
 
-Non-lifetime grants MUST use a source-supplied expiration time.
-Lifetime grants MUST use the project's stable lifetime interval-end marker.
-The marker represents an unbounded interval and MUST NOT be interpreted as a semantic expiration.
+Periods without an active source entitlement MUST be absent from the effective timeline.
+Adjacent periods with the same effective value MUST form one effective entitlement interval.
 
-### Source-owned grants
+After a source change, the module MUST rebuild the affected user's current-and-future projection from every source entitlement that remains unrevoked.
+The rebuilt projection MUST contain exactly the effective intervals required by the effective-state rules at or after the workflow's evaluation time.
+**Rationale:** This developer-approved rebuild mechanism is an intentional architectural requirement: deriving the projection solely from durable source entitlements keeps them as the sole source of truth and prevents previously materialized projection state from influencing the result.
 
-One source entitlement MUST be identified by the exact tuple of source, transaction id, user id, and entitlement kind.
+### Source-change consistency
 
-Source and transaction identifiers MUST be non-empty.
-A grant MUST contain an integer value and timezone-aware activation and expiration times, with activation earlier than expiration.
-A grant being created MUST not already be revoked.
+Each grant or revocation that changes source state, its effective-state consequence, and its required audit evidence MUST succeed or fail together.
+Failure MUST leave the prior source state, effective state, and audit history unchanged.
 
-A source entitlement is inactive before activation, at or after expiration, and at or after a revocation time.
-An already expired grant MAY be recorded, but it is immediately inactive.
+Competing source changes for the same user and entitlement kind MUST produce an outcome equivalent to one complete ordering of those changes, without losing a grant or deriving effective state from partial changes.
+Every source change MUST use one evaluation time consistently for every time-dependent decision and effect.
 
-After creation, only revocation state may change.
-Correcting any other field requires a new transaction id.
+### Effective-state retrieval
 
-Creating a grant whose identity and immutable values exactly match an existing grant MUST be a no-op.
-Reusing the same identity with different immutable values MUST fail.
-Retrying an identical grant after it has been revoked MUST remain a no-op and MUST NOT reactivate it.
+Callers MUST be able to determine whether any supported entitlement kind is effective for any user at one current evaluation time captured by the retrieval operation and, when granted, its value and effective interval.
+Historical effective-state retrieval is outside the module's current contract.
+Retrieval MUST NOT change entitlement state merely because time has passed.
 
-Revocation MUST capture one current time.
-Revoking an already revoked grant MUST be a no-op and preserve its original revocation time.
-Revoking a missing grant MUST fail.
-
-Future-dated and multiple same-source grants MUST coexist.
-The `lifetime_tokens` effective value MUST be the sum of all active lifetime grants.
-
-### Effective entitlement intervals
-
-Effective entitlement intervals MUST be derived from all source-owned grants for one user and kind.
-They MUST be half-open: activation is inclusive and expiration is exclusive.
-
-At any time, at most one effective interval may cover one user and kind.
-Absence of a covering interval means the entitlement is not granted.
-
-Each interval MUST have the value produced by applying the kind's merge policy to every source entitlement active throughout that interval.
-Periods with no active source entitlement MUST be omitted.
-Adjacent intervals with equal values MUST be represented as one interval.
-
-Derivation MUST preserve every current and future interval whose end is later than the evaluation time.
-Expired effective intervals MAY remain until cleanup, but they MUST NOT affect query results.
-
-The effective state at an evaluation time MUST be represented as granted with an integer value when an interval covers that time, and not granted with no value otherwise.
-
-### Source-change workflow
-
-Each non-no-op grant or revocation MUST atomically change source-owned state, update the complete affected effective timeline, and append the required audit record.
-Changes for the same user and entitlement kind MUST be serialized.
-
-The workflow MUST use one captured evaluation time for validation, revocation, effective-state derivation, audit data, and the returned state.
-
-Failure at any point MUST leave source-owned state, effective intervals, and audit history unchanged.
-
-Business events MUST be emitted only after the state and audit transaction succeeds.
-No-op and failed workflows MUST NOT emit them.
-
-### Effective-state queries
-
-Every query MUST capture one evaluation time and treat an interval as active exactly when its activation is not later than that time and its expiration is later than that time.
-Queries MUST NOT mutate entitlement state merely because time has passed.
-
-A batch query MUST return an entry for every requested user and selected entitlement kind.
-Each entry MUST contain the complete active interval or no value.
-
-An empty entitlement-kind selection MUST select every supported kind.
-Duplicate user or kind identifiers MUST behave as one request for the duplicated value.
-Unknown kind identifiers MUST fail.
-
-### Cleanup
-
-Cleanup MUST capture one cleanup time and remove only effective intervals that have expired by that time.
-It MUST NOT remove source-owned grants.
-It MUST return the number of effective intervals removed.
-
-## Public interface
-
-The public interface MUST provide these operations:
-
-- `get_entitlement_kind` returns the stable metadata for one entitlement kind and fails for an unknown kind.
-- `grant_source_entitlement` creates or retries one source-owned grant.
-- `revoke_source_entitlement` revokes or retries revocation of one source-owned grant.
-- `get_entitlements` returns current effective intervals for requested users and kinds.
-- `cleanup_expired_entitlements` removes expired effective intervals and returns the number removed.
-
-`grant_source_entitlement` MUST accept one source entitlement containing source, transaction id, user id, kind id, value, activation, expiration, and no revocation time.
-It MUST also accept the audit actor's kind and canonical identifier.
-It MUST return the effective granted state and value at the workflow's evaluation time.
-
-`revoke_source_entitlement` MUST identify the grant by source, transaction id, user id, and kind id and accept the audit actor.
-It MUST capture the revocation time internally and return the effective state after the workflow.
-
-`get_entitlements` MUST accept collections of user ids and entitlement kind ids.
-Its result MUST map each selected user and kind to the active interval's user id, kind id, value, activation, and expiration, or to no value when the entitlement is not granted.
+The benefits workflow MUST be able to retrieve source entitlements owned by one subscription through the entitlements domain boundary so it can compare that target's current or future grants with a newly materialized benefit package.
+This retrieval MUST include revoked and expired history so the benefits workflow can select the relevant source state without inferring from merged effective entitlements.
+It MUST have no domain effects.
 
 ## Audit records
 
-### `source_entitlement_changed`
+Every source grant or revocation that changes source state MUST produce durable evidence of who initiated the change, which user's grant changed and why, and its effective-entitlement consequence.
+The evidence and entitlement change MUST succeed or fail together.
 
-Every non-no-op source change MUST append one `source_entitlement_changed` audit record in the same transaction as the state change.
-
-The actor MUST identify the initiating user, administrator, payment service provider, or system component.
-The subject MUST be the affected user.
-
-The record attributes MUST include:
-
-- `source`, identifying the owner of the changed grant.
-- `transaction_id`, identifying the changed source transaction.
-- `kind_id`, identifying the entitlement kind.
-- `previous_source_state`, containing the previous source, transaction id, user id, kind id, value, activation, expiration, and revocation values, or `null` for a new grant.
-- `new_source_state`, containing the resulting source, transaction id, user id, kind id, value, activation, expiration, and revocation values.
-- `previous_effective_intervals`, containing every previous current or future effective interval ordered by activation.
-- `new_effective_intervals`, containing every resulting current or future effective interval ordered by activation.
-
-Each effective-interval snapshot MUST contain its user id, kind id, value, activation, and expiration.
-
-The audit record MUST be appended even when source state changes without changing the effective entitlement.
-A no-op request MUST NOT append a record.
+Evidence MUST be produced even when source state changes without changing the effective entitlement.
+A failed change or a request with no additional effect MUST NOT produce audit evidence.
 
 ## Business events
 
-The module MUST emit both events below after every successful non-no-op source change.
-No-op and rolled-back changes MUST NOT emit either event.
+Every successful source change MUST notify consumers of both the resulting source grant and its effective-entitlement consequence for the affected user.
+The notification MUST describe the effective outcome even when it did not change.
 
-### `source_entitlement_changed`
+Notification MUST occur only after the entitlement change and its audit evidence are durable.
+An unsuccessful change or a request with no additional effect MUST NOT produce notification.
+Delivery failure MUST NOT alter durable entitlement state, and an idempotent retry MUST NOT replay notification for the earlier change.
 
-The event MUST describe the resulting source-owned grant.
-It MUST use the affected user as the business-event user and include `source`, `transaction_id`, `kind_id`, `granted`, `value`, `starts_at`, `expires_at`, and `revoked_at`.
-
-### `entitlement_changed`
-
-The event MUST describe the resulting effective state.
-It MUST use the affected user as the business-event user and include:
-
-- `kind_id`.
-- `granted`.
-- `value`, or `null` when not granted.
-- `new_effective_intervals`, containing the resulting interval values, activation times, and expiration times.
-
-The event MUST be emitted even when a source change leaves the effective timeline unchanged.
-Time passage, queries, and cleanup MUST NOT emit either event.
+Time passage and effective-state retrieval MUST NOT produce business events.

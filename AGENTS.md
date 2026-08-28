@@ -4,6 +4,16 @@ This document provides instructions and guidelines for the AI agents working on 
 
 Every agent MUST follow the rules and guidelines outlined in this document when performing their work.
 
+## Simplicity-first design
+
+- Start with the smallest design that satisfies the current explicit requirements and preserves existing behavior. Do not design for hypothetical future requirements.
+- Every proposed abstraction, entity, table, column, persisted value, variant, or workflow must serve a current requirement and have a current consumer. If removing it does not break required behavior or an existing invariant, omit it.
+- Prefer one source of truth. Derive information when it is unambiguous, and do not duplicate facts for convenience, symmetry, debugging, auditability, or possible future use unless explicitly required.
+- Before presenting or implementing a design, perform a subtraction pass: try removing each newly introduced concept and keep it only when its absence causes a concrete problem.
+- Consider corner cases only when they follow from current requirements, existing behavior, or observed data and materially affect the design. Defer speculative cases instead of building for them.
+- When several approaches satisfy the requirements, recommend the one with fewer concepts, states, branches, storage paths, and migrations. Present additional flexibility only as an optional extension.
+- Simplicity does not mean merging unrelated interfaces at any cost. Do not combine APIs when doing so introduces mutually exclusive optional arguments, invalid states, or pervasive runtime branching.
+
 ## Environment
 
 All development-related operations MUST be performed in Docker containers, see `./docker-compose.yml` for details.
@@ -75,6 +85,19 @@ At the start of each work session, read the `depmesh` usage instructions for det
 depmesh skill usage
 ```
 
+### `difftastic`
+
+Use `difft` as the default tool for inspecting code changes and whenever a semantic, syntax-aware diff is useful. Prefer stable, agent-readable output:
+
+```bash
+difft --display=inline --color=never --context=6 OLD-PATH NEW-PATH
+difft --display=inline --color=never --context=6 --sort-paths OLD-DIR NEW-DIR
+GIT_EXTERNAL_DIFF="difft --display=inline --color=never --context=6" git --no-pager diff -- PATH
+GIT_EXTERNAL_DIFF="difft --display=inline --color=never --context=6" git --no-pager diff --cached -- PATH
+```
+
+Use a classic line-oriented diff, such as `git --no-pager diff --no-ext-diff` or `diff -u`, only when the task explicitly requires raw line-by-line output—for example, producing a patch, inspecting exact whitespace or line endings, or supplying unified-diff input to another tool. Do not choose a classic diff merely because a change is small or limited to text.
+
 ### `inconsistency-check.py`
 
 `./bin/inconsistency-check.py` — a direct helper script for managing the depmesh-backed consistency-check queue.
@@ -82,11 +105,11 @@ depmesh skill usage
 Use this script only when the developer explicitly asks you to run it, or when an active workflow explicitly instructs
 you to run it. Do not run it opportunistically as a general dependency or consistency check.
 
-The queue is an isolated Taskwarrior database of relation-pair checks. Each queued record represents one oriented
-`depmesh` relation from a changed or manually selected file to one related artifact, plus the current SHA-256 checksums
-of both files, the relation id, the check status, and an optional markdown report. Pair keys include the relation and
-both file checksums, so old records remain as history while changed file content creates a fresh unchecked pair.
-Reconciliation immediately marks older checksum versions of the same oriented relation pair as `outdated`.
+The queue is an isolated SQLite database of relation-pair checks. Each queued record represents one oriented `depmesh`
+relation from a changed or manually selected file to one related artifact, plus the current SHA-256 checksums of both
+files, the relation id, the check status, and an optional markdown report. Pair keys include the relation and both file
+checksums, so old records remain as history while changed file content creates a fresh unchecked pair. Reconciliation
+immediately marks older checksum versions of the same oriented relation pair as `outdated`.
 
 The `run-cycle` command reconciles all non-outdated queue pairs against current files, `depmesh` relations, and the
 active mode. A mode that requires branch changes marks a pair `outdated` when its changed-side file is outside the
@@ -107,6 +130,10 @@ The `sync-queue` command performs mode-aware queue reconciliation without proces
 current files and whose oriented relation is still returned by `depmesh`; this current-only view does not mutate the
 queue.
 
+`list-operations` shows the latest pair operations in chronological order. The history records queue creation,
+completed child checks, explicit status marks, and automatic status changes. It remains available when queue records
+are cleared.
+
 Main commands:
 
 - `python ./bin/inconsistency-check.py enqueue @/path/to/file` — manually add one file and all configured depmesh relation pairs for that file to the isolated queue.
@@ -114,16 +141,20 @@ Main commands:
 - `python ./bin/inconsistency-check.py enqueue-changed` — enqueue all relation pairs for files changed relative to `main` without processing unchecked pairs or spawning child checkers.
 - `python ./bin/inconsistency-check.py sync-queue` — reconcile the mode-eligible queue without processing pairs.
 - `python ./bin/inconsistency-check.py list-pairs --current` — show only current-checksum records for relations still returned by `depmesh`.
+- `python ./bin/inconsistency-check.py list-operations --last 20` — show the latest pair operations oldest-to-newest within the selected tail.
 - `python ./bin/inconsistency-check.py progress --file @/path/to/file` — show queued records where the file is either the changed side or the related side.
 - `python ./bin/inconsistency-check.py mark-consistent --changed @/changed --related @/related --relation <relation>` — explicitly mark the current-checksum relation pair as consistent.
 - `python ./bin/inconsistency-check.py mark-unchecked --changed @/changed --related @/related --relation <relation>` — reset the current-checksum relation pair to unchecked, clear its previous reviewer result, and require checker reevaluation.
 - `python ./bin/inconsistency-check.py mark-inconsistent --changed @/changed --related @/related --relation <relation> --report "<markdown>"` — explicitly mark the current-checksum relation pair as inconsistent.
-- `python ./bin/inconsistency-check.py clear-queue` — delete all records from the isolated relation-pair queue.
+- `python ./bin/inconsistency-check.py clear-queue` — delete all records from the isolated relation-pair queue without deleting pair-operation history.
 - `python ./bin/inconsistency-check.py run-cycle` — reconcile the queue and process one mode-eligible dependency frontier.
 - `python ./bin/inconsistency-check.py process-queue` — process one mode-eligible dependency frontier.
 - `python ./bin/inconsistency-check.py self-check` — run deterministic script verification without spawning a child Codex checker.
 
 The script stores its relation-pair queue and runtime files only under `@/.session/inconsistency-check/`.
+Relation-pair state and structured pair-operation history are stored in
+`@/.session/inconsistency-check/state.sqlite3`. The previously migrated `taskwarrior/` database and `operations.jsonl`
+remain as recoverable artifacts; the script does not read, write, or delete them.
 
 ### `ast-grep`
 

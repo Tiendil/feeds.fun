@@ -25,11 +25,7 @@
     </template>
 
     <template v-else>
-      <div
-        v-if="!loading"
-        class="ffun-info-common">
-        No news to show.
-      </div>
+      <ui-empty-state v-if="!loading"> No news to show. </ui-empty-state>
     </template>
   </div>
 </template>

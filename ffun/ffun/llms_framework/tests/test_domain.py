@@ -29,9 +29,9 @@ from ffun.llms_framework.entities import (
 )
 from ffun.llms_framework.keys_rotator import _cost_points
 from ffun.llms_framework.provider_interface import ChatRequestTest, ChatResponseTest, ProviderTest
-from ffun.llms_framework.tests.helpers import reserve_resource
 from ffun.product.entities import Resource as AppResource
 from ffun.resources import domain as r_domain
+from ffun.resources.tests.helpers import reserve_resource
 
 _text_parts_intersection = 100
 
@@ -402,6 +402,7 @@ class TestCallLLM:
 
         await reserve_resource(
             user_id=internal_user_id,
+            kind=AppResource.tokens_cost,
             interval_started_at=interval_started_at,
             amount=_cost_points.to_points(key_usage.reserved_cost),
             limit=_cost_points.to_points(USDCost(Decimal(124512512))),
@@ -415,8 +416,10 @@ class TestCallLLM:
 
         assert responses == [ChatResponseTest(content=request.text) for request in requests]
 
-        resources = await r_domain.load_resources(
-            user_ids=[internal_user_id], kind=AppResource.tokens_cost, interval_started_at=interval_started_at
+        resource = await r_domain.load_resource(
+            user_id=internal_user_id,
+            kind=AppResource.tokens_cost,
+            interval_started_at=interval_started_at,
         )
 
         cost = USDCost(
@@ -430,7 +433,7 @@ class TestCallLLM:
             )
         )
 
-        assert resources[internal_user_id].used == _cost_points.to_points(cost)
+        assert resource.used == _cost_points.to_points(cost)
 
     @pytest.mark.asyncio
     @pytest.mark.parametrize(
@@ -467,6 +470,7 @@ class TestCallLLM:
 
         await reserve_resource(
             user_id=internal_user_id,
+            kind=AppResource.tokens_cost,
             interval_started_at=interval_started_at,
             amount=_cost_points.to_points(key_usage.reserved_cost),
             limit=_cost_points.to_points(USDCost(Decimal(124512512))),
@@ -477,8 +481,10 @@ class TestCallLLM:
         with pytest.raises(errors.TemporaryError):
             await call_llm(llm=fake_llm_provider, llm_config=llm_config, api_key_usage=key_usage, requests=requests)
 
-        resources = await r_domain.load_resources(
-            user_ids=[internal_user_id], kind=AppResource.tokens_cost, interval_started_at=interval_started_at
+        resource = await r_domain.load_resource(
+            user_id=internal_user_id,
+            kind=AppResource.tokens_cost,
+            interval_started_at=interval_started_at,
         )
 
         cost = USDCost(
@@ -487,7 +493,7 @@ class TestCallLLM:
         )
 
         assert key_usage.used_cost == cost
-        assert resources[internal_user_id].used == _cost_points.to_points(cost)
+        assert resource.used == _cost_points.to_points(cost)
 
     @pytest.mark.asyncio
     async def test_rejected_requests_are_not_billed(
@@ -513,6 +519,7 @@ class TestCallLLM:
 
         await reserve_resource(
             user_id=internal_user_id,
+            kind=AppResource.tokens_cost,
             interval_started_at=interval_started_at,
             amount=_cost_points.to_points(key_usage.reserved_cost),
             limit=_cost_points.to_points(USDCost(Decimal(124512512))),
@@ -528,11 +535,13 @@ class TestCallLLM:
         with pytest.raises(errors.RequestWasRejected):
             await call_llm(llm=fake_llm_provider, llm_config=llm_config, api_key_usage=key_usage, requests=requests)
 
-        resources = await r_domain.load_resources(
-            user_ids=[internal_user_id], kind=AppResource.tokens_cost, interval_started_at=interval_started_at
+        resource = await r_domain.load_resource(
+            user_id=internal_user_id,
+            kind=AppResource.tokens_cost,
+            interval_started_at=interval_started_at,
         )
 
         cost = model.tokens_cost(input_tokens=LLMTokens(6), output_tokens=LLMTokens(6))
 
         assert key_usage.used_cost == cost
-        assert resources[internal_user_id].used == _cost_points.to_points(cost)
+        assert resource.used == _cost_points.to_points(cost)

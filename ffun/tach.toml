@@ -1,5 +1,5 @@
 source_roots = ["."]
-root_module = "ignore"
+root_module = "forbid"
 ignore_type_checking_imports = true
 # TODO: make forbid_circular_dependencies true and fix circular dependencies.
 forbid_circular_dependencies = false
@@ -63,6 +63,7 @@ depends_on = [
     "ffun.feeds_collections",
     "ffun.librarian",
     "ffun.loader",
+    "ffun.product",
 ]
 layer = "web_application"
 
@@ -72,6 +73,7 @@ depends_on = [
     "ffun.application",
     "ffun.auth",
     "ffun.data_protection",
+    "ffun.entitlements",
     "ffun.feeds",
     "ffun.feeds_collections",
     "ffun.feeds_discoverer",
@@ -83,12 +85,25 @@ depends_on = [
     "ffun.meta",
     "ffun.ontology",
     "ffun.parsers",
+    "ffun.product",
     "ffun.resources",
     "ffun.scores",
+    "ffun.subscriptions",
     "ffun.tags",
     "ffun.user_settings",
 ]
 layer = "web_application"
+
+[[modules]]
+path = "ffun.benefits"
+depends_on = [
+    "ffun.audit",
+    "ffun.entitlements",
+    "ffun.locks",
+    "ffun.one_time_purchases",
+    "ffun.subscriptions",
+]
+layer = "meta_workflow"
 
 [[modules]]
 path = "ffun.meta"
@@ -190,6 +205,7 @@ depends_on = [
     "ffun.google",
     "ffun.library",
     "ffun.openai",
+    "ffun.product",
     "ffun.resources",
     "ffun.user_settings",
 ]
@@ -214,6 +230,7 @@ depends_on = [
     "ffun.markers",
     "ffun.queues",
     "ffun.resources",
+    "ffun.product",
     # TODO: temporary dependency for the legacy user API-key visibility bypass.
     #       Remove together with the old API-key consumption logic.
     "ffun.user_settings",
@@ -295,9 +312,35 @@ layer = "users"
 
 [[modules]]
 path = "ffun.product"
-utility = true
-depends_on = ["ffun.user_settings"]
+depends_on = [
+    "ffun.entitlements",
+    "ffun.user_settings",
+]
 layer = "product"
+
+[[modules]]
+path = "ffun.entitlements"
+depends_on = [
+    "ffun.audit",
+    "ffun.locks",
+]
+layer = "users"
+
+[[modules]]
+path = "ffun.one_time_purchases"
+depends_on = [
+    "ffun.audit",
+    "ffun.locks",
+]
+layer = "users"
+
+[[modules]]
+path = "ffun.subscriptions"
+depends_on = [
+    "ffun.audit",
+    "ffun.locks",
+]
+layer = "users"
 
 [[modules]]
 path = "ffun.users"

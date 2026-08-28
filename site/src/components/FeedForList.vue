@@ -99,8 +99,6 @@
   import * as utils from "@/logic/utils";
   import {useFeedsStore} from "@/stores/feeds";
   import {useCollectionsStore} from "@/stores/collections";
-  import FeedListColumns from "@/components/feed_list/Columns.vue";
-  import FeedEntriesPerDayChart from "@/components/feed_list/FeedEntriesPerDayChart.vue";
 
   const feedsStore = useFeedsStore();
   const collections = useCollectionsStore();

@@ -2,123 +2,242 @@
 
 ## Goal of the document
 
-This document describes the common location, naming, structure, abstraction level, and content conventions for specifications of individual Feeds Fun backend modules.
+This document describes requirements for the structure, abstraction level, and content of specifications for individual Feeds Fun backend modules.
 
 ## Scope
 
-This specification applies to module specifications under `specs/backend_architecture/modules/`.
+This specification applies to specifications of high-level domain modules represented by `ffun.<name>`, where each module owns one cohesive project subdomain.
+The `ffun.<name>` notation identifies the architectural boundary covered here; nested packages and other implementation-level code organization are out of scope.
 
-Module specifications cover module responsibilities, public interfaces, observable behavior, and externally relevant effects.
-
-General specification style, backend-wide architecture, implementation package layout, persistence schemas, internal algorithms, framework choices, and requirements that apply uniformly to all backend modules are out of scope.
+It governs how those specifications distinguish durable domain requirements from implementation choices.
+General specification style, backend-wide architecture, and policies owned by other specifications are out of scope.
 
 ## Dictionary
 
-- `module specification` - a specification dedicated to the responsibilities and behavior of one top-level `ffun` backend module.
-- `module-specific section` - a section that describes concepts or behavior unique to the module being specified.
-- `public interface` - the module capabilities and semantic contracts available to other top-level backend modules.
+- `module specification` - a specification dedicated to one such high-level domain module's responsibility and observable behavior.
+- `entity kind` - a durable category of domain entity owned by a module, independent of its representation as a class, record, table, or other implementation construct.
+- `special module rule` - a module-specific architectural rule that differs from, or adds to, the rules that ordinarily apply to every backend module.
+- `observable correctness guarantee` - an atomicity, concurrency, idempotency, ordering, or temporal property whose violation would change a domain outcome visible outside the module.
 
-## Abstraction boundary
+## Core principle
 
-A module specification MUST describe the module at the boundary visible to callers and other project components.
-It MUST define module responsibilities, public capabilities, semantic inputs and results, failure conditions, behavioral invariants, state transitions, and observable effects at the highest level that remains precise and testable.
+A module specification is a domain contract, not a map of the current code.
+It MUST establish what the module owns, which entity kinds belong to that ownership, how those entities relate and evolve, and which module-specific behaviors must remain true.
+It MUST remain accurate when internal APIs, persistence, data structures, and orchestration change without changing the domain behavior.
 
-A module specification MUST NOT prescribe internal representations, orchestration, algorithms, persistence mechanisms, or framework-specific structures.
-It MUST NOT name concrete entity, model, data-transfer-object, exception, or helper types, or the files and internal submodules that define them.
-Public data contracts MUST instead be described through their semantic fields, invariants, and observable meaning.
+Requirements MUST be stated at the highest semantic level that still distinguishes correct behavior from an incorrect domain outcome.
+They MUST describe invariants and effects rather than the mechanisms used to achieve them.
 
-Persistence requirements MAY specify observable properties such as durability, uniqueness, atomicity, isolation, and ordering.
-They MUST NOT specify table, column, index, constraint, or migration names; SQL or DDL; query shapes; or the number and sequence of persistence operations.
-
-A workflow sequence MUST be specified only when callers can observe the sequence or when its ordering is itself a required behavior.
-Internal processing steps MUST otherwise be expressed as required outcomes and invariants.
-
-Concrete public operation, audit-event, and business-event names MAY be specified when the name itself is an intentional stable contract.
+Every module-specific requirement MUST serve a current behavior, ownership boundary, relationship, or observable correctness guarantee.
+Authors MUST perform a subtraction pass and remove a concept when removing it would not make a current valid outcome, invalid outcome, or ownership boundary ambiguous.
 
 ## Location and identity
 
-Each module specification MUST be stored as `specs/backend_architecture/modules/<module>.md`, where `<module>` matches the intended or existing top-level Python package name under `ffun/ffun/<module>/`.
+Each module specification MUST be stored under `specs/backend_architecture/modules/` and MUST have a title that identifies the module.
+There MUST be at most one specification for each top-level backend module.
 
-A module specification MAY exist before its implementation package is created.
-
-There MUST be at most one module specification for each top-level backend module.
-
-The document's `h1` title MUST identify the module and end with `module`, such as `# Audit module` for `ffun.audit`.
-
-A module specification MUST supplement the backend-wide architecture specifications. It MUST NOT repeat general package, database, entity, error, or test requirements unless it adds a module-specific constraint.
+The specification MAY exist before the module is implemented.
+Its content MUST describe the intended domain contract rather than treating the absence or shape of the current implementation as a domain limitation.
 
 ## Required structure
 
-In addition to the sections required for every specification by `specs/meta/general.md`, a module specification MUST contain these top-level sections:
+After the opening sections required by `specs/meta/general.md`, every module specification MUST contain the following top-level sections, in this order:
 
-- `Module responsibility`.
-- `Domain behavior`.
+1. `Module responsibility`
+2. `Special module rules`
+3. `Domain model`
+4. `Domain behavior`
+5. `Audit records`
+6. `Business events`
 
-Standardized top-level sections MUST appear in this order:
+An additional top-level section SHOULD be used only when a substantial current concern does not fit the standard sections.
 
-1. `Goal of the document`.
-2. `Scope`.
-3. `Dictionary` [can be empty].
-4. `Module responsibility`.
-5. `Domain behavior`.
-6. `Public interface` [can be empty].
-7. `Audit records` [can be empty].
-8. `Business events` [can be empty].
+Every required section MUST remain present when it has no module-specific requirements.
+Such a section MUST contain a direct statement of absence, such as `This module has no special module rules.`, `This module owns no domain entity kinds.`, or `This module produces no audit records.`
+It MUST NOT be filled by repeating backend-wide defaults.
 
-A section marked `[can be empty]` MAY contain no module requirements. In that case, the section MUST contain one plain-text sentence explaining why, such as `Module does not produce business events.`
-
-Module-specific sections SHOULD be nested under `Domain behavior`. A module specification MAY use an additional top-level section when the concern is substantial, stable, and does not fit a standardized section.
+Caller-visible capabilities MUST be described under `Domain behavior` and MUST NOT be placed in a separate operation catalogue.
 
 ## Standard sections
 
+### `Scope`
+
+The `Scope` section MUST identify the module's stable domain boundary and the general responsibility to which the specification applies.
+It SHOULD distinguish an adjacent responsibility when readers could reasonably assign it to the wrong module.
+It MUST NOT enumerate the module's current operations, implementation components, or an exhaustive collection of unrelated out-of-scope concerns.
+
 ### `Module responsibility`
 
-The `Module responsibility` section MUST identify the module's architectural role and the behavior, state, or integration boundaries it owns.
+The `Module responsibility` section MUST state which domain concepts, decisions, state, and invariants the module owns.
+It MUST make ownership boundaries with collaborating modules clear enough that a policy has one authoritative owner.
 
-The section SHOULD identify important behavior that callers must access through the module boundary. It SHOULD NOT enumerate implementation files or private helpers.
+This section MAY state that callers must respect a module-owned decision or use the module's domain boundary.
+It MUST NOT turn that boundary into a catalogue of callable operations or repeat the ordinary boundary rules that apply to every backend module.
+
+### `Special module rules`
+
+The `Special module rules` section MUST contain only intentional differences from, or additions to, ordinary backend-module rules.
+
+**Example:** A technical audit or locking module may state that it is intentionally used by other modules.
+A purchased-state or entitlement module may state that its state changes are intended to participate in an atomic workflow owned by `ffun.benefits`.
+
+A special rule MUST state the module-specific architectural requirement and the semantic boundary within which it applies.
+It MUST NOT prescribe:
+
+- the functions that implement the rule.
+- concrete transaction-context representation or plumbing.
+- callbacks that implement the rule.
+- implementation orchestration.
+
+When one module owns a collaborative policy, that module MUST define the policy.
+Participating modules MUST state only their participation in and respect for the owning module's decision.
+
+When no special rule exists, the section MUST say so explicitly.
+
+### `Domain model`
+
+The `Domain model` section MUST identify the entity kinds necessary to describe the module's domain contract; implementation-only or technically motivated representations MUST be omitted.
+For each identified entity kind, it MUST state the kind's semantic meaning, distinguishing invariants, or membership criteria needed to distinguish it from related kinds.
+It MUST describe module-specific relationships and lifecycle invariants, including ownership, cardinality, identity stability, mutability, and historical status when those properties are part of current domain correctness.
+
+Entity kinds and their relationships MUST be described semantically.
+The specification MUST NOT translate relationships or lifecycle facts into fields, foreign keys, row shapes, model inheritance, or persistence constraints.
+
+**Example:** A purchase may belong to exactly one user, its ownership may be immutable, and a historical transaction may be append-only.
+
+**Counterexample:** Describing a purchase as a row with a non-null user foreign key prescribes its persistence representation instead of its semantic relationship.
+
+A domain state or category MAY be named when the distinction is necessary to define current behavior.
+Semantic names MAY use the same spelling and typography in specifications, code, and serialized representations when they denote the same domain concept.
+Terms defined by an applicable external standard or third-party contract SHOULD be preserved as-is when referring to that external concept.
+Exact spelling MAY be required when interoperability depends on it.
+Name reuse alone does not prescribe an implementation representation.
+
+A specification MUST NOT prescribe how a semantic name is declared, encoded, stored, or mapped unless that representation is part of a current interoperability contract or the developer explicitly requests it as part of the contract.
+
+**Example:** An OAuth integration may use `access_token` unchanged in specifications and code.
+The specification may require that exact wire name when OAuth interoperability depends on it, but it MUST NOT prescribe a Python type or database representation merely for convenience.
+
+An exhaustive domain set MUST be listed only when it is intentionally closed and the completeness of the set changes valid behavior.
 
 ### `Domain behavior`
 
-The `Domain behavior` section MUST describe the module-specific concepts, invariants, state transitions, calculations, and workflows needed to implement the module correctly.
+The `Domain behavior` section MUST define the module-specific rules, state transitions, calculations, query semantics, and observable effects needed to preserve its domain contract.
+It SHOULD organize closely related invariants together and omit behavior already governed by another module or by backend-wide specifications.
 
-Distinct concepts or workflows SHOULD use nested sections. Transaction and concurrency requirements SHOULD stay with the workflow they constrain.
+Capabilities MUST be expressed without prescribing an interface.
+They MUST NOT name an operation, prescribe its arguments, or define its return shape.
 
-The section MUST specify behavior through observable outcomes and MUST NOT prescribe internal algorithms, intermediate representations, helper operations, or persistence steps.
+**Example:** A specification may require that records for one owner can be retrieved in a domain-significant order.
 
-### `Public interface`
+Atomicity, concurrency, idempotency, ordering, and temporal guarantees MUST be included only when they define observable correctness.
+Such a guarantee MUST state which domain effects succeed or fail together, which competing outcomes are allowed, or how authority and time affect acceptance.
+It MUST NOT prescribe:
 
-A module specification SHOULD define a public interface when another module needs a stable call contract that is not sufficiently described by the responsibility and behavior sections.
+- lock acquisition.
+- retry loops.
+- event callbacks.
+- persistence-operation order.
 
-The section MUST describe public behavior through caller-visible capabilities and semantic contracts.
-It MAY define stable operation names, inputs, results, transaction participation, and failure behavior when those details are part of the cross-module contract.
+**Example:** `An older authoritative state cannot replace a newer state` is an observable temporal and concurrency invariant.
+`Repeating the same logical operation has no additional effect` is a domain idempotency guarantee.
 
-The section SHOULD specify accepted values, semantic result fields, failure conditions, transaction behavior, and observable lifecycle semantics when those details form the stable contract.
-It MUST NOT require concrete entity, model, data-transfer-object, or exception type names.
+**Counterexample:** Requiring a particular lock, comparison query, exception type, and retry sequence prescribes how an invariant is enforced rather than defining the invariant.
 
-The section MUST describe callable interfaces by their observable protocol. It MUST NOT require that a public callable is implemented as a class, function, decorated generator, or callable object unless callers depend on that distinction through type identity, inheritance, instance reuse, introspection, or another explicitly documented contract.
+#### Transaction participation
 
-The section MUST NOT specify private helpers, internal submodules, or implementation-only operations.
+A module specification MAY define transaction participation only when it is an intentional architectural capability permitted by the backend database architecture or is required to state an observable correctness guarantee for a current workflow.
+When transaction participation is part of the module contract, the specification MUST state its stable boundary and observable effects at the highest semantic level.
+The specification MAY define:
+
+- which module owns the transaction and workflow decision.
+- which module-owned effects participate in the transaction.
+- which effects commit or roll back together.
+- whether participating reads observe state visible within the transaction.
+
+These requirements describe architectural boundaries and observable behavior and MUST NOT be treated as implementation orchestration.
+
+The specification MUST NOT prescribe:
+
+- concrete transaction-context or execute-callable types.
+- function parameters or signatures used to pass transaction state.
+- decorators or context managers.
+- how transaction state is propagated through implementation layers.
+- the sequence of persistence operations.
+- which implementation function opens, commits, or rolls back the transaction.
 
 ### `Audit records`
 
-A module specification that defines concrete durable audit events for its workflows MUST include an `Audit records` section.
+The `Audit records` section MUST describe the module-specific rules for when a domain change produces durable audit evidence.
+It MUST state the semantic purpose of that evidence and any module-specific atomicity, lifecycle, or no-op invariants.
 
-The section MUST define when each record is appended, its event name, actor and subject entity roles, required attributes, transaction boundary, and no-op behavior.
-
-The section MUST NOT treat business-event logs as durable audit storage.
+**Example:** `A failed state change leaves both the prior domain state and its audit history unchanged` describes an observable atomicity invariant when partial success would be visible.
 
 ### `Business events`
 
-A module specification that generates business events MUST include a `Business events` section.
+The `Business events` section MUST describe the module-specific rules for when a domain change produces a business event.
+It MUST state the semantic purpose of the event and any module-specific ordering, temporal, or no-op invariants.
 
-The section MUST define each event name, the condition that generates it, its business-event user, and required attributes. It SHOULD distinguish effective-state events from source or request events when both exist.
+## Cross-module ownership
+
+Each policy MUST be defined by the module that owns the corresponding domain decision.
+A consuming module MUST state only the effect of respecting that decision when the relationship is necessary to understand its own behavior.
+It MUST NOT duplicate the owner's policy, enumerate the owner's cases, or prescribe how the owner implements it.
+
+Backend-wide rules such as ordinary module boundaries, error conventions, database practices, and test conventions MUST NOT be repeated in module specifications unless a module has a concrete exception.
+Out-of-scope statements SHOULD be limited to adjacent responsibilities that are genuinely easy to confuse with the module's ownership.
+
+## Excluded implementation detail
+
+A module specification MUST NOT catalogue public operations or name functions, classes, enums, exceptions, callbacks, arguments, or private implementation components.
+It MUST NOT specify:
+
+- signatures.
+- parameter lists.
+- return shapes.
+- concrete transaction-context types or plumbing.
+- whether behavior is exposed through any particular programming-language construct.
+
+A module specification MUST omit the following implementation details:
+
+- entity field inventories.
+- data-transfer shapes.
+- identifier representations.
+- serialization formats.
+- stable numeric enum values.
+- database-oriented identifiers.
+- string formats.
+- size limits.
+- validation expressions.
+
+The specification MUST describe the domain distinction or validity rule they serve instead.
+
+The following implementation details MUST NOT appear in a module specification:
+
+- tables.
+- columns.
+- indexes.
+- constraints.
+- migrations.
+- row shapes.
+- persistence-operation sequences.
+- algorithms.
+- data structures.
+
+The specification also MUST NOT prescribe transaction, locking, retry, or event-delivery orchestration even when the current implementation uses those mechanisms.
+
+Audit records and business events MUST be specified only as semantic effects when they are part of observable behavior.
+By default, a module specification MUST state only which domain change requires or does not require durable evidence or notification, the semantic purpose of that effect, and relevant atomicity or no-op invariants.
+It MUST NOT define exact event names, schemas, attribute inventories, serialization rules, callback protocols, or delivery procedures.
+
+Test cases, fixtures, and implementation verification strategies MUST NOT be specified.
+Current implementation limitations MUST NOT be promoted into permanent domain constraints, and speculative variants, compatibility provisions, or extension points without a current consumer MUST be omitted.
+
+An otherwise excluded implementation detail MAY appear only when a current interoperability contract requires it or when the developer explicitly requests that exact detail as part of the contract.
+The specification MUST place an explanation next to the detail stating why it is required and which current observable behavior or architectural property would be lost without it.
+Existing implementation shape, convenience, symmetry, debugging value, and hypothetical future use are not sufficient justifications.
 
 ## Dependency metadata
 
-Depmesh MUST relate each module specification to Python files under the top-level backend module with the matching name.
-
-The `governed_by` relation for `ffun/ffun/<module>/**/*.py` MUST include `specs/backend_architecture/modules/<module>.md` when that specification exists.
-
-The reverse `governs` relation for a module specification MUST include existing Python files under `ffun/ffun/<module>/`.
-
-All module specifications MUST be governed by this specification through depmesh. These relationships SHOULD use generic name-based rules rather than one rule per module.
+Depmesh MUST relate every module specification to the implementation artifacts governed by it and MUST relate every module specification to this specification.
+These relationships SHOULD use generic module-based rules rather than one rule per module.

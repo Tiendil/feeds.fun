@@ -1,26 +1,41 @@
 import asyncio
 import datetime
+import uuid
 from typing import cast
 
 import pytest
-from psycopg.errors import UniqueViolation
+from psycopg.errors import CheckViolation, UniqueViolation
 from pydantic import ValidationError
 
 from ffun.core.postgresql import execute, transaction
 from ffun.core.tests.helpers import TableSizeDelta, TableSizeNotChanged
 from ffun.domain.domain import new_user_id
-from ffun.domain.entities import UserId
+from ffun.domain.entities import BenefitTransactionId, UserId
 from ffun.entitlements import errors, operations
-from ffun.entitlements.entities import EntitlementKindId, EntitlementSourceId, EntitlementTransactionId
+from ffun.entitlements.entities import EntitlementKindId
 from ffun.entitlements.tests.helpers import load_effective_interval_timestamps, load_source_entitlement_timestamps
 from ffun.entitlements.tests.make import make_effective_entitlement_interval, make_source_entitlement
+from ffun.one_time_purchases.domain import new_purchase_id
+from ffun.subscriptions.domain import new_subscription_id
+
+
+def _transaction_id(value: int) -> BenefitTransactionId:
+    return BenefitTransactionId(uuid.UUID(int=value))
+
+
+def _ordered_transaction_ids(count: int) -> tuple[BenefitTransactionId, ...]:
+    base = uuid.uuid4().int & ~0xFFFF
+    return tuple(BenefitTransactionId(uuid.UUID(int=base + offset)) for offset in range(1, count + 1))
 
 
 class TestRowToSourceEntitlement:
-    def test_converts_row(self) -> None:
+    def test_converts_row_and_removes_persistence_timestamps(self) -> None:
         entitlement = make_source_entitlement()
+        now = datetime.datetime.now(tz=datetime.UTC)
+        row = cast(dict[str, object], entitlement.model_dump())
+        row.update({"created_at": now, "updated_at": now})
 
-        assert operations.row_to_source_entitlement(entitlement.model_dump()) == entitlement  # type: ignore[misc]
+        assert operations.row_to_source_entitlement(row) == entitlement
 
     def test_invalid_row_raises_module_error(self) -> None:
         with pytest.raises(errors.InvalidStoredEntitlement) as exception_info:
@@ -34,7 +49,7 @@ class TestRowToEffectiveInterval:
     def test_converts_row(self) -> None:
         interval = make_effective_entitlement_interval()
 
-        assert operations.row_to_effective_interval(interval.model_dump()) == interval  # type: ignore[misc]
+        assert operations.row_to_effective_interval(cast(dict[str, object], interval.model_dump())) == interval
 
     def test_invalid_row_raises_module_error(self) -> None:
         with pytest.raises(errors.InvalidStoredEntitlement) as exception_info:
@@ -51,26 +66,22 @@ class TestLoadSourceEntitlement:
             execute,
             new_user_id(),
             EntitlementKindId.day_tokens,
-            EntitlementSourceId("missing"),
-            EntitlementTransactionId("missing"),
+            BenefitTransactionId(uuid.uuid4()),
         )
 
         assert loaded is None
 
     @pytest.mark.asyncio
-    async def test_identity_includes_transaction(self) -> None:
+    async def test_identity_includes_grant_transaction(self) -> None:
         entitlement = make_source_entitlement()
-
-        async with TableSizeDelta("en_source_entitlements", delta=1):
-            await operations.insert_source_entitlement(execute, entitlement)
+        await operations.insert_source_entitlement(execute, entitlement)
 
         assert (
             await operations.load_source_entitlement(
                 execute,
                 entitlement.user_id,
                 entitlement.kind_id,
-                entitlement.source,
-                entitlement.transaction_id,
+                entitlement.grant_transaction_id,
             )
             == entitlement
         )
@@ -79,8 +90,7 @@ class TestLoadSourceEntitlement:
                 execute,
                 entitlement.user_id,
                 entitlement.kind_id,
-                entitlement.source,
-                EntitlementTransactionId("other"),
+                BenefitTransactionId(uuid.uuid4()),
             )
             is None
         )
@@ -88,25 +98,90 @@ class TestLoadSourceEntitlement:
 
 class TestInsertSourceEntitlement:
     @pytest.mark.asyncio
-    async def test_inserts_immutable_grant(self) -> None:
-        entitlement = make_source_entitlement()
+    async def test_inserts_complete_immutable_grant(self) -> None:
+        entitlement = make_source_entitlement(subscription_id=new_subscription_id())
 
         async with TableSizeDelta("en_source_entitlements", delta=1):
             await operations.insert_source_entitlement(execute, entitlement)
 
+        loaded = await operations.load_source_entitlement(
+            execute,
+            entitlement.user_id,
+            entitlement.kind_id,
+            entitlement.grant_transaction_id,
+        )
+        assert loaded == entitlement
         created_at, updated_at = await load_source_entitlement_timestamps(entitlement)
         assert created_at == updated_at
 
     @pytest.mark.asyncio
-    async def test_same_source_can_insert_multiple_transactions(self) -> None:
-        first = make_source_entitlement()
-        second = first.replace(transaction_id=EntitlementTransactionId("second"), value=20)
+    async def test_inserts_one_time_purchase_owner(self) -> None:
+        entitlement = make_source_entitlement(one_time_purchase_id=new_purchase_id())
+
+        async with TableSizeDelta("en_source_entitlements", delta=1):
+            await operations.insert_source_entitlement(execute, entitlement)
+
+        assert (
+            await operations.load_source_entitlement(
+                execute,
+                entitlement.user_id,
+                entitlement.kind_id,
+                entitlement.grant_transaction_id,
+            )
+            == entitlement
+        )
+
+    @pytest.mark.asyncio
+    async def test_rejects_multiple_purchased_state_owners(self) -> None:
+        entitlement = make_source_entitlement(subscription_id=new_subscription_id())
+        arguments = cast(dict[str, object], entitlement.model_dump())
+        arguments["one_time_purchase_id"] = new_purchase_id()
+        check_violation = cast(type[Exception], CheckViolation)
+
+        # Developer-approved direct SQL is required because valid entities reject multiple owners before persistence.
+        async with TableSizeNotChanged("en_source_entitlements"):
+            with pytest.raises(check_violation):
+                await execute(
+                    """
+                    INSERT INTO en_source_entitlements (
+                        grant_transaction_id,
+                        user_id,
+                        subscription_id,
+                        one_time_purchase_id,
+                        kind_id,
+                        value,
+                        starts_at,
+                        expires_at,
+                        revoked_at,
+                        revoked_by_transaction_id
+                    )
+                    VALUES (
+                        %(grant_transaction_id)s,
+                        %(user_id)s,
+                        %(subscription_id)s,
+                        %(one_time_purchase_id)s,
+                        %(kind_id)s,
+                        %(value)s,
+                        %(starts_at)s,
+                        %(expires_at)s,
+                        %(revoked_at)s,
+                        %(revoked_by_transaction_id)s
+                    )
+                    """,
+                    arguments,
+                )
+
+    @pytest.mark.asyncio
+    async def test_inserts_multiple_grant_transactions(self) -> None:
+        first_transaction_id, second_transaction_id = _ordered_transaction_ids(2)
+        first = make_source_entitlement(grant_transaction_id=first_transaction_id)
+        second = first.replace(grant_transaction_id=second_transaction_id, value=20)
 
         async with TableSizeDelta("en_source_entitlements", delta=2):
             await operations.insert_source_entitlement(execute, first)
             await operations.insert_source_entitlement(execute, second)
 
-        assert await operations.load_source_entitlements(execute, first.user_id, first.kind_id) == [second, first]
+        assert await operations.load_source_entitlements(execute, first.user_id, first.kind_id) == [first, second]
 
     @pytest.mark.asyncio
     async def test_conflicting_identity_fails(self) -> None:
@@ -125,8 +200,7 @@ class TestInsertSourceEntitlement:
                 execute,
                 entitlement.user_id,
                 entitlement.kind_id,
-                entitlement.source,
-                entitlement.transaction_id,
+                entitlement.grant_transaction_id,
             )
             == entitlement
         )
@@ -134,52 +208,273 @@ class TestInsertSourceEntitlement:
 
 class TestRevokeSourceEntitlement:
     @pytest.mark.asyncio
-    async def test_sets_only_revocation_and_updated_timestamp(self) -> None:
+    async def test_missing_source_raises_invalid_stored_entitlement(self) -> None:
+        entitlement = make_source_entitlement()
+
+        async with TableSizeNotChanged("en_source_entitlements"):
+            with pytest.raises(errors.InvalidStoredEntitlement) as exception_info:
+                await operations.revoke_source_entitlement(
+                    execute,
+                    entitlement,
+                    revoked_at=datetime.datetime.now(tz=datetime.UTC),
+                    revoked_by_transaction_id=_transaction_id(10),
+                )
+
+        assert "reason=Expected a source entitlement to exist" in str(exception_info.value)
+
+    @pytest.mark.asyncio
+    async def test_sets_revocation_causality_and_updated_timestamp(self) -> None:
         entitlement = make_source_entitlement()
         await operations.insert_source_entitlement(execute, entitlement)
         created_at, _ = await load_source_entitlement_timestamps(entitlement)
         await asyncio.sleep(0.001)
         revoked_at = datetime.datetime.now(tz=datetime.UTC)
+        revoked_by_transaction_id = _transaction_id(10)
 
         async with TableSizeNotChanged("en_source_entitlements"):
-            await operations.revoke_source_entitlement(execute, entitlement, revoked_at=revoked_at)
+            revoked = await operations.revoke_source_entitlement(
+                execute,
+                entitlement,
+                revoked_at=revoked_at,
+                revoked_by_transaction_id=revoked_by_transaction_id,
+            )
 
-        loaded = await operations.load_source_entitlement(
-            execute,
-            entitlement.user_id,
-            entitlement.kind_id,
-            entitlement.source,
-            entitlement.transaction_id,
+        assert revoked == entitlement.replace(
+            revoked_at=revoked_at,
+            revoked_by_transaction_id=revoked_by_transaction_id,
         )
-        assert loaded == entitlement.to_revoked(revoked_at=revoked_at)
+        assert (
+            await operations.load_source_entitlement(
+                execute,
+                entitlement.user_id,
+                entitlement.kind_id,
+                entitlement.grant_transaction_id,
+            )
+            == revoked
+        )
         revoked_created_at, revoked_updated_at = await load_source_entitlement_timestamps(entitlement)
         assert revoked_created_at == created_at
         assert revoked_updated_at > created_at
 
     @pytest.mark.asyncio
-    async def test_already_revoked_row_is_not_changed(self) -> None:
+    async def test_existing_earlier_revocation_is_returned_and_preserved(self) -> None:
         entitlement = make_source_entitlement()
         await operations.insert_source_entitlement(execute, entitlement)
         original_revoked_at = datetime.datetime.now(tz=datetime.UTC)
-        await operations.revoke_source_entitlement(execute, entitlement, revoked_at=original_revoked_at)
-        timestamps = await load_source_entitlement_timestamps(entitlement)
-
-        await operations.revoke_source_entitlement(
+        original_transaction_id = _transaction_id(10)
+        revoked = await operations.revoke_source_entitlement(
             execute,
             entitlement,
+            revoked_at=original_revoked_at,
+            revoked_by_transaction_id=original_transaction_id,
+        )
+        timestamps = await load_source_entitlement_timestamps(entitlement)
+
+        returned = await operations.revoke_source_entitlement(
+            execute,
+            revoked,
             revoked_at=original_revoked_at + datetime.timedelta(days=1),
+            revoked_by_transaction_id=_transaction_id(11),
         )
 
-        loaded = await operations.load_source_entitlement(
-            execute,
-            entitlement.user_id,
-            entitlement.kind_id,
-            entitlement.source,
-            entitlement.transaction_id,
+        assert returned == revoked
+        assert (
+            await operations.load_source_entitlement(
+                execute,
+                entitlement.user_id,
+                entitlement.kind_id,
+                entitlement.grant_transaction_id,
+            )
+            == revoked
         )
-        assert loaded is not None
-        assert loaded.revoked_at == original_revoked_at
         assert await load_source_entitlement_timestamps(entitlement) == timestamps
+
+    @pytest.mark.asyncio
+    async def test_earlier_retry_returns_existing_revocation_and_preserves_it(self) -> None:
+        entitlement = make_source_entitlement()
+        await operations.insert_source_entitlement(execute, entitlement)
+        original_revoked_at = datetime.datetime.now(tz=datetime.UTC)
+        stored = await operations.revoke_source_entitlement(
+            execute,
+            entitlement,
+            revoked_at=original_revoked_at,
+            revoked_by_transaction_id=_transaction_id(10),
+        )
+        timestamps = await load_source_entitlement_timestamps(entitlement)
+        earlier = original_revoked_at - datetime.timedelta(days=1)
+
+        returned = await operations.revoke_source_entitlement(
+            execute,
+            stored,
+            revoked_at=earlier,
+            revoked_by_transaction_id=_transaction_id(11),
+        )
+
+        assert returned == stored
+        assert (
+            await operations.load_source_entitlement(
+                execute,
+                entitlement.user_id,
+                entitlement.kind_id,
+                entitlement.grant_transaction_id,
+            )
+            == stored
+        )
+        assert await load_source_entitlement_timestamps(entitlement) == timestamps
+
+
+class TestLoadSourceEntitlementsForSubscription:
+    @pytest.mark.asyncio
+    async def test_missing_subscription_returns_empty_list(self) -> None:
+        loaded = await operations.load_source_entitlements_for_subscription(
+            execute,
+            new_subscription_id(),
+        )
+
+        assert loaded == []
+
+    @pytest.mark.asyncio
+    async def test_returns_all_linked_grants_in_kind_and_transaction_order(self) -> None:
+        subscription_id = new_subscription_id()
+        now = datetime.datetime.now(tz=datetime.UTC)
+        transaction_ids = _ordered_transaction_ids(6)
+        active_month = make_source_entitlement(
+            subscription_id=subscription_id,
+            grant_transaction_id=transaction_ids[1],
+            kind_id=EntitlementKindId.month_tokens,
+            starts_at=now - datetime.timedelta(days=1),
+            expires_at=now + datetime.timedelta(days=1),
+        )
+        active_day = make_source_entitlement(
+            subscription_id=subscription_id,
+            grant_transaction_id=transaction_ids[0],
+            user_id=active_month.user_id,
+            kind_id=EntitlementKindId.day_tokens,
+            starts_at=now - datetime.timedelta(days=1),
+            expires_at=now + datetime.timedelta(days=1),
+        )
+        expired = make_source_entitlement(
+            subscription_id=subscription_id,
+            grant_transaction_id=transaction_ids[2],
+            user_id=active_month.user_id,
+            starts_at=now - datetime.timedelta(days=2),
+            expires_at=now,
+        )
+        future_day = make_source_entitlement(
+            subscription_id=subscription_id,
+            grant_transaction_id=transaction_ids[3],
+            user_id=active_month.user_id,
+            kind_id=EntitlementKindId.day_tokens,
+            starts_at=now + datetime.timedelta(days=1),
+            expires_at=now + datetime.timedelta(days=3),
+        )
+        never_active_future = make_source_entitlement(
+            subscription_id=subscription_id,
+            grant_transaction_id=transaction_ids[4],
+            user_id=active_month.user_id,
+            kind_id=EntitlementKindId.day_tokens,
+            starts_at=now + datetime.timedelta(days=2),
+            expires_at=now + datetime.timedelta(days=3),
+            revoked_at=now,
+        )
+        revoked = make_source_entitlement(
+            subscription_id=subscription_id,
+            grant_transaction_id=transaction_ids[5],
+            user_id=active_month.user_id,
+            starts_at=now - datetime.timedelta(days=1),
+            expires_at=now + datetime.timedelta(days=1),
+            revoked_at=now,
+        )
+        unlinked = make_source_entitlement(
+            starts_at=now - datetime.timedelta(days=1),
+            expires_at=now + datetime.timedelta(days=1),
+        )
+        for entitlement in (
+            active_month,
+            active_day,
+            expired,
+            future_day,
+            never_active_future,
+            revoked,
+            unlinked,
+        ):
+            await operations.insert_source_entitlement(execute, entitlement)
+
+        loaded = await operations.load_source_entitlements_for_subscription(
+            execute,
+            subscription_id,
+        )
+
+        assert loaded == [active_day, expired, future_day, never_active_future, revoked, active_month]
+
+
+class TestLoadSourceEntitlementsForOneTimePurchase:
+    @pytest.mark.asyncio
+    async def test_missing_purchase_returns_empty_list(self) -> None:
+        loaded = await operations.load_source_entitlements_for_one_time_purchase(
+            execute,
+            new_purchase_id(),
+        )
+
+        assert loaded == []
+
+    @pytest.mark.asyncio
+    async def test_returns_all_linked_grants_in_kind_and_transaction_order(self) -> None:
+        one_time_purchase_id = new_purchase_id()
+        now = datetime.datetime.now(tz=datetime.UTC)
+        transaction_ids = _ordered_transaction_ids(5)
+        active_month = make_source_entitlement(
+            one_time_purchase_id=one_time_purchase_id,
+            grant_transaction_id=transaction_ids[1],
+            kind_id=EntitlementKindId.month_tokens,
+            starts_at=now - datetime.timedelta(days=1),
+            expires_at=now + datetime.timedelta(days=1),
+        )
+        active_day = make_source_entitlement(
+            one_time_purchase_id=one_time_purchase_id,
+            grant_transaction_id=transaction_ids[0],
+            user_id=active_month.user_id,
+            kind_id=EntitlementKindId.day_tokens,
+            starts_at=now - datetime.timedelta(days=1),
+            expires_at=now + datetime.timedelta(days=1),
+        )
+        future_day = make_source_entitlement(
+            one_time_purchase_id=one_time_purchase_id,
+            grant_transaction_id=transaction_ids[3],
+            user_id=active_month.user_id,
+            kind_id=EntitlementKindId.day_tokens,
+            starts_at=now + datetime.timedelta(days=1),
+            expires_at=now + datetime.timedelta(days=3),
+        )
+        expired = make_source_entitlement(
+            one_time_purchase_id=one_time_purchase_id,
+            grant_transaction_id=transaction_ids[2],
+            user_id=active_month.user_id,
+            starts_at=now - datetime.timedelta(days=2),
+            expires_at=now,
+        )
+        revoked = make_source_entitlement(
+            one_time_purchase_id=one_time_purchase_id,
+            grant_transaction_id=transaction_ids[4],
+            user_id=active_month.user_id,
+            starts_at=now - datetime.timedelta(days=1),
+            expires_at=now + datetime.timedelta(days=1),
+            revoked_at=now,
+        )
+        other_purchase = make_source_entitlement(
+            one_time_purchase_id=new_purchase_id(),
+            starts_at=now - datetime.timedelta(days=1),
+            expires_at=now + datetime.timedelta(days=1),
+        )
+        for entitlement in (active_month, active_day, future_day, expired, revoked, other_purchase):
+            await operations.insert_source_entitlement(execute, entitlement)
+
+        loaded = await operations.load_source_entitlements_for_one_time_purchase(
+            execute,
+            one_time_purchase_id,
+        )
+
+        assert loaded == [active_day, expired, future_day, revoked, active_month]
 
 
 class TestLoadSourceEntitlements:
@@ -200,13 +495,11 @@ class TestLoadSourceEntitlements:
         now = datetime.datetime.now(tz=datetime.UTC)
         later = make_source_entitlement(
             user_id=user_id,
-            source=EntitlementSourceId("later"),
             starts_at=now,
             expires_at=now + datetime.timedelta(days=2),
         )
         earlier = make_source_entitlement(
             user_id=user_id,
-            source=EntitlementSourceId("earlier"),
             starts_at=now - datetime.timedelta(days=1),
             expires_at=now + datetime.timedelta(days=1),
         )

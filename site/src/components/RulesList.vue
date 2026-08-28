@@ -10,11 +10,7 @@
     </ul>
   </template>
   <template v-else>
-    <p
-      v-if="!loading"
-      class="ffun-info-common"
-      >No rules to show.</p
-    >
+    <ui-empty-state v-if="!loading"> No rules to show. </ui-empty-state>
   </template>
 </template>
 

@@ -22,9 +22,10 @@ Command names, arguments, options, output, and errors defined by command-family 
 
 The root command MUST expose the following command groups:
 
+- [`benefits`](cli/benefits.md) — Applies administrator-authorized benefit transactions and refreshes subscription entitlements from current benefit configuration.
 - `cleaner` — Cleans orphaned data and expired effective entitlements, and runs tag and feed normalization operations.
 - `debug` — Loads and inspects feeds through the available parsing paths.
-- [`entitlements`](cli/entitlements.md) — Manages source entitlements and lists effective entitlements.
+- [`entitlements`](cli/entitlements.md) — Lists effective entitlements.
 - `estimates` — Estimates entry publication rates for feeds and collections.
 - `experiments` — Runs ad hoc backend data experiments.
 - `feeds` — Performs administrative operations on feeds and their user links.
@@ -33,6 +34,7 @@ The root command MUST expose the following command groups:
 - `processors-quality` — Evaluates processor output and maintains processor quality reference data.
 - `profile` — Runs ad hoc backend profiling scenarios.
 - `queues` — Cleans all or selected processing queues.
+- [`subscriptions`](cli/subscriptions.md) — Lists purchased-subscription snapshots.
 - `user-settings` — Performs maintenance of persisted user settings.
 - `users` — Performs user administration and identity-provider imports.
 

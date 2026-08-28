@@ -1,4 +1,8 @@
+import datetime
 import enum
+
+from ffun.core.entities import BaseEntity
+from ffun.entitlements.entities import EntitlementKindId
 
 
 class UserSetting(enum.IntEnum):
@@ -40,3 +44,22 @@ class Resource(enum.IntEnum):
     day_token_usage = 3
     month_token_usage = 4
     lifetime_token_usage = 5
+
+
+class Credit(enum.IntEnum):
+    day = 1
+    month = 2
+    lifetime = 3
+
+
+class CreditDefinition(BaseEntity):
+    kind: Credit
+    entitlement_kind: EntitlementKindId
+    resource_kind: Resource
+
+
+class CreditUsageWindow(BaseEntity):
+    definition: CreditDefinition
+    resource_interval_started_at: datetime.datetime
+    period_started_at: datetime.datetime | None
+    period_ends_at: datetime.datetime | None

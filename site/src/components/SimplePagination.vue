@@ -2,19 +2,23 @@
   <div>
     {{ realShowEntries }} of {{ total }}
 
-    <button
-      class="ffun-form-button short ml-2"
+    <ui-button
+      variant="quiet"
+      size="compact"
+      class="ml-2"
       v-if="canHide"
       @click.prevent="hideAll()"
-      >hide</button
+      >Hide</ui-button
     >
 
-    <button
-      class="ffun-form-button short ml-2"
+    <ui-button
+      variant="primary"
+      size="compact"
+      class="ml-2"
       v-if="canShowMore"
       @click.prevent="showMore()">
-      next {{ realShowPerPage }}
-    </button>
+      Next {{ realShowPerPage }}
+    </ui-button>
 
     <div
       v-if="counterOnNewLine"

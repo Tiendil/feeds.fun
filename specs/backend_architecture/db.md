@@ -17,6 +17,7 @@ This specification does not cover deployment-specific PostgreSQL administration,
 - `operation module` - a module-local `operations` submodule that owns persistence-backed commands and queries for the parent backend module.
 - `migration` - a yoyo migration file stored in a module-local `migrations` package.
 - `execute callable` - an object with the same contract as `ffun.core.postgresql.ExecuteType`, used to run SQL inside either a single-statement helper or an explicit transaction.
+- `approved transaction participant` - a cross-cutting technical module whose public domain interface MAY participate in another top-level module's transaction without workflow-specific approval.
 
 ## Storage Technology
 
@@ -57,6 +58,17 @@ Domain modules MUST own transaction boundaries for new or significantly changed 
 When a workflow changes multiple database records owned by the same top-level backend module that must stay consistent, the domain module MUST handle the transaction boundary and pass the transaction execute callable into operation-module helpers.
 
 By default, a transaction owned by one top-level backend module MUST NOT execute database operations owned by another top-level backend module or pass its execute callable through another top-level module's domain boundary.
+The following cross-cutting technical modules are approved transaction participants for every workflow:
+
+- `ffun.locks`, only for transaction-scoped lock acquisition, release, and holder-transaction lifecycle.
+- `ffun.audit`, only for appending and loading audit records through its public domain interface.
+
+A transaction-owning module MAY pass its execute callable through an approved transaction participant's public domain interface, or use an execute callable yielded by that interface, without workflow-specific approval.
+When `ffun.locks.locked_transaction` opens the holder transaction, the calling top-level module remains the transaction owner for business-architecture purposes; `ffun.locks` owns only the technical transaction lifecycle.
+Participation MUST remain limited to the approved responsibility above, MUST NOT transfer ownership of the calling workflow or its database operations, and MUST NOT permit importing the participant's operation module.
+No workflow-specific exception or approval documentation is required for an approved transaction participant.
+
+Transaction sharing with any other top-level backend module remains prohibited by default.
 Only a human developer MAY grant an exception to this rule, and the approval MUST be explicit.
 Every approved exception MUST be documented before implementation begins, either in the specification for the transaction-owning module or in a comment or docstring attached to the particular function that owns the cross-module transaction.
 These locations are required to keep the approval version-controlled and discoverable at either the module's architectural contract or the exact transaction boundary; a separate record would not reliably accompany reviews of the specification or transaction-owning function.
@@ -73,6 +85,10 @@ Operation modules SHOULD return domain entities, typed ids, primitives, or dicti
 
 Operation modules SHOULD provide small row mapper functions when database rows are converted into entities in more than one place.
 
+When persisted row data cannot be converted into a valid owning-domain entity, the operation boundary SHOULD raise a module-owned stored-state integrity exception and preserve the validation exception as its cause.
+A stored-row validation failure MUST NOT be interpreted as a missing record, filtered from query results, or replaced with a partially populated entity or fallback value.
+Normal write paths MUST prevent invalid persisted state; encountering it during a read indicates corrupted data, an incompatible migration, or a write that bypassed domain validation.
+
 Technical maintenance functions that directly mutate storage for cleanup, merge, repair, or tests SHOULD make that purpose clear in their name or containing boundary and SHOULD remain outside normal user-facing workflows unless explicitly intended.
 
 ## Execution Helpers
@@ -88,6 +104,9 @@ Functions that are designed to run inside a caller-owned transaction SHOULD acce
 Functions that accept an execute callable MUST use that callable for all SQL that belongs to the caller's transaction.
 
 Transactional functions MUST NOT call the top-level `execute` helper for statements that are expected to participate in the active transaction, because that opens a separate autocommitted execution path.
+
+Transaction boundaries MUST cover the complete defined persistence behavior of the workflows and operations they compose.
+Code MUST NOT omit or narrow a transaction boundary based on an operation's current number or order of SQL statements.
 
 The transaction decorator SHOULD be used when a public async function owns the whole transaction and has no setup code that must run outside the transaction.
 
@@ -126,8 +145,10 @@ Operations that need one consistent application-level timestamp across multiple 
 ## Idempotency And Constraints
 
 Schema constraints MUST be limited to structural storage integrity, such as nullability, primary keys, foreign keys, uniqueness, and ownership keys.
+Row-local cross-column constraints MAY enforce structural combinations such as paired nullability and exactly-one or at-most-one ownership keys.
 
-Business invariants, including allowed values, cross-column value combinations, and state-transition rules, MUST be validated by domain or service logic before an operation persists the state. Database schemas MUST NOT use `CHECK` constraints or other schema-level validation to enforce business invariants.
+Business invariants, including allowed values and state-transition rules, MUST be validated by domain or service logic before an operation persists the state, even when a row-local schema constraint also protects the corresponding stored shape.
+Database schemas MUST NOT use constraints, triggers, or other schema-level validation to enforce invariants that depend on data owned by another top-level backend module.
 
 Database operations SHOULD use `ON CONFLICT` when repeated calls are expected to be harmless.
 
@@ -167,6 +188,11 @@ Schema changes MUST be implemented as yoyo migrations in the owning module's `mi
 
 Migration files SHOULD stay close to the module that owns the changed tables.
 
+Before adding a migration on a development branch, developers and agents MUST check whether that branch already introduces an unreleased migration for the same feature or schema change.
+When it does, they SHOULD amend that branch migration instead of adding another incremental migration.
+Consolidating unreleased changes avoids unnecessary migration-chain noise and keeps one feature's apply and rollback behavior coherent; a separate migration MAY be used when it has a justified independent maintenance or review boundary.
+A new migration MUST be added when the earlier migration may already have been applied outside the development branch, or when the new change has an independent compatibility or ordering boundary.
+
 Cross-module schema changes SHOULD live in the module that owns the main business reason for the change. If there is no single owner, the `meta` module MAY own the migration.
 
 Migrations SHOULD define explicit dependencies with `__depends__` when ordering matters across files or modules.
@@ -202,7 +228,9 @@ In particular, schemas SHOULD use:
 - `TIMESTAMP WITHOUT TIME ZONE` when a timestamp intentionally has no time zone, rather than relying on the shorter `TIMESTAMP` spelling.
 - SQL-standard identity syntax, such as `BIGINT GENERATED BY DEFAULT AS IDENTITY`, instead of PostgreSQL pseudo-types such as `SERIAL` and `BIGSERIAL` when the database must generate integer identifiers.
 
-Closed categorical values SHOULD be represented by stable integer identifiers and stored with `SMALLINT`, `INTEGER`, or `BIGINT`, according to the required range, rather than with string labels. Numeric identifiers decouple persisted identity from human-readable names, avoid data migrations when names change, and generally require less storage and index space. The owning specification MUST define the identifier mapping, and assigned identifiers MUST NOT be changed or reused.
+Closed categorical values SHOULD be represented by stable integer identifiers and stored with `SMALLINT`, `INTEGER`, or `BIGINT`, according to the required range, rather than with string labels.
+Numeric identifiers decouple persisted identity from human-readable names, avoid data migrations when names change, and generally require less storage and index space.
+Assigned identifiers MUST NOT be changed or reused.
 
 Python code SHOULD expose these categorical identifiers as enums with the stable integer identifiers as their member values. Enum member names SHOULD provide readable code and interface vocabulary, while enum integer values SHOULD be used for persistence and internal identifiers.
 

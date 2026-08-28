@@ -17,16 +17,14 @@
 
     <rule-constructor v-if="showCreateRule" />
 
-    <p
-      v-if="showRegistrationInvitation"
-      class="ffun-info-common">
+    <ui-action-panel v-if="showRegistrationInvitation">
       <a
         href="#"
         @click.prevent="router.push({name: 'main'})"
         >Register</a
       >
       to score news by tags!
-    </p>
+    </ui-action-panel>
 
     <input
       class="ffun-input w-full"

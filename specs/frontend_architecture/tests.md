@@ -24,6 +24,7 @@ The following topics are out of scope:
 - `integration test` - a test that checks multiple frontend modules through a public boundary such as component rendering, store behavior, router behavior, or API client behavior.
 - `fixture` - test data or setup used by one or more tests.
 - `DOM test` - a test that uses the Vitest `jsdom` environment to verify browser-facing behavior.
+- `component test` - a test that mounts or renders a Vue component to verify its behavior.
 
 ## General principles
 
@@ -65,6 +66,9 @@ Static typing requirements SHOULD be enforced by TypeScript, static analysis, co
 
 Frontend tests MUST use the Vitest `*.test.ts` naming convention.
 
+Test files MUST NOT be placed directly under `./site/src`.
+Cross-cutting frontend architecture tests MUST live under `./site/src/tests`.
+
 Each implementation module or submodule SHOULD have corresponding tests under a `tests` submodule owned by the same parent module when that matches the existing layout.
 
 The name of a test file MUST be built from the name of the tested module by adding the `.test.ts` suffix.
@@ -76,6 +80,7 @@ Examples:
 - `./site/src/logic/utils.ts` -> `./site/src/logic/tests/utils.test.ts`
 - `./site/src/logic/iframeSanitizer.ts` -> `./site/src/logic/tests/iframeSanitizer.test.ts`
 - `./site/src/stores/entries.ts` -> `./site/src/stores/tests/entries.test.ts` when store tests are added.
+- global component registration architecture -> `./site/src/tests/componentRegistration.test.ts`.
 
 Cross-module integration tests MAY live under the module that owns the public boundary being exercised.
 
@@ -148,6 +153,12 @@ Logic tests that inspect HTML or browser APIs MUST use the configured `jsdom` en
 Logic tests MAY use spies when they verify integration with a third-party library and direct observable output is not enough.
 
 ## Component and view tests
+
+Component tests MUST NOT be added unless the developer explicitly requests component-level testing.
+Component behavior SHOULD be extracted into frontend logic and covered by logic tests when practical.
+Requiring explicit approval keeps the component-test surface intentional; extracting render-independent behavior produces smaller, faster tests that are less coupled to Vue mounting details.
+Architecture tests that inspect component source or registration without mounting or rendering components are not component tests under this restriction.
+When component tests are explicitly requested, the following component-test rules apply.
 
 Component tests SHOULD verify user-observable behavior.
 

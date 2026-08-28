@@ -1,4 +1,6 @@
+import asyncio
 import datetime
+import uuid
 from typing import cast
 
 import pytest
@@ -6,7 +8,7 @@ from pytest_mock import MockerFixture
 
 from ffun.audit import domain as audit_domain
 from ffun.audit.entities import AuditEntityKind
-from ffun.core.postgresql import execute, transaction
+from ffun.core.postgresql import ExecuteType, execute, transaction
 from ffun.core.tests.helpers import (
     TableSizeDelta,
     TableSizeNotChanged,
@@ -16,26 +18,50 @@ from ffun.core.tests.helpers import (
 )
 from ffun.domain.datetime_intervals import LIFETIME_INTERVAL_END_MARKER
 from ffun.domain.domain import new_user_id
-from ffun.domain.entities import SerializedId
+from ffun.domain.entities import BenefitTransactionId, SerializedId, UserId
 from ffun.entitlements import domain
 from ffun.entitlements import entities as entitlement_entities
 from ffun.entitlements import errors, operations
 from ffun.entitlements.entities import (
+    EntitlementGuarantee,
     EntitlementKindId,
-    EntitlementSourceId,
-    EntitlementTransactionId,
     MergePolicy,
+    SourceEntitlement,
 )
-from ffun.entitlements.tests.helpers import clear_effective_intervals
+from ffun.entitlements.tests.helpers import (
+    _ACTOR_ID,
+    _ACTOR_KIND,
+    _REVOKING_TRANSACTION_ID,
+    _grant,
+    _revoke,
+    clear_effective_intervals,
+)
 from ffun.entitlements.tests.make import make_effective_entitlement_interval, make_source_entitlement
+from ffun.one_time_purchases.domain import new_purchase_id
+from ffun.subscriptions.domain import new_subscription_id
 
 _DAY_TOKENS = EntitlementKindId.day_tokens
 _MONTH_TOKENS = EntitlementKindId.month_tokens
 _LIFETIME_TOKENS = EntitlementKindId.lifetime_tokens
-_SOURCE = EntitlementSourceId("test")
-_TRANSACTION = EntitlementTransactionId("test-transaction")
-_ACTOR_KIND = AuditEntityKind.admin
-_ACTOR_ID = SerializedId("test-admin")
+
+
+def _ordered_transaction_ids(count: int) -> tuple[BenefitTransactionId, ...]:
+    base = uuid.uuid4().int & ~0xFFFF
+    return tuple(BenefitTransactionId(uuid.UUID(int=base + offset)) for offset in range(1, count + 1))
+
+
+class TestLoadSourceEntitlementsForSubscription:
+    def test_reexports_operation(self) -> None:
+        assert domain.load_source_entitlements_for_subscription is operations.load_source_entitlements_for_subscription
+
+
+class TestEmptyBusinessEventCallback:
+    def test_emits_no_business_events(self) -> None:
+        with capture_logs() as logs:
+            domain._empty_business_event_callback()
+
+        assert_logs_has_no_business_event(logs, "source_entitlement_changed")
+        assert_logs_has_no_business_event(logs, "entitlement_changed")
 
 
 class TestGetEntitlementKind:
@@ -65,6 +91,13 @@ class TestGetEntitlementKind:
             domain.get_entitlement_kind(_MONTH_TOKENS)
 
 
+class TestGuaranteeKindId:
+    def test_returns_kind_id(self) -> None:
+        guarantee = EntitlementGuarantee(kind_id=_MONTH_TOKENS, value=10)
+
+        assert domain._guarantee_kind_id(guarantee) == _MONTH_TOKENS
+
+
 class TestMergeValues:
     @pytest.mark.parametrize(
         ("policy", "expected"),
@@ -85,8 +118,15 @@ class TestMergeValues:
             domain.merge_values(MergePolicy.max, [])
 
     def test_unsupported_policy(self) -> None:
-        with pytest.raises(AssertionError, match="Unsupported"):
+        with pytest.raises(AssertionError, match="Expected code to be unreachable"):
             domain.merge_values(cast(MergePolicy, "unsupported"), [1])
+
+    def test_result_must_fit_persistence_bounds(self) -> None:
+        with pytest.raises(errors.InvalidMergeValues, match="persistence-safe bounds"):
+            domain.merge_values(
+                MergePolicy.sum,
+                [entitlement_entities.MAX_ENTITLEMENT_VALUE, 1],
+            )
 
 
 class TestBuildEffectiveTimeline:
@@ -107,14 +147,12 @@ class TestBuildEffectiveTimeline:
         now = datetime.datetime.now(tz=datetime.UTC)
         first = make_source_entitlement(
             user_id=user_id,
-            source=EntitlementSourceId("first"),
             value=10,
             starts_at=now - datetime.timedelta(days=2),
             expires_at=now + datetime.timedelta(days=2),
         )
         second = make_source_entitlement(
             user_id=user_id,
-            source=EntitlementSourceId("second"),
             value=20,
             starts_at=now + datetime.timedelta(days=1),
             expires_at=now + datetime.timedelta(days=3),
@@ -133,15 +171,14 @@ class TestBuildEffectiveTimeline:
             (20, second.starts_at, second.expires_at),
         ]
 
-    def test_revocation_is_an_exclusive_boundary(self) -> None:
+    def test_revoked_entitlement_is_excluded(self) -> None:
         user_id = new_user_id()
         now = datetime.datetime.now(tz=datetime.UTC)
-        revoked_at = now + datetime.timedelta(days=1)
         entitlement = make_source_entitlement(
             user_id=user_id,
             starts_at=now - datetime.timedelta(days=1),
             expires_at=now + datetime.timedelta(days=2),
-            revoked_at=revoked_at,
+            revoked_at=now,
         )
 
         intervals = domain.build_effective_timeline(
@@ -152,9 +189,7 @@ class TestBuildEffectiveTimeline:
             evaluation_time=now,
         )
 
-        assert [(interval.starts_at, interval.expires_at) for interval in intervals] == [
-            (entitlement.starts_at, revoked_at)
-        ]
+        assert intervals == []
 
     def test_sum_policy_combines_same_source_transactions(self) -> None:
         user_id = new_user_id()
@@ -166,7 +201,7 @@ class TestBuildEffectiveTimeline:
             starts_at=now,
             expires_at=LIFETIME_INTERVAL_END_MARKER,
         )
-        second = first.replace(transaction_id=EntitlementTransactionId("second"), value=20)
+        second = first.replace(grant_transaction_id=BenefitTransactionId(uuid.uuid4()), value=20)
 
         intervals = domain.build_effective_timeline(
             user_id=user_id,
@@ -223,9 +258,10 @@ class TestEffectiveStateAt:
 
 class TestRebuildAfterSourceChange:
     @pytest.mark.asyncio
-    async def test_rebuilds_effective_state_and_records_audit(self) -> None:
+    async def test_rebuilds_effective_state_and_records_complete_audit(self) -> None:
         evaluation_time = datetime.datetime.now(tz=datetime.UTC)
         source_state = make_source_entitlement(
+            subscription_id=new_subscription_id(),
             starts_at=evaluation_time - datetime.timedelta(days=1),
             expires_at=evaluation_time + datetime.timedelta(days=1),
         )
@@ -260,9 +296,19 @@ class TestRebuildAfterSourceChange:
             subject_kind=AuditEntityKind.user,
             subject_id=SerializedId(str(source_state.user_id)),
         )
-        assert records[-1].attributes["new_source_state"] == cast(
-            dict[str, object], source_state.model_dump(mode="json")
-        )
+        assert records[-1].attributes == {
+            "subscription_id": str(source_state.subscription_id),
+            "one_time_purchase_id": None,
+            "grant_transaction_id": str(source_state.grant_transaction_id),
+            "revoked_by_transaction_id": None,
+            "kind_id": source_state.kind_id.value,
+            "previous_source_state": None,
+            "new_source_state": cast(dict[str, object], source_state.model_dump(mode="json")),
+            "previous_effective_intervals": [],
+            "new_effective_intervals": [
+                cast(dict[str, object], interval.model_dump(mode="json")) for interval in outcome.effective_intervals
+            ],
+        }
 
 
 class TestUnchangedOutcome:
@@ -312,8 +358,7 @@ class TestApplySourceGrant:
                 execute,
                 source_state.user_id,
                 source_state.kind_id,
-                source_state.source,
-                source_state.transaction_id,
+                source_state.grant_transaction_id,
             )
             == source_state
         )
@@ -325,15 +370,8 @@ class TestApplySourceGrant:
             starts_at=evaluation_time - datetime.timedelta(days=1),
             expires_at=evaluation_time + datetime.timedelta(days=1),
         )
-        async with transaction() as transaction_execute:
-            await domain._apply_source_grant(
-                transaction_execute,
-                kind=domain.get_entitlement_kind(source_state.kind_id),
-                source_state=source_state,
-                evaluation_time=evaluation_time,
-                actor_kind=_ACTOR_KIND,
-                actor_id=_ACTOR_ID,
-            )
+        await _grant(source_state, evaluation_time=evaluation_time)
+
         async with (
             TableSizeNotChanged("en_source_entitlements"),
             TableSizeNotChanged("en_entitlements"),
@@ -356,15 +394,7 @@ class TestApplySourceGrant:
     async def test_changed_immutable_field_conflicts(self) -> None:
         evaluation_time = datetime.datetime.now(tz=datetime.UTC)
         source_state = make_source_entitlement(value=10)
-        async with transaction() as transaction_execute:
-            await domain._apply_source_grant(
-                transaction_execute,
-                kind=domain.get_entitlement_kind(source_state.kind_id),
-                source_state=source_state,
-                evaluation_time=evaluation_time,
-                actor_kind=_ACTOR_KIND,
-                actor_id=_ACTOR_ID,
-            )
+        await _grant(source_state, evaluation_time=evaluation_time)
 
         async with (
             TableSizeNotChanged("en_source_entitlements"),
@@ -387,6 +417,7 @@ class TestApplySourceRevocation:
     @pytest.mark.asyncio
     async def test_missing_source_fails(self) -> None:
         source_state = make_source_entitlement()
+        now = datetime.datetime.now(tz=datetime.UTC)
 
         async with (
             TableSizeNotChanged("en_source_entitlements"),
@@ -398,10 +429,10 @@ class TestApplySourceRevocation:
                     await domain._apply_source_revocation(
                         transaction_execute,
                         kind=domain.get_entitlement_kind(source_state.kind_id),
-                        source=source_state.source,
-                        transaction_id=source_state.transaction_id,
+                        grant_transaction_id=source_state.grant_transaction_id,
+                        revoked_by_transaction_id=_REVOKING_TRANSACTION_ID,
                         user_id=source_state.user_id,
-                        evaluation_time=datetime.datetime.now(tz=datetime.UTC),
+                        evaluation_time=now,
                         actor_kind=_ACTOR_KIND,
                         actor_id=_ACTOR_ID,
                     )
@@ -413,22 +444,14 @@ class TestApplySourceRevocation:
             starts_at=evaluation_time - datetime.timedelta(days=1),
             expires_at=evaluation_time + datetime.timedelta(days=1),
         )
-        revoked_state = source_state.to_revoked(revoked_at=evaluation_time)
-        async with transaction() as transaction_execute:
-            await domain._apply_source_grant(
-                transaction_execute,
-                kind=domain.get_entitlement_kind(source_state.kind_id),
-                source_state=source_state,
-                evaluation_time=evaluation_time,
-                actor_kind=_ACTOR_KIND,
-                actor_id=_ACTOR_ID,
-            )
+        await _grant(source_state, evaluation_time=evaluation_time)
+
         async with transaction() as transaction_execute:
             outcome = await domain._apply_source_revocation(
                 transaction_execute,
                 kind=domain.get_entitlement_kind(source_state.kind_id),
-                source=source_state.source,
-                transaction_id=source_state.transaction_id,
+                grant_transaction_id=source_state.grant_transaction_id,
+                revoked_by_transaction_id=_REVOKING_TRANSACTION_ID,
                 user_id=source_state.user_id,
                 evaluation_time=evaluation_time,
                 actor_kind=_ACTOR_KIND,
@@ -438,42 +461,21 @@ class TestApplySourceRevocation:
         assert outcome.changed
         assert outcome.effective_state == (False, None)
         assert outcome.effective_intervals == []
-        assert outcome.source_state == revoked_state
-        assert (
-            await operations.load_source_entitlement(
-                execute,
-                source_state.user_id,
-                source_state.kind_id,
-                source_state.source,
-                source_state.transaction_id,
-            )
-            == revoked_state
+        assert outcome.source_state == source_state.replace(
+            revoked_at=evaluation_time,
+            revoked_by_transaction_id=_REVOKING_TRANSACTION_ID,
         )
 
     @pytest.mark.asyncio
     async def test_already_revoked_source_is_unchanged(self) -> None:
-        evaluation_time = datetime.datetime.now(tz=datetime.UTC)
         source_state = make_source_entitlement()
-        async with transaction() as transaction_execute:
-            await domain._apply_source_grant(
-                transaction_execute,
-                kind=domain.get_entitlement_kind(source_state.kind_id),
-                source_state=source_state,
-                evaluation_time=evaluation_time,
-                actor_kind=_ACTOR_KIND,
-                actor_id=_ACTOR_ID,
-            )
-        async with transaction() as transaction_execute:
-            first = await domain._apply_source_revocation(
-                transaction_execute,
-                kind=domain.get_entitlement_kind(source_state.kind_id),
-                source=source_state.source,
-                transaction_id=source_state.transaction_id,
-                user_id=source_state.user_id,
-                evaluation_time=evaluation_time,
-                actor_kind=_ACTOR_KIND,
-                actor_id=_ACTOR_ID,
-            )
+        evaluation_time = datetime.datetime.now(tz=datetime.UTC)
+        await _grant(source_state, evaluation_time=evaluation_time)
+        first, _ = await _revoke(
+            source_state,
+            evaluation_time=evaluation_time,
+        )
+
         async with (
             TableSizeNotChanged("en_source_entitlements"),
             TableSizeNotChanged("en_entitlements"),
@@ -483,8 +485,8 @@ class TestApplySourceRevocation:
                 outcome = await domain._apply_source_revocation(
                     transaction_execute,
                     kind=domain.get_entitlement_kind(source_state.kind_id),
-                    source=source_state.source,
-                    transaction_id=source_state.transaction_id,
+                    grant_transaction_id=source_state.grant_transaction_id,
+                    revoked_by_transaction_id=BenefitTransactionId(uuid.uuid4()),
                     user_id=source_state.user_id,
                     evaluation_time=evaluation_time + datetime.timedelta(days=1),
                     actor_kind=_ACTOR_KIND,
@@ -495,12 +497,20 @@ class TestApplySourceRevocation:
         assert outcome.source_state == first.source_state
 
 
-class TestEmitBusinessEvents:
-    def test_emits_source_and_effective_state_events(self) -> None:
-        evaluation_time = datetime.datetime.now(tz=datetime.UTC)
+class TestEmitSourceChangeEvents:
+    @pytest.mark.parametrize(
+        ("revoked_at", "granted"),
+        [(None, True), (datetime.datetime.now(tz=datetime.UTC), False)],
+    )
+    def test_emits_complete_source_and_effective_events(
+        self,
+        revoked_at: datetime.datetime | None,
+        granted: bool,
+    ) -> None:
         source_state = make_source_entitlement(
-            starts_at=evaluation_time - datetime.timedelta(days=1),
-            expires_at=evaluation_time + datetime.timedelta(days=1),
+            subscription_id=new_subscription_id(),
+            revoked_at=revoked_at,
+            revoked_by_transaction_id=_REVOKING_TRANSACTION_ID if revoked_at is not None else None,
         )
         interval = make_effective_entitlement_interval(
             user_id=source_state.user_id,
@@ -509,66 +519,138 @@ class TestEmitBusinessEvents:
             starts_at=source_state.starts_at,
             expires_at=source_state.expires_at,
         )
-        outcome = domain._SourceChangeOutcome(
+        outcome = entitlement_entities.SourceEntitlementChange(
             changed=True,
-            effective_state=(True, source_state.value),
-            effective_intervals=[interval],
+            effective_state=(granted, source_state.value if granted else None),
+            effective_intervals=[interval] if granted else [],
             source_state=source_state,
         )
 
         with capture_logs() as logs:
-            domain._emit_business_events(outcome)
+            domain._emit_source_change_events(outcome)
 
         assert_logs_has_business_event(
             logs,
             "source_entitlement_changed",
             user_id=source_state.user_id,
-            source=source_state.source,
-            transaction_id=source_state.transaction_id,
-            kind_id=source_state.kind_id,
-            granted=True,
+            subscription_id=str(source_state.subscription_id),
+            one_time_purchase_id=None,
+            grant_transaction_id=str(source_state.grant_transaction_id),
+            revoked_by_transaction_id=(
+                str(source_state.revoked_by_transaction_id)
+                if source_state.revoked_by_transaction_id is not None
+                else None
+            ),
+            kind_id=source_state.kind_id.value,
+            granted=granted,
+            value=source_state.value,
+            starts_at=source_state.starts_at.isoformat(),
+            expires_at=source_state.expires_at.isoformat(),
+            revoked_at=revoked_at.isoformat() if revoked_at is not None else None,
         )
         assert_logs_has_business_event(
             logs,
             "entitlement_changed",
             user_id=source_state.user_id,
-            kind_id=source_state.kind_id,
-            granted=True,
-            value=source_state.value,
+            kind_id=source_state.kind_id.value,
+            granted=granted,
+            value=source_state.value if granted else None,
         )
 
 
 class TestGrantSourceEntitlement:
     @pytest.mark.asyncio
-    async def test_invalid_policy_does_not_change_persistence(self) -> None:
-        user_id = new_user_id()
+    async def test_invalid_grant_does_not_change_persistence(self) -> None:
         now = datetime.datetime.now(tz=datetime.UTC)
         source_entitlement = make_source_entitlement(
-            user_id=user_id,
             kind_id=_LIFETIME_TOKENS,
             starts_at=now,
             expires_at=now + datetime.timedelta(days=1),
         )
 
-        async with TableSizeNotChanged("en_source_entitlements"):
-            async with TableSizeNotChanged("en_entitlements"):
-                async with TableSizeNotChanged("a_records"):
-                    with pytest.raises(errors.InvalidSourceEntitlement):
-                        await domain.grant_source_entitlement(
-                            source_entitlement,
-                            actor_kind=_ACTOR_KIND,
-                            actor_id=_ACTOR_ID,
-                        )
+        async with (
+            TableSizeNotChanged("en_source_entitlements"),
+            TableSizeNotChanged("en_entitlements"),
+            TableSizeNotChanged("a_records"),
+        ):
+            with pytest.raises(errors.InvalidSourceEntitlement):
+                async with transaction() as transaction_execute:
+                    await domain.grant_source_entitlement(
+                        transaction_execute,
+                        source_entitlement,
+                        evaluation_time=now,
+                        actor_kind=_ACTOR_KIND,
+                        actor_id=_ACTOR_ID,
+                    )
 
     @pytest.mark.asyncio
-    async def test_stores_grant_timeline_audit_and_events(self) -> None:
+    async def test_same_user_and_kind_cannot_load_while_first_grant_holds_lock(
+        self,
+        mocker: MockerFixture,
+    ) -> None:
         user_id = new_user_id()
-        starts_at = datetime.datetime.now(tz=datetime.UTC) - datetime.timedelta(days=1)
-        expires_at = starts_at + datetime.timedelta(days=2)
+        first = make_source_entitlement(user_id=user_id)
+        second = make_source_entitlement(user_id=user_id)
+        first_load_entered = asyncio.Event()
+        release_first_load = asyncio.Event()
+        second_grant_attempting = asyncio.Event()
+        second_load_entered = asyncio.Event()
+        original_load_source_entitlement = operations.load_source_entitlement
+
+        async def tracked_load_source_entitlement(
+            transaction_execute: ExecuteType,
+            loaded_user_id: UserId,
+            kind_id: EntitlementKindId,
+            grant_transaction_id: BenefitTransactionId,
+        ) -> SourceEntitlement | None:
+            if grant_transaction_id == first.grant_transaction_id:
+                first_load_entered.set()
+                await release_first_load.wait()
+            elif grant_transaction_id == second.grant_transaction_id:
+                second_load_entered.set()
+
+            return await original_load_source_entitlement(
+                transaction_execute,
+                loaded_user_id,
+                kind_id,
+                grant_transaction_id,
+            )
+
+        async def grant_second() -> entitlement_entities.SourceEntitlementChange:
+            second_grant_attempting.set()
+            outcome, _ = await _grant(second, emit_event=False)
+            return outcome
+
+        mocker.patch.object(
+            operations,
+            "load_source_entitlement",
+            side_effect=tracked_load_source_entitlement,
+        )
+
+        first_grant = asyncio.create_task(_grant(first, emit_event=False))
+        await first_load_entered.wait()
+        second_grant = asyncio.create_task(grant_second())
+        await second_grant_attempting.wait()
+
+        try:
+            with pytest.raises(TimeoutError):
+                async with asyncio.timeout(0.05):
+                    await second_load_entered.wait()
+        finally:
+            release_first_load.set()
+            (first_outcome, _), second_outcome = await asyncio.gather(first_grant, second_grant)
+
+        assert second_load_entered.is_set()
+        assert first_outcome.changed
+        assert second_outcome.changed
+
+    @pytest.mark.asyncio
+    async def test_stores_grant_audit_and_returns_post_commit_events(self) -> None:
+        evaluation_time = datetime.datetime.now(tz=datetime.UTC)
         source_entitlement = make_source_entitlement(
-            user_id=user_id,
-            starts_at=starts_at,
-            expires_at=expires_at,
+            subscription_id=new_subscription_id(),
+            starts_at=evaluation_time - datetime.timedelta(days=1),
+            expires_at=evaluation_time + datetime.timedelta(days=1),
         )
 
         with capture_logs() as logs:
@@ -577,80 +659,38 @@ class TestGrantSourceEntitlement:
                 TableSizeDelta("en_entitlements", delta=1),
                 TableSizeDelta("a_records", delta=1),
             ):
-                state = await domain.grant_source_entitlement(
+                outcome, callback = await _grant(
                     source_entitlement,
-                    actor_kind=_ACTOR_KIND,
-                    actor_id=_ACTOR_ID,
+                    evaluation_time=evaluation_time,
+                    emit_event=False,
                 )
 
-        assert state == (True, 10)
-        assert (
-            await operations.load_source_entitlement(
-                execute,
-                user_id,
-                _DAY_TOKENS,
-                _SOURCE,
-                _TRANSACTION,
-            )
-            == source_entitlement
-        )
-        expected_interval = make_effective_entitlement_interval(
-            user_id=user_id,
-            kind_id=_DAY_TOKENS,
-            value=10,
-            starts_at=starts_at,
-            expires_at=expires_at,
-        )
-        intervals = await operations.load_effective_intervals(
-            execute,
-            user_id,
-            _DAY_TOKENS,
-            ending_after=starts_at,
-        )
-        assert intervals == [expected_interval]
-        records = await audit_domain.load_records_for_subject(
-            execute,
-            subject_kind=AuditEntityKind.user,
-            subject_id=SerializedId(str(user_id)),
-        )
-        assert records[0].attributes == {
-            "source": "test",
-            "transaction_id": "test-transaction",
-            "kind_id": _DAY_TOKENS.value,
-            "previous_source_state": None,
-            "new_source_state": cast(dict[str, object], source_entitlement.model_dump(mode="json")),
-            "previous_effective_intervals": [],
-            "new_effective_intervals": [cast(dict[str, object], expected_interval.model_dump(mode="json"))],
-        }
+            assert_logs_has_no_business_event(logs, "source_entitlement_changed")
+            assert_logs_has_no_business_event(logs, "entitlement_changed")
+            callback()
+
+        assert outcome.changed
+        assert outcome.effective_state == (True, source_entitlement.value)
+        assert outcome.source_state == source_entitlement
         assert_logs_has_business_event(
             logs,
             "source_entitlement_changed",
-            user_id=user_id,
-            source="test",
-            transaction_id="test-transaction",
-            kind_id=_DAY_TOKENS.value,
+            user_id=source_entitlement.user_id,
+            grant_transaction_id=str(source_entitlement.grant_transaction_id),
             granted=True,
-            value=10,
-            starts_at=starts_at.isoformat(),
-            expires_at=expires_at.isoformat(),
-            revoked_at=None,
+        )
+        assert_logs_has_business_event(
+            logs,
+            "entitlement_changed",
+            user_id=source_entitlement.user_id,
+            granted=True,
+            value=source_entitlement.value,
         )
 
     @pytest.mark.asyncio
     async def test_identical_grant_is_no_op(self) -> None:
-        user_id = new_user_id()
-        starts_at = datetime.datetime.now(tz=datetime.UTC) - datetime.timedelta(days=1)
-        expires_at = starts_at + datetime.timedelta(days=2)
-        source_entitlement = make_source_entitlement(
-            user_id=user_id,
-            starts_at=starts_at,
-            expires_at=expires_at,
-        )
-        await domain.grant_source_entitlement(
-            source_entitlement,
-            actor_kind=_ACTOR_KIND,
-            actor_id=_ACTOR_ID,
-        )
+        source_entitlement = make_source_entitlement()
+        await _grant(source_entitlement)
 
         with capture_logs() as logs:
             async with (
@@ -658,31 +698,18 @@ class TestGrantSourceEntitlement:
                 TableSizeNotChanged("en_entitlements"),
                 TableSizeNotChanged("a_records"),
             ):
-                state = await domain.grant_source_entitlement(
-                    source_entitlement,
-                    actor_kind=_ACTOR_KIND,
-                    actor_id=_ACTOR_ID,
-                )
+                outcome, callback = await _grant(source_entitlement, emit_event=False)
+            callback()
 
-        assert state == (True, 10)
+        assert not outcome.changed
+        assert outcome.source_state == source_entitlement
         assert_logs_has_no_business_event(logs, "source_entitlement_changed")
         assert_logs_has_no_business_event(logs, "entitlement_changed")
 
     @pytest.mark.asyncio
     async def test_reusing_identity_with_different_immutable_fields_fails(self) -> None:
-        user_id = new_user_id()
-        starts_at = datetime.datetime.now(tz=datetime.UTC) - datetime.timedelta(days=1)
-        expires_at = starts_at + datetime.timedelta(days=2)
-        source_entitlement = make_source_entitlement(
-            user_id=user_id,
-            starts_at=starts_at,
-            expires_at=expires_at,
-        )
-        await domain.grant_source_entitlement(
-            source_entitlement,
-            actor_kind=_ACTOR_KIND,
-            actor_id=_ACTOR_ID,
-        )
+        source_entitlement = make_source_entitlement()
+        await _grant(source_entitlement)
 
         async with (
             TableSizeNotChanged("en_source_entitlements"),
@@ -690,43 +717,32 @@ class TestGrantSourceEntitlement:
             TableSizeNotChanged("a_records"),
         ):
             with pytest.raises(errors.SourceEntitlementConflict):
-                await domain.grant_source_entitlement(
-                    source_entitlement.replace(value=20),
-                    actor_kind=_ACTOR_KIND,
-                    actor_id=_ACTOR_ID,
-                )
+                await _grant(source_entitlement.replace(value=20))
 
     @pytest.mark.asyncio
     async def test_future_grant_does_not_replace_current_grant(self) -> None:
         user_id = new_user_id()
         now = datetime.datetime.now(tz=datetime.UTC)
-        await domain.grant_source_entitlement(
-            make_source_entitlement(
-                user_id=user_id,
-                starts_at=now - datetime.timedelta(days=1),
-                expires_at=now + datetime.timedelta(days=1),
-            ),
-            actor_kind=_ACTOR_KIND,
-            actor_id=_ACTOR_ID,
+        current = make_source_entitlement(
+            user_id=user_id,
+            value=10,
+            starts_at=now - datetime.timedelta(days=1),
+            expires_at=now + datetime.timedelta(days=1),
         )
+        await _grant(current, evaluation_time=now)
         future_start = now + datetime.timedelta(days=2)
-
-        state = await domain.grant_source_entitlement(
-            make_source_entitlement(
-                user_id=user_id,
-                transaction_id=EntitlementTransactionId("future"),
-                value=20,
-                starts_at=future_start,
-                expires_at=future_start + datetime.timedelta(days=1),
-            ),
-            actor_kind=_ACTOR_KIND,
-            actor_id=_ACTOR_ID,
+        future = make_source_entitlement(
+            user_id=user_id,
+            value=20,
+            starts_at=future_start,
+            expires_at=future_start + datetime.timedelta(days=1),
         )
 
-        assert state == (True, 10)
-        intervals = await operations.load_effective_intervals(execute, user_id, _DAY_TOKENS, ending_after=now)
-        assert [(interval.value, interval.starts_at) for interval in intervals] == [
-            (10, now - datetime.timedelta(days=1)),
+        outcome, _ = await _grant(future, evaluation_time=now)
+
+        assert outcome.effective_state == (True, 10)
+        assert [(interval.value, interval.starts_at) for interval in outcome.effective_intervals] == [
+            (10, current.starts_at),
             (20, future_start),
         ]
 
@@ -734,38 +750,29 @@ class TestGrantSourceEntitlement:
     async def test_lifetime_transactions_sum(self) -> None:
         user_id = new_user_id()
         starts_at = datetime.datetime.now(tz=datetime.UTC) - datetime.timedelta(days=1)
-        await domain.grant_source_entitlement(
-            make_source_entitlement(
-                user_id=user_id,
-                kind_id=_LIFETIME_TOKENS,
-                value=10,
-                starts_at=starts_at,
-                expires_at=LIFETIME_INTERVAL_END_MARKER,
-            ),
-            actor_kind=_ACTOR_KIND,
-            actor_id=_ACTOR_ID,
+        first = make_source_entitlement(
+            user_id=user_id,
+            kind_id=_LIFETIME_TOKENS,
+            value=10,
+            starts_at=starts_at,
+            expires_at=LIFETIME_INTERVAL_END_MARKER,
         )
-
-        state = await domain.grant_source_entitlement(
-            make_source_entitlement(
-                user_id=user_id,
-                transaction_id=EntitlementTransactionId("second"),
-                kind_id=_LIFETIME_TOKENS,
-                value=20,
-                starts_at=starts_at,
-                expires_at=LIFETIME_INTERVAL_END_MARKER,
-            ),
-            actor_kind=_ACTOR_KIND,
-            actor_id=_ACTOR_ID,
+        second = make_source_entitlement(
+            user_id=user_id,
+            kind_id=_LIFETIME_TOKENS,
+            value=20,
+            starts_at=starts_at,
+            expires_at=LIFETIME_INTERVAL_END_MARKER,
         )
+        await _grant(first)
 
-        assert state == (True, 30)
+        outcome, _ = await _grant(second)
+
+        assert outcome.effective_state == (True, 30)
 
     @pytest.mark.asyncio
     async def test_audit_failure_rolls_back_without_events(self, mocker: MockerFixture) -> None:
-        user_id = new_user_id()
-        starts_at = datetime.datetime.now(tz=datetime.UTC) - datetime.timedelta(days=1)
-        expires_at = starts_at + datetime.timedelta(days=2)
+        source_entitlement = make_source_entitlement()
         mocker.patch.object(audit_domain, "record", side_effect=RuntimeError("audit failed"))
 
         with capture_logs() as logs:
@@ -775,15 +782,7 @@ class TestGrantSourceEntitlement:
                 TableSizeNotChanged("a_records"),
             ):
                 with pytest.raises(RuntimeError, match="audit failed"):
-                    await domain.grant_source_entitlement(
-                        make_source_entitlement(
-                            user_id=user_id,
-                            starts_at=starts_at,
-                            expires_at=expires_at,
-                        ),
-                        actor_kind=_ACTOR_KIND,
-                        actor_id=_ACTOR_ID,
-                    )
+                    await _grant(source_entitlement)
 
         assert_logs_has_no_business_event(logs, "source_entitlement_changed")
         assert_logs_has_no_business_event(logs, "entitlement_changed")
@@ -791,33 +790,101 @@ class TestGrantSourceEntitlement:
 
 class TestRevokeSourceEntitlement:
     @pytest.mark.asyncio
+    async def test_same_user_and_kind_cannot_load_while_first_revocation_holds_lock(
+        self,
+        mocker: MockerFixture,
+    ) -> None:
+        source_entitlement = make_source_entitlement()
+        evaluation_time = datetime.datetime.now(tz=datetime.UTC)
+        await _grant(source_entitlement, evaluation_time=evaluation_time, emit_event=False)
+        first_load_entered = asyncio.Event()
+        release_first_load = asyncio.Event()
+        second_revocation_attempting = asyncio.Event()
+        second_load_entered = asyncio.Event()
+        load_count = 0
+        original_load_source_entitlement = operations.load_source_entitlement
+
+        async def tracked_load_source_entitlement(
+            transaction_execute: ExecuteType,
+            user_id: UserId,
+            kind_id: EntitlementKindId,
+            grant_transaction_id: BenefitTransactionId,
+        ) -> SourceEntitlement | None:
+            nonlocal load_count
+            load_count += 1
+
+            if load_count == 1:
+                first_load_entered.set()
+                await release_first_load.wait()
+            elif load_count == 2:
+                second_load_entered.set()
+
+            return await original_load_source_entitlement(
+                transaction_execute,
+                user_id,
+                kind_id,
+                grant_transaction_id,
+            )
+
+        async def revoke_second() -> entitlement_entities.SourceEntitlementChange:
+            second_revocation_attempting.set()
+            outcome, _ = await _revoke(
+                source_entitlement,
+                evaluation_time=evaluation_time,
+                emit_event=False,
+            )
+            return outcome
+
+        mocker.patch.object(
+            operations,
+            "load_source_entitlement",
+            side_effect=tracked_load_source_entitlement,
+        )
+
+        first_revocation = asyncio.create_task(
+            _revoke(
+                source_entitlement,
+                evaluation_time=evaluation_time,
+                emit_event=False,
+            )
+        )
+        await first_load_entered.wait()
+        second_revocation = asyncio.create_task(revoke_second())
+        await second_revocation_attempting.wait()
+
+        try:
+            with pytest.raises(TimeoutError):
+                async with asyncio.timeout(0.05):
+                    await second_load_entered.wait()
+        finally:
+            release_first_load.set()
+            (first_outcome, _), second_outcome = await asyncio.gather(first_revocation, second_revocation)
+
+        assert second_load_entered.is_set()
+        assert first_outcome.changed
+        assert not second_outcome.changed
+        assert first_outcome.source_state == second_outcome.source_state
+
+    @pytest.mark.asyncio
     async def test_missing_grant_fails_without_changes(self) -> None:
+        source_entitlement = make_source_entitlement()
+
         async with (
             TableSizeNotChanged("en_source_entitlements"),
             TableSizeNotChanged("en_entitlements"),
             TableSizeNotChanged("a_records"),
         ):
             with pytest.raises(errors.SourceEntitlementNotFound):
-                await domain.revoke_source_entitlement(
-                    source=_SOURCE,
-                    transaction_id=_TRANSACTION,
-                    user_id=new_user_id(),
-                    kind_id=_DAY_TOKENS,
-                    actor_kind=_ACTOR_KIND,
-                    actor_id=_ACTOR_ID,
-                )
+                await _revoke(source_entitlement)
 
     @pytest.mark.asyncio
     async def test_revokes_grant_and_records_complete_change(self) -> None:
-        user_id = new_user_id()
-        starts_at = datetime.datetime.now(tz=datetime.UTC) - datetime.timedelta(days=1)
-        expires_at = starts_at + datetime.timedelta(days=2)
-        previous_source = make_source_entitlement(user_id=user_id, starts_at=starts_at, expires_at=expires_at)
-        await domain.grant_source_entitlement(
-            previous_source,
-            actor_kind=_ACTOR_KIND,
-            actor_id=_ACTOR_ID,
+        evaluation_time = datetime.datetime.now(tz=datetime.UTC)
+        source_entitlement = make_source_entitlement(
+            starts_at=evaluation_time - datetime.timedelta(days=1),
+            expires_at=evaluation_time + datetime.timedelta(days=1),
         )
+        await _grant(source_entitlement, evaluation_time=evaluation_time)
 
         with capture_logs() as logs:
             async with (
@@ -825,70 +892,46 @@ class TestRevokeSourceEntitlement:
                 TableSizeDelta("en_entitlements", delta=-1),
                 TableSizeDelta("a_records", delta=1),
             ):
-                state = await domain.revoke_source_entitlement(
-                    source=_SOURCE,
-                    transaction_id=_TRANSACTION,
-                    user_id=user_id,
-                    kind_id=_DAY_TOKENS,
-                    actor_kind=_ACTOR_KIND,
-                    actor_id=_ACTOR_ID,
+                outcome, callback = await _revoke(
+                    source_entitlement,
+                    evaluation_time=evaluation_time,
+                    emit_event=False,
                 )
+            assert_logs_has_no_business_event(logs, "source_entitlement_changed")
+            callback()
 
-        assert state == (False, None)
-        revoked = await operations.load_source_entitlement(
-            execute,
-            user_id,
-            _DAY_TOKENS,
-            _SOURCE,
-            _TRANSACTION,
+        expected = source_entitlement.replace(
+            revoked_at=evaluation_time,
+            revoked_by_transaction_id=_REVOKING_TRANSACTION_ID,
         )
-        assert revoked is not None
-        assert revoked.revoked_at is not None
-        assert revoked == previous_source.to_revoked(revoked_at=revoked.revoked_at)
+        assert outcome.changed
+        assert outcome.effective_state == (False, None)
+        assert outcome.source_state == expected
         records = await audit_domain.load_records_for_subject(
             execute,
             subject_kind=AuditEntityKind.user,
-            subject_id=SerializedId(str(user_id)),
+            subject_id=SerializedId(str(source_entitlement.user_id)),
         )
         assert records[-1].attributes["previous_source_state"] == cast(
-            dict[str, object], previous_source.model_dump(mode="json")
+            dict[str, object], source_entitlement.model_dump(mode="json")
         )
-        assert records[-1].attributes["new_source_state"] == cast(dict[str, object], revoked.model_dump(mode="json"))
-        assert records[-1].attributes["transaction_id"] == "test-transaction"
+        assert records[-1].attributes["new_source_state"] == cast(dict[str, object], expected.model_dump(mode="json"))
+        assert records[-1].attributes["revoked_by_transaction_id"] == str(_REVOKING_TRANSACTION_ID)
         assert_logs_has_business_event(
             logs,
             "source_entitlement_changed",
-            user_id=user_id,
-            source="test",
-            transaction_id="test-transaction",
-            kind_id=_DAY_TOKENS.value,
+            user_id=source_entitlement.user_id,
+            grant_transaction_id=str(source_entitlement.grant_transaction_id),
+            revoked_by_transaction_id=str(_REVOKING_TRANSACTION_ID),
             granted=False,
-            value=10,
-            starts_at=starts_at.isoformat(),
-            expires_at=expires_at.isoformat(),
-            revoked_at=revoked.revoked_at.isoformat(),
         )
 
     @pytest.mark.asyncio
-    async def test_repeated_revocation_is_no_op_and_preserves_timestamp(self) -> None:
-        user_id = new_user_id()
-        starts_at = datetime.datetime.now(tz=datetime.UTC) - datetime.timedelta(days=1)
-        expires_at = starts_at + datetime.timedelta(days=2)
-        await domain.grant_source_entitlement(
-            make_source_entitlement(user_id=user_id, starts_at=starts_at, expires_at=expires_at),
-            actor_kind=_ACTOR_KIND,
-            actor_id=_ACTOR_ID,
-        )
-        await domain.revoke_source_entitlement(
-            source=_SOURCE,
-            transaction_id=_TRANSACTION,
-            user_id=user_id,
-            kind_id=_DAY_TOKENS,
-            actor_kind=_ACTOR_KIND,
-            actor_id=_ACTOR_ID,
-        )
-        first = await operations.load_source_entitlement(execute, user_id, _DAY_TOKENS, _SOURCE, _TRANSACTION)
-        assert first is not None
+    async def test_repeated_revocation_is_no_op_and_preserves_causality(self) -> None:
+        source_entitlement = make_source_entitlement()
+        now = datetime.datetime.now(tz=datetime.UTC)
+        await _grant(source_entitlement, evaluation_time=now)
+        first, _ = await _revoke(source_entitlement, evaluation_time=now)
 
         with capture_logs() as logs:
             async with (
@@ -896,136 +939,495 @@ class TestRevokeSourceEntitlement:
                 TableSizeNotChanged("en_entitlements"),
                 TableSizeNotChanged("a_records"),
             ):
-                state = await domain.revoke_source_entitlement(
-                    source=_SOURCE,
-                    transaction_id=_TRANSACTION,
-                    user_id=user_id,
-                    kind_id=_DAY_TOKENS,
-                    actor_kind=_ACTOR_KIND,
-                    actor_id=_ACTOR_ID,
+                second, callback = await _revoke(
+                    source_entitlement,
+                    revoked_by_transaction_id=BenefitTransactionId(uuid.uuid4()),
+                    evaluation_time=now + datetime.timedelta(days=1),
+                    emit_event=False,
                 )
+            callback()
 
-        second = await operations.load_source_entitlement(execute, user_id, _DAY_TOKENS, _SOURCE, _TRANSACTION)
-        assert state == (False, None)
-        assert second == first
+        assert not second.changed
+        assert second.source_state == first.source_state
         assert_logs_has_no_business_event(logs, "source_entitlement_changed")
         assert_logs_has_no_business_event(logs, "entitlement_changed")
 
     @pytest.mark.asyncio
     async def test_grant_retry_after_revocation_is_no_op(self) -> None:
+        source_entitlement = make_source_entitlement()
+        await _grant(source_entitlement)
+        revoked, _ = await _revoke(source_entitlement)
+
+        outcome, _ = await _grant(source_entitlement)
+
+        assert not outcome.changed
+        assert outcome.source_state == revoked.source_state
+
+    @pytest.mark.asyncio
+    async def test_revoking_one_transaction_preserves_other_grants(self) -> None:
         user_id = new_user_id()
-        starts_at = datetime.datetime.now(tz=datetime.UTC) - datetime.timedelta(days=1)
-        expires_at = starts_at + datetime.timedelta(days=2)
-        source_entitlement = make_source_entitlement(
+        now = datetime.datetime.now(tz=datetime.UTC)
+        first = make_source_entitlement(
             user_id=user_id,
-            starts_at=starts_at,
-            expires_at=expires_at,
+            value=10,
+            starts_at=now - datetime.timedelta(days=1),
+            expires_at=now + datetime.timedelta(days=1),
         )
-        await domain.grant_source_entitlement(
-            source_entitlement,
-            actor_kind=_ACTOR_KIND,
-            actor_id=_ACTOR_ID,
-        )
-        await domain.revoke_source_entitlement(
-            source=_SOURCE,
-            transaction_id=_TRANSACTION,
+        second = make_source_entitlement(
             user_id=user_id,
-            kind_id=_DAY_TOKENS,
-            actor_kind=_ACTOR_KIND,
-            actor_id=_ACTOR_ID,
+            value=20,
+            starts_at=first.starts_at,
+            expires_at=first.expires_at,
         )
+        await _grant(first, evaluation_time=now)
+        await _grant(second, evaluation_time=now)
+
+        outcome, _ = await _revoke(second, evaluation_time=now)
+
+        assert outcome.effective_state == (True, 10)
+        sources = await operations.load_source_entitlements(execute, user_id, _DAY_TOKENS)
+        assert {source.grant_transaction_id: source.granted for source in sources} == {
+            first.grant_transaction_id: True,
+            second.grant_transaction_id: False,
+        }
+
+    @pytest.mark.asyncio
+    async def test_audit_failure_rolls_back_revocation_without_events(self, mocker: MockerFixture) -> None:
+        source_entitlement = make_source_entitlement()
+        await _grant(source_entitlement)
+        mocker.patch.object(audit_domain, "record", side_effect=RuntimeError("audit failed"))
+
+        with capture_logs() as logs:
+            async with (
+                TableSizeNotChanged("en_source_entitlements"),
+                TableSizeNotChanged("en_entitlements"),
+                TableSizeNotChanged("a_records"),
+            ):
+                with pytest.raises(RuntimeError, match="audit failed"):
+                    await _revoke(source_entitlement)
+
+        stored = await operations.load_source_entitlement(
+            execute,
+            source_entitlement.user_id,
+            source_entitlement.kind_id,
+            source_entitlement.grant_transaction_id,
+        )
+        assert stored == source_entitlement
+        assert_logs_has_no_business_event(logs, "source_entitlement_changed")
+        assert_logs_has_no_business_event(logs, "entitlement_changed")
+
+
+class TestGrantSourceEntitlements:
+    @pytest.mark.asyncio
+    async def test_empty_guarantees_return_empty_results(self) -> None:
+        async with transaction() as transaction_execute:
+            outcomes, callbacks = await domain.grant_source_entitlements(
+                transaction_execute,
+                grant_transaction_id=BenefitTransactionId(uuid.uuid4()),
+                user_id=new_user_id(),
+                subscription_id=None,
+                one_time_purchase_id=None,
+                guarantees=[],
+                starts_at=datetime.datetime.now(tz=datetime.UTC),
+                expires_at=datetime.datetime.now(tz=datetime.UTC) + datetime.timedelta(days=1),
+                evaluation_time=datetime.datetime.now(tz=datetime.UTC),
+                actor_kind=_ACTOR_KIND,
+                actor_id=_ACTOR_ID,
+            )
+
+        assert outcomes == []
+        assert callbacks == []
+
+    @pytest.mark.asyncio
+    async def test_grants_sorted_guarantees_with_supplied_expiration_and_subscription(self) -> None:
+        user_id = new_user_id()
+        subscription_id = new_subscription_id()
+        grant_transaction_id = BenefitTransactionId(uuid.uuid4())
+        now = datetime.datetime.now(tz=datetime.UTC)
+
+        with capture_logs() as logs:
+            async with transaction() as transaction_execute:
+                outcomes, callbacks = await domain.grant_source_entitlements(
+                    transaction_execute,
+                    grant_transaction_id=grant_transaction_id,
+                    user_id=user_id,
+                    subscription_id=subscription_id,
+                    one_time_purchase_id=None,
+                    guarantees=[
+                        EntitlementGuarantee(kind_id=_MONTH_TOKENS, value=30),
+                        EntitlementGuarantee(kind_id=_DAY_TOKENS, value=10),
+                    ],
+                    starts_at=now,
+                    expires_at=now + datetime.timedelta(days=1),
+                    evaluation_time=now,
+                    actor_kind=_ACTOR_KIND,
+                    actor_id=_ACTOR_ID,
+                )
+
+            assert_logs_has_no_business_event(logs, "source_entitlement_changed")
+            for callback in callbacks:
+                callback()
+
+        assert [outcome.source_state.kind_id for outcome in outcomes] == [_DAY_TOKENS, _MONTH_TOKENS]
+        assert all(outcome.source_state.expires_at == now + datetime.timedelta(days=1) for outcome in outcomes)
+        assert all(outcome.source_state.subscription_id == subscription_id for outcome in outcomes)
+        assert all(outcome.source_state.grant_transaction_id == grant_transaction_id for outcome in outcomes)
+        assert sum(record.get("event") == "source_entitlement_changed" for record in logs) == 2
+        assert sum(record.get("event") == "entitlement_changed" for record in logs) == 2
+
+    @pytest.mark.asyncio
+    async def test_grants_one_time_purchase_owned_guarantee_with_audit_and_events(self) -> None:
+        user_id = new_user_id()
+        one_time_purchase_id = new_purchase_id()
+        grant_transaction_id = BenefitTransactionId(uuid.uuid4())
+        now = datetime.datetime.now(tz=datetime.UTC)
+
+        with capture_logs() as logs:
+            async with transaction() as transaction_execute:
+                outcomes, callbacks = await domain.grant_source_entitlements(
+                    transaction_execute,
+                    grant_transaction_id=grant_transaction_id,
+                    user_id=user_id,
+                    subscription_id=None,
+                    one_time_purchase_id=one_time_purchase_id,
+                    guarantees=[EntitlementGuarantee(kind_id=_LIFETIME_TOKENS, value=30)],
+                    starts_at=now,
+                    expires_at=LIFETIME_INTERVAL_END_MARKER,
+                    evaluation_time=now,
+                    actor_kind=_ACTOR_KIND,
+                    actor_id=_ACTOR_ID,
+                )
+
+            assert_logs_has_no_business_event(logs, "source_entitlement_changed")
+            for callback in callbacks:
+                callback()
+
+        assert len(outcomes) == 1
+        assert outcomes[0].source_state.subscription_id is None
+        assert outcomes[0].source_state.one_time_purchase_id == one_time_purchase_id
+        records = await audit_domain.load_records_for_subject(
+            execute,
+            subject_kind=AuditEntityKind.user,
+            subject_id=SerializedId(str(user_id)),
+        )
+        assert records[-1].attributes["subscription_id"] is None
+        assert records[-1].attributes["one_time_purchase_id"] == str(one_time_purchase_id)
+        assert_logs_has_business_event(
+            logs,
+            "source_entitlement_changed",
+            user_id=user_id,
+            subscription_id=None,
+            one_time_purchase_id=str(one_time_purchase_id),
+            granted=True,
+        )
+
+    @pytest.mark.asyncio
+    async def test_invalid_interval_is_module_error_and_rolls_back(self) -> None:
+        user_id = new_user_id()
+        now = datetime.datetime.now(tz=datetime.UTC)
 
         async with (
             TableSizeNotChanged("en_source_entitlements"),
             TableSizeNotChanged("en_entitlements"),
             TableSizeNotChanged("a_records"),
         ):
-            state = await domain.grant_source_entitlement(
-                source_entitlement,
+            with pytest.raises(errors.InvalidSourceEntitlement):
+                async with transaction() as transaction_execute:
+                    await domain.grant_source_entitlements(
+                        transaction_execute,
+                        grant_transaction_id=BenefitTransactionId(uuid.uuid4()),
+                        user_id=user_id,
+                        subscription_id=None,
+                        one_time_purchase_id=None,
+                        guarantees=[EntitlementGuarantee(kind_id=_DAY_TOKENS, value=10)],
+                        starts_at=now,
+                        expires_at=now,
+                        evaluation_time=now,
+                        actor_kind=_ACTOR_KIND,
+                        actor_id=_ACTOR_ID,
+                    )
+
+
+class TestRevokeSubscriptionEntitlements:
+    @pytest.mark.asyncio
+    async def test_missing_subscription_grants_return_empty_results(self) -> None:
+        async with transaction() as transaction_execute:
+            outcomes, callbacks = await domain.revoke_subscription_entitlements(
+                transaction_execute,
+                subscription_id=new_subscription_id(),
+                revoked_by_transaction_id=_REVOKING_TRANSACTION_ID,
+                evaluation_time=datetime.datetime.now(tz=datetime.UTC),
                 actor_kind=_ACTOR_KIND,
                 actor_id=_ACTOR_ID,
             )
 
-        assert state == (False, None)
+        assert outcomes == []
+        assert callbacks == []
 
     @pytest.mark.asyncio
-    async def test_revoking_one_transaction_preserves_other_grants(self) -> None:
+    async def test_revokes_expired_and_ignores_already_revoked_subscription_grants(self) -> None:
         user_id = new_user_id()
-        starts_at = datetime.datetime.now(tz=datetime.UTC) - datetime.timedelta(days=1)
-        expires_at = starts_at + datetime.timedelta(days=2)
-        await domain.grant_source_entitlement(
-            make_source_entitlement(
-                user_id=user_id,
-                value=10,
-                starts_at=starts_at,
-                expires_at=expires_at,
-            ),
-            actor_kind=_ACTOR_KIND,
-            actor_id=_ACTOR_ID,
-        )
-        await domain.grant_source_entitlement(
-            make_source_entitlement(
-                user_id=user_id,
-                transaction_id=EntitlementTransactionId("second"),
-                value=20,
-                starts_at=starts_at,
-                expires_at=expires_at,
-            ),
-            actor_kind=_ACTOR_KIND,
-            actor_id=_ACTOR_ID,
-        )
-
-        state = await domain.revoke_source_entitlement(
-            source=_SOURCE,
-            transaction_id=EntitlementTransactionId("second"),
-            user_id=user_id,
-            kind_id=_DAY_TOKENS,
-            actor_kind=_ACTOR_KIND,
-            actor_id=_ACTOR_ID,
-        )
-
-        assert state == (True, 10)
-        sources = await operations.load_source_entitlements(execute, user_id, _DAY_TOKENS)
-        assert {source.transaction_id: source.granted for source in sources} == {
-            "test-transaction": True,
-            "second": False,
-        }
-
-
-class TestCleanupExpiredEntitlements:
-    @pytest.mark.asyncio
-    async def test_no_expired_rows(self) -> None:
-        await clear_effective_intervals()
-
-        async with TableSizeNotChanged("en_entitlements"):
-            deleted = await domain.cleanup_expired_entitlements()
-
-        assert deleted == 0
-
-    @pytest.mark.asyncio
-    async def test_deletes_expired_effective_rows_only(self) -> None:
-        await clear_effective_intervals()
-        user_id = new_user_id()
+        subscription_id = new_subscription_id()
         now = datetime.datetime.now(tz=datetime.UTC)
-        expired = make_effective_entitlement_interval(
+        expired_transaction_id, revoked_transaction_id = _ordered_transaction_ids(2)
+        expired = make_source_entitlement(
             user_id=user_id,
+            subscription_id=subscription_id,
+            grant_transaction_id=expired_transaction_id,
             starts_at=now - datetime.timedelta(days=2),
-            expires_at=now - datetime.timedelta(days=1),
+            expires_at=now,
         )
-        source = make_source_entitlement(
+        revoked = make_source_entitlement(
             user_id=user_id,
-            starts_at=expired.starts_at,
-            expires_at=expired.expires_at,
+            subscription_id=subscription_id,
+            grant_transaction_id=revoked_transaction_id,
+            starts_at=now - datetime.timedelta(days=2),
+            expires_at=now + datetime.timedelta(days=1),
         )
-        await operations.insert_source_entitlement(execute, source)
+        await _grant(expired, evaluation_time=now, emit_event=False)
+        await _grant(revoked, evaluation_time=now - datetime.timedelta(days=1), emit_event=False)
+        revoked_outcome, _ = await _revoke(
+            revoked,
+            evaluation_time=now - datetime.timedelta(days=1),
+            emit_event=False,
+        )
+        revoked = revoked_outcome.source_state
+
         async with transaction() as transaction_execute:
-            await operations.replace_effective_intervals(transaction_execute, user_id, _DAY_TOKENS, [expired])
+            outcomes, callbacks = await domain.revoke_subscription_entitlements(
+                transaction_execute,
+                subscription_id=subscription_id,
+                revoked_by_transaction_id=_REVOKING_TRANSACTION_ID,
+                evaluation_time=now,
+                actor_kind=_ACTOR_KIND,
+                actor_id=_ACTOR_ID,
+            )
 
-        async with TableSizeNotChanged("en_source_entitlements"):
-            async with TableSizeDelta("en_entitlements", delta=-1):
-                deleted = await domain.cleanup_expired_entitlements()
+        revoked_expired = expired.replace(
+            revoked_at=now,
+            revoked_by_transaction_id=_REVOKING_TRANSACTION_ID,
+        )
+        assert [outcome.source_state for outcome in outcomes] == [revoked_expired]
+        assert len(callbacks) == 1
+        assert await operations.load_source_entitlements_for_subscription(execute, subscription_id) == [
+            revoked_expired,
+            revoked,
+        ]
 
-        assert deleted == 1
+    @pytest.mark.asyncio
+    async def test_revokes_active_and_future_grants_linked_to_subscription(self) -> None:
+        user_id = new_user_id()
+        subscription_id = new_subscription_id()
+        now = datetime.datetime.now(tz=datetime.UTC)
+        grant_transaction_id, future_transaction_id = _ordered_transaction_ids(2)
+        async with transaction() as transaction_execute:
+            granted, grant_callbacks = await domain.grant_source_entitlements(
+                transaction_execute,
+                grant_transaction_id=grant_transaction_id,
+                user_id=user_id,
+                subscription_id=subscription_id,
+                one_time_purchase_id=None,
+                guarantees=[
+                    EntitlementGuarantee(kind_id=_DAY_TOKENS, value=10),
+                    EntitlementGuarantee(kind_id=_MONTH_TOKENS, value=20),
+                ],
+                starts_at=now - datetime.timedelta(days=1),
+                expires_at=now + datetime.timedelta(days=1),
+                evaluation_time=now,
+                actor_kind=_ACTOR_KIND,
+                actor_id=_ACTOR_ID,
+            )
+            future_granted, future_grant_callbacks = await domain.grant_source_entitlements(
+                transaction_execute,
+                grant_transaction_id=future_transaction_id,
+                user_id=user_id,
+                subscription_id=subscription_id,
+                one_time_purchase_id=None,
+                guarantees=[EntitlementGuarantee(kind_id=_DAY_TOKENS, value=30)],
+                starts_at=now + datetime.timedelta(days=1),
+                expires_at=now + datetime.timedelta(days=2),
+                evaluation_time=now,
+                actor_kind=_ACTOR_KIND,
+                actor_id=_ACTOR_ID,
+            )
+
+        for callback in grant_callbacks + future_grant_callbacks:
+            callback()
+
+        async with transaction() as transaction_execute:
+            outcomes, callbacks = await domain.revoke_subscription_entitlements(
+                transaction_execute,
+                subscription_id=subscription_id,
+                revoked_by_transaction_id=_REVOKING_TRANSACTION_ID,
+                evaluation_time=now,
+                actor_kind=_ACTOR_KIND,
+                actor_id=_ACTOR_ID,
+            )
+
+        for callback in callbacks:
+            callback()
+
+        assert [(outcome.source_state.kind_id, outcome.source_state.grant_transaction_id) for outcome in outcomes] == [
+            (_DAY_TOKENS, grant_transaction_id),
+            (_DAY_TOKENS, future_transaction_id),
+            (_MONTH_TOKENS, grant_transaction_id),
+        ]
+        assert all(not outcome.source_state.granted for outcome in outcomes)
+        assert all(outcome.source_state.revoked_by_transaction_id == _REVOKING_TRANSACTION_ID for outcome in outcomes)
+        assert len(callbacks) == len(granted) + len(future_granted)
+
+
+class TestRevokeOneTimePurchaseEntitlements:
+    @pytest.mark.asyncio
+    async def test_missing_purchase_grants_return_empty_results(self) -> None:
+        async with transaction() as transaction_execute:
+            outcomes, callbacks = await domain.revoke_one_time_purchase_entitlements(
+                transaction_execute,
+                one_time_purchase_id=new_purchase_id(),
+                revoked_by_transaction_id=_REVOKING_TRANSACTION_ID,
+                evaluation_time=datetime.datetime.now(tz=datetime.UTC),
+                actor_kind=_ACTOR_KIND,
+                actor_id=_ACTOR_ID,
+            )
+
+        assert outcomes == []
+        assert callbacks == []
+
+    @pytest.mark.asyncio
+    async def test_revokes_expired_and_ignores_already_revoked_purchase_grants(self) -> None:
+        user_id = new_user_id()
+        one_time_purchase_id = new_purchase_id()
+        now = datetime.datetime.now(tz=datetime.UTC)
+        expired_transaction_id, revoked_transaction_id = _ordered_transaction_ids(2)
+        expired = make_source_entitlement(
+            user_id=user_id,
+            one_time_purchase_id=one_time_purchase_id,
+            grant_transaction_id=expired_transaction_id,
+            starts_at=now - datetime.timedelta(days=2),
+            expires_at=now,
+        )
+        revoked = make_source_entitlement(
+            user_id=user_id,
+            one_time_purchase_id=one_time_purchase_id,
+            grant_transaction_id=revoked_transaction_id,
+            starts_at=now - datetime.timedelta(days=2),
+            expires_at=now + datetime.timedelta(days=1),
+        )
+        await _grant(expired, evaluation_time=now, emit_event=False)
+        await _grant(revoked, evaluation_time=now - datetime.timedelta(days=1), emit_event=False)
+        revoked_outcome, _ = await _revoke(
+            revoked,
+            evaluation_time=now - datetime.timedelta(days=1),
+            emit_event=False,
+        )
+        revoked = revoked_outcome.source_state
+
+        async with transaction() as transaction_execute:
+            outcomes, callbacks = await domain.revoke_one_time_purchase_entitlements(
+                transaction_execute,
+                one_time_purchase_id=one_time_purchase_id,
+                revoked_by_transaction_id=_REVOKING_TRANSACTION_ID,
+                evaluation_time=now,
+                actor_kind=_ACTOR_KIND,
+                actor_id=_ACTOR_ID,
+            )
+
+        revoked_expired = expired.replace(
+            revoked_at=now,
+            revoked_by_transaction_id=_REVOKING_TRANSACTION_ID,
+        )
+        assert [outcome.source_state for outcome in outcomes] == [revoked_expired]
+        assert len(callbacks) == 1
+        assert await operations.load_source_entitlements_for_one_time_purchase(execute, one_time_purchase_id) == [
+            revoked_expired,
+            revoked,
+        ]
+
+    @pytest.mark.asyncio
+    async def test_revokes_purchase_grants_and_rebuilds_timeline_without_other_purchase(self) -> None:
+        user_id = new_user_id()
+        one_time_purchase_id = new_purchase_id()
+        other_purchase_id = new_purchase_id()
+        now = datetime.datetime.now(tz=datetime.UTC)
+        grant_transaction_id, future_transaction_id, other_transaction_id = _ordered_transaction_ids(3)
+
+        grants = (
+            (grant_transaction_id, one_time_purchase_id, 100, -1),
+            (future_transaction_id, one_time_purchase_id, 50, 1),
+            (other_transaction_id, other_purchase_id, 250, -1),
+        )
+        grant_callbacks = []
+        async with transaction() as transaction_execute:
+            for transaction_id, purchase_id, value, starts_in_days in grants:
+                _, callbacks = await domain.grant_source_entitlements(
+                    transaction_execute,
+                    grant_transaction_id=transaction_id,
+                    user_id=user_id,
+                    subscription_id=None,
+                    one_time_purchase_id=purchase_id,
+                    guarantees=[EntitlementGuarantee(kind_id=_LIFETIME_TOKENS, value=value)],
+                    starts_at=now + datetime.timedelta(days=starts_in_days),
+                    expires_at=LIFETIME_INTERVAL_END_MARKER,
+                    evaluation_time=now,
+                    actor_kind=_ACTOR_KIND,
+                    actor_id=_ACTOR_ID,
+                )
+                grant_callbacks.extend(callbacks)
+
+        for callback in grant_callbacks:
+            callback()
+
+        with capture_logs() as logs:
+            async with transaction() as transaction_execute:
+                outcomes, callbacks = await domain.revoke_one_time_purchase_entitlements(
+                    transaction_execute,
+                    one_time_purchase_id=one_time_purchase_id,
+                    revoked_by_transaction_id=_REVOKING_TRANSACTION_ID,
+                    evaluation_time=now,
+                    actor_kind=_ACTOR_KIND,
+                    actor_id=_ACTOR_ID,
+                )
+
+            assert_logs_has_no_business_event(logs, "source_entitlement_changed")
+            for callback in callbacks:
+                callback()
+
+        assert [outcome.source_state.grant_transaction_id for outcome in outcomes] == [
+            grant_transaction_id,
+            future_transaction_id,
+        ]
+        assert all(not outcome.source_state.granted for outcome in outcomes)
+        assert all(outcome.source_state.one_time_purchase_id == one_time_purchase_id for outcome in outcomes)
+        assert len(callbacks) == 2
+        effective = (await domain.get_entitlements([user_id], [_LIFETIME_TOKENS]))[user_id][_LIFETIME_TOKENS]
+        assert effective is not None
+        assert effective.value == 250
+
+        source_entitlements = await operations.load_source_entitlements(execute, user_id, _LIFETIME_TOKENS)
+        assert {source.grant_transaction_id: source.granted for source in source_entitlements} == {
+            grant_transaction_id: False,
+            future_transaction_id: False,
+            other_transaction_id: True,
+        }
+        records = await audit_domain.load_records_for_subject(
+            execute,
+            subject_kind=AuditEntityKind.user,
+            subject_id=SerializedId(str(user_id)),
+        )
+        assert [record.attributes["one_time_purchase_id"] for record in records[-2:]] == [
+            str(one_time_purchase_id),
+            str(one_time_purchase_id),
+        ]
+        assert sum(record.get("event") == "source_entitlement_changed" for record in logs) == 2
+        assert sum(record.get("event") == "entitlement_changed" for record in logs) == 2
+        assert_logs_has_business_event(
+            logs,
+            "source_entitlement_changed",
+            user_id=user_id,
+            one_time_purchase_id=str(one_time_purchase_id),
+            revoked_by_transaction_id=str(_REVOKING_TRANSACTION_ID),
+            granted=False,
+        )
 
 
 class TestGetEntitlements:
@@ -1035,15 +1437,12 @@ class TestGetEntitlements:
         other_user = new_user_id()
         starts_at = datetime.datetime.now(tz=datetime.UTC) - datetime.timedelta(days=1)
         expires_at = starts_at + datetime.timedelta(days=2)
-        await domain.grant_source_entitlement(
-            make_source_entitlement(
-                user_id=entitled_user,
-                starts_at=starts_at,
-                expires_at=expires_at,
-            ),
-            actor_kind=_ACTOR_KIND,
-            actor_id=_ACTOR_ID,
+        source_entitlement = make_source_entitlement(
+            user_id=entitled_user,
+            starts_at=starts_at,
+            expires_at=expires_at,
         )
+        await _grant(source_entitlement)
 
         listed = await domain.get_entitlements([entitled_user, other_user], [_DAY_TOKENS, _MONTH_TOKENS])
 
@@ -1097,7 +1496,7 @@ class TestGetEntitlements:
             await domain.get_entitlements([new_user_id()], [_MONTH_TOKENS])
 
     @pytest.mark.asyncio
-    async def test_query_does_not_remove_expired_rows(self) -> None:
+    async def test_query_does_not_remove_expired_rows_or_emit_events(self) -> None:
         interval = make_effective_entitlement_interval(
             starts_at=datetime.datetime.now(tz=datetime.UTC) - datetime.timedelta(days=2),
             expires_at=datetime.datetime.now(tz=datetime.UTC) - datetime.timedelta(days=1),
@@ -1110,7 +1509,49 @@ class TestGetEntitlements:
                 [interval],
             )
 
-        async with TableSizeNotChanged("en_entitlements"):
-            listed = await domain.get_entitlements([interval.user_id], [interval.kind_id])
+        with capture_logs() as logs:
+            async with TableSizeNotChanged("en_entitlements"):
+                listed = await domain.get_entitlements([interval.user_id], [interval.kind_id])
 
         assert listed == {interval.user_id: {interval.kind_id: None}}
+        assert_logs_has_no_business_event(logs, "source_entitlement_changed")
+        assert_logs_has_no_business_event(logs, "entitlement_changed")
+
+
+class TestCleanupExpiredEntitlements:
+    @pytest.mark.asyncio
+    async def test_no_expired_rows(self) -> None:
+        await clear_effective_intervals()
+
+        async with TableSizeNotChanged("en_entitlements"):
+            deleted = await domain.cleanup_expired_entitlements()
+
+        assert deleted == 0
+
+    @pytest.mark.asyncio
+    async def test_deletes_expired_effective_rows_only_without_events(self) -> None:
+        await clear_effective_intervals()
+        user_id = new_user_id()
+        now = datetime.datetime.now(tz=datetime.UTC)
+        expired = make_effective_entitlement_interval(
+            user_id=user_id,
+            starts_at=now - datetime.timedelta(days=2),
+            expires_at=now - datetime.timedelta(days=1),
+        )
+        source = make_source_entitlement(
+            user_id=user_id,
+            starts_at=expired.starts_at,
+            expires_at=expired.expires_at,
+        )
+        await operations.insert_source_entitlement(execute, source)
+        async with transaction() as transaction_execute:
+            await operations.replace_effective_intervals(transaction_execute, user_id, _DAY_TOKENS, [expired])
+
+        with capture_logs() as logs:
+            async with TableSizeNotChanged("en_source_entitlements"):
+                async with TableSizeDelta("en_entitlements", delta=-1):
+                    deleted = await domain.cleanup_expired_entitlements()
+
+        assert deleted == 1
+        assert_logs_has_no_business_event(logs, "source_entitlement_changed")
+        assert_logs_has_no_business_event(logs, "entitlement_changed")

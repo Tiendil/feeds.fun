@@ -6,7 +6,7 @@ runtime_dir = ".session/inconsistency-check"
 comparison_base_refs = ["main", "origin/main"]
 allowed_file_relations = ["governed_by"]
 requires_branch_change = false
-# Maximum concurrent validator processes. Reviewers run only for validator-reported candidates.
+# Maximum concurrent relation-pair tasks. Each task runs a validator and, for a candidate, its reviewer.
 agent_jobs = 20
 # Maximum concurrent depmesh subprocesses in one dependency-discovery wave.
 discovery_jobs = 20
@@ -148,6 +148,7 @@ Review instructions:
 - Independently inspect the current workspace files and the relevant git diff; do not trust the candidate report by itself.
 - Review only the reported candidate. Do not turn this into a broad audit or introduce unrelated findings.
 - Verify that the cited changed hunk exists, the cited related-file rule actually applies, and the claimed contradiction follows.
+- If evidence encountered while reviewing the reported candidate exposes genuinely conflicting applicable specifications or unclear precedence, do not broaden the review or choose an interpretation. Reject the candidate and use a `## Ambiguous specification` report that identifies the conflict and required human clarification.
 - Apply the active mode's scope. In `incremental` mode, reject findings that are pre-existing, unrelated to changed hunks, or only made visible by nearby edits. In `strict` mode, a real contradiction may be confirmed even when pre-existing.
 - Consider the whole design before confirming. In particular, check natural module ownership, dependency direction, duplicated definitions, unnecessary abstractions, and whether the implied fix would improve rather than merely rearrange the architecture.
 - Confirm only a clear, actionable inconsistency whose correction is justified by the governing artifact and improves overall consistency.

@@ -193,6 +193,8 @@ class TestExistedRouteUrls:
             "/spa/api/private/unsubscribe",
             "/spa/api/private/subscribe-to-collections",
             "/spa/api/private/get-resource-history",
+            "/spa/api/private/get-resource-statistics",
+            "/spa/api/private/get-product-state",
             "/spa/api/private/get-user-settings",
             "/spa/api/private/set-user-setting",
             "/spa/api/private/remove-user",

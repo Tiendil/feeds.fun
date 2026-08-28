@@ -127,6 +127,8 @@ async def _get_user_key_infos(  # pylint: disable=R0914
     from ffun.product.entities import Resource as AppResource
     from ffun.product.entities import UserSetting
 
+    user_ids = list(user_ids)
+
     # TODO: move somewhere in configs
     provider_to_settings = {
         LLMProvider.openai: UserSetting.openai_api_key,
@@ -150,8 +152,16 @@ async def _get_user_key_infos(  # pylint: disable=R0914
         kinds=kinds,
     )
 
+    resource_key = r_entities.ResourceKey(
+        kind=r_entities.ResourceKind(AppResource.tokens_cost),
+        interval_started_at=interval_started_at,
+    )
+    resource_identities_by_user = {
+        resource_identity.user_id: resource_identity
+        for resource_identity in r_entities.ResourceIdentity.for_resource(user_ids, resource_key)
+    }
     resources = await r_domain.load_resources(
-        user_ids=user_ids, kind=AppResource.tokens_cost, interval_started_at=interval_started_at
+        resource_identities_by_user.values(),
     )
 
     infos = []
@@ -177,7 +187,7 @@ async def _get_user_key_infos(  # pylint: disable=R0914
                 api_key=api_key,
                 max_tokens_cost_in_month=max_tokens_cost_in_month,
                 process_entries_not_older_than=datetime.timedelta(days=days),
-                cost_used=_cost_points.to_cost(LLMCostPoints(resources[user_id].total)),
+                cost_used=_cost_points.to_cost(LLMCostPoints(resources[resource_identities_by_user[user_id]].total)),
             )
         )
 

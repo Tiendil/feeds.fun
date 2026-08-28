@@ -9,25 +9,22 @@
           v-model="currentScore" />
       </div>
 
-      <a
-        class="ffun-form-button p-1 my-1 block text-center inline-block flex-grow"
-        href="#"
+      <ui-button
+        variant="primary"
+        size="compact"
+        class="my-1 flex-grow"
         @click.prevent="createOrUpdateRule()"
-        >Create Rule</a
+        >Create Rule</ui-button
       >
     </div>
 
     <template v-else>
-      <p
+      <ui-notice
         v-if="showSuccess"
-        class="ffun-info-good"
-        >Rule created.</p
+        tone="success"
+        >Rule created.</ui-notice
       >
-      <p
-        v-else
-        class="ffun-info-common"
-        >Select tags to create a rule.</p
-      >
+      <ui-empty-state v-else> Select tags to create a rule. </ui-empty-state>
     </template>
   </div>
 </template>

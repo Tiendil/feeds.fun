@@ -1,5 +1,5 @@
 <template>
-  <div class="ffun-info-good">
+  <ui-action-panel>
     <h4>Hi there!</h4>
 
     <p>
@@ -34,7 +34,7 @@
     <p> You can find more about scoring rules on the <a :href="router.resolve({name: 'main'}).href">main page</a>. </p>
 
     <p><strong>All news in this collection is always up-to-date and tagged.</strong> </p>
-  </div>
+  </ui-action-panel>
 </template>
 
 <script lang="ts" setup>

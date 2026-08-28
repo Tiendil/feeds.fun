@@ -1,63 +1,67 @@
 <template>
   <div>
-    <form @submit.prevent="searhedUrl = search">
+    <form
+      class="ui-form-row"
+      @submit.prevent="searhedUrl = search">
       <input
         type="text"
-        class="ffun-input mr-1"
+        class="ffun-input ui-form-row-control"
         v-model="search"
         :disabled="disableInputs"
         placeholder="Enter a site URL" />
 
-      <button
+      <ui-button
+        variant="primary"
         type="submit"
-        class="ffun-form-button"
         :disabled="disableInputs">
         Search
-      </button>
+      </ui-button>
     </form>
 
-    <p
+    <ui-notice
       v-if="searching"
-      class="ffun-info-waiting mt-2"
-      >Searching for feeds…</p
+      tone="info"
+      class="mt-2"
+      >Searching for feeds…</ui-notice
     >
 
     <div v-else-if="foundFeeds === null"></div>
 
-    <div
+    <ui-notice
       v-else-if="foundFeeds.length === 0"
-      class="ffun-info-bad mt-2">
+      tone="danger"
+      class="mt-2">
       <p v-for="message in messages">
         {{ message.message }}
       </p>
 
       <p v-if="messages.length === 0"> No feeds found. </p>
-    </div>
+    </ui-notice>
 
     <div
       v-for="feed in foundFeeds"
       :key="feed.url">
       <feed-info :feed="feed" />
 
-      <p
+      <ui-notice
         v-if="feed.isLinked"
-        class="ffun-info-good">
+        tone="success">
         You are already subscribed to this feed.
-      </p>
+      </ui-notice>
 
       <template v-else>
-        <button
-          class="ffun-form-button"
+        <ui-button
+          variant="primary"
           v-if="!addedFeeds[feed.url]"
           :disabled="disableInputs"
           @click.prevent="addFeed(feed.url)">
           Add
-        </button>
+        </ui-button>
 
-        <p
+        <ui-notice
           v-else
-          class="ffun-info-good"
-          >Feed added</p
+          tone="success"
+          >Feed added</ui-notice
         >
       </template>
     </div>

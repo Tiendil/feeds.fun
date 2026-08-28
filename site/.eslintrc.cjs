@@ -11,5 +11,23 @@ module.exports = {
   ],
   parserOptions: {
     ecmaVersion: 'latest'
-  }
+  },
+  overrides: [
+    {
+      files: ['src/**/*.vue'],
+      rules: {
+        'no-restricted-imports': [
+          'error',
+          {
+            patterns: [
+              {
+                group: ['**/*.vue'],
+                message: 'Vue components must be registered globally in src/main.ts and used without local imports.'
+              }
+            ]
+          }
+        ]
+      }
+    }
+  ]
 }

@@ -1,0 +1,17 @@
+@layer base {
+  :root {
+    --ffun-plot-feed-missing-data: theme(colors.gray.200);
+    --ffun-plot-feed-zero: theme(colors.blue.200);
+    --ffun-plot-feed-value: theme(colors.blue.300);
+
+    --ffun-plot-token-day: theme(colors.blue.400);
+    --ffun-plot-token-month: theme(colors.violet.400);
+    --ffun-plot-token-lifetime: theme(colors.amber.500);
+
+    --ffun-plot-axis: theme(colors.gray.200);
+    --ffun-plot-grid: theme(colors.gray.100);
+    --ffun-plot-text: theme(colors.gray.600);
+    --ffun-plot-tooltip-background: theme(colors.gray.900);
+    --ffun-plot-tooltip-border: theme(colors.gray.700);
+  }
+}

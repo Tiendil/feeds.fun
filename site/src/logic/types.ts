@@ -534,6 +534,122 @@ export function resourceHistoryRecordFromJSON({
   });
 }
 
+export type RawResourceStatisticsSeries = {
+  firstDate: string;
+  values: Array<number | string>;
+};
+
+export type ResourceStatisticsSeries = {
+  readonly firstDate: Date;
+  readonly values: number[];
+};
+
+export type ResourceStatistics = {
+  readonly interval: e.ResourceStatisticsApiId;
+  readonly statistics: Partial<Record<e.ResourceKind, ResourceStatisticsSeries>>;
+};
+
+export function resourceStatisticsFromJSON({
+  interval,
+  statistics
+}: {
+  interval: e.ResourceStatisticsApiId;
+  statistics: Partial<Record<e.ResourceKind, RawResourceStatisticsSeries>>;
+}): ResourceStatistics {
+  const parsedStatistics: Partial<Record<e.ResourceKind, ResourceStatisticsSeries>> = {};
+
+  for (const [kind, series] of Object.entries(statistics) as Array<[e.ResourceKind, RawResourceStatisticsSeries]>) {
+    parsedStatistics[kind] = {
+      firstDate: new Date(`${series.firstDate}T00:00:00Z`),
+      values: series.values.map((value) => parseFloat(value as string))
+    };
+  }
+
+  return {interval, statistics: parsedStatistics};
+}
+
+export type RawProductStateToken = {
+  readonly limit: number | null;
+  readonly balance: number;
+  readonly periodStartsAt: string | null;
+  readonly periodEndsAt: string | null;
+};
+
+export type ProductStateToken = {
+  readonly limit: number | null;
+  readonly balance: number;
+  readonly periodStartsAt: Date | null;
+  readonly periodEndsAt: Date | null;
+};
+
+export type RawProductStateSubscription = {
+  readonly status: e.SubscriptionStatus;
+  readonly startedAt: string;
+  readonly periodStartsAt: string;
+  readonly periodEndsAt: string;
+  readonly expectedRenewalAt: string | null;
+  readonly endsAt: string | null;
+};
+
+export type ProductStateSubscription = {
+  readonly status: e.SubscriptionStatus;
+  readonly startedAt: Date;
+  readonly periodStartsAt: Date;
+  readonly periodEndsAt: Date;
+  readonly expectedRenewalAt: Date | null;
+  readonly endsAt: Date | null;
+};
+
+export type ProductState = {
+  readonly subscriptions: ProductStateSubscription[];
+  readonly tokens: {
+    readonly [e.ResourceKind.DayTokenUsage]: ProductStateToken;
+    readonly [e.ResourceKind.MonthTokenUsage]: ProductStateToken;
+    readonly [e.ResourceKind.LifetimeTokenUsage]: ProductStateToken;
+  };
+};
+
+function productStateTokenFromJSON(token: RawProductStateToken): ProductStateToken {
+  return {
+    limit: token.limit,
+    balance: token.balance,
+    periodStartsAt: token.periodStartsAt === null ? null : new Date(token.periodStartsAt),
+    periodEndsAt: token.periodEndsAt === null ? null : new Date(token.periodEndsAt)
+  };
+}
+
+function productStateSubscriptionFromJSON(subscription: RawProductStateSubscription): ProductStateSubscription {
+  return {
+    status: subscription.status,
+    startedAt: new Date(subscription.startedAt),
+    periodStartsAt: new Date(subscription.periodStartsAt),
+    periodEndsAt: new Date(subscription.periodEndsAt),
+    expectedRenewalAt: subscription.expectedRenewalAt === null ? null : new Date(subscription.expectedRenewalAt),
+    endsAt: subscription.endsAt === null ? null : new Date(subscription.endsAt)
+  };
+}
+
+export function productStateFromJSON({
+  subscriptions,
+  tokens
+}: {
+  subscriptions: RawProductStateSubscription[];
+  tokens: {
+    readonly day: RawProductStateToken;
+    readonly month: RawProductStateToken;
+    readonly lifetime: RawProductStateToken;
+  };
+}): ProductState {
+  return {
+    subscriptions: subscriptions.map(productStateSubscriptionFromJSON),
+    tokens: {
+      [e.ResourceKind.DayTokenUsage]: productStateTokenFromJSON(tokens.day),
+      [e.ResourceKind.MonthTokenUsage]: productStateTokenFromJSON(tokens.month),
+      [e.ResourceKind.LifetimeTokenUsage]: productStateTokenFromJSON(tokens.lifetime)
+    }
+  };
+}
+
 export class Collection {
   readonly id: CollectionId;
   readonly slug: CollectionSlug;

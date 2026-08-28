@@ -1,5 +1,5 @@
 <template>
-  <div class="ffun-info-common">
+  <ui-action-panel>
     <h4>Setup API keys</h4>
 
     <p>
@@ -32,7 +32,7 @@
     <user-setting-for-notification
       kind="hide_message_about_setting_up_key"
       button-text="Hide this message" />
-  </div>
+  </ui-action-panel>
 </template>
 
 <script lang="ts" setup>

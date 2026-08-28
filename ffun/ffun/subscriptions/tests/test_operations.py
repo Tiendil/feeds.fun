@@ -1,0 +1,275 @@
+import asyncio
+import datetime
+import uuid
+from typing import cast
+
+import pytest
+from pydantic import ValidationError
+from pytest_mock import MockerFixture
+
+from ffun.core.postgresql import ExecuteType, execute, transaction
+from ffun.core.tests.helpers import TableSizeDelta, TableSizeNotChanged, assert_pool_capacity_at_least
+from ffun.domain.domain import new_user_id
+from ffun.domain.entities import BenefitId, BenefitTransactionId, ProviderObjectReference, SubscriptionId
+from ffun.subscriptions import errors, operations
+from ffun.subscriptions.entities import SubscriptionStatusId
+from ffun.subscriptions.tests.make import make_provider_subscription_reference, make_subscription
+
+
+class TestNewSubscriptionId:
+    def test_returns_distinct_uuid_identifiers(self) -> None:
+        first = operations.new_subscription_id()
+        second = operations.new_subscription_id()
+
+        assert isinstance(first, uuid.UUID)
+        assert isinstance(second, uuid.UUID)
+        assert first != second
+
+
+class TestRowToSubscription:
+    def test_converts_row_and_removes_persistence_timestamps(self) -> None:
+        subscription = make_subscription()
+        now = datetime.datetime.now(tz=datetime.UTC)
+        row = cast(dict[str, object], subscription.model_dump())
+        row.update({"created_at": now, "updated_at": now})
+
+        assert operations.row_to_subscription(row) == subscription
+
+    def test_unexpected_field_raises_module_error(self) -> None:
+        subscription = make_subscription()
+        row = cast(dict[str, object], subscription.model_dump())
+        row["unexpected"] = "value"
+
+        with pytest.raises(errors.InvalidStoredSubscription) as exception_info:
+            operations.row_to_subscription(row)
+
+        assert isinstance(exception_info.value.__cause__, ValidationError)
+
+    def test_invalid_row_raises_module_error(self) -> None:
+        with pytest.raises(errors.InvalidStoredSubscription) as exception_info:
+            operations.row_to_subscription({})
+
+        assert isinstance(exception_info.value.__cause__, ValidationError)
+
+
+class TestLoadSubscription:
+    @pytest.mark.asyncio
+    async def test_missing(self) -> None:
+        subscription = make_subscription()
+
+        assert await operations.load_subscription(execute, subscription.id) is None
+
+    @pytest.mark.asyncio
+    async def test_loads_complete_snapshot_for_exact_identity(self) -> None:
+        subscription = make_subscription()
+        await operations.save_subscription(execute, subscription)
+
+        assert await operations.load_subscription(execute, subscription.id) == subscription
+        assert await operations.load_subscription(execute, operations.new_subscription_id()) is None
+
+
+class TestLoadProviderSubscriptionReference:
+    @pytest.mark.asyncio
+    async def test_missing(self) -> None:
+        reference = make_provider_subscription_reference()
+
+        assert await operations.load_provider_subscription_reference(execute, reference) is None
+
+    @pytest.mark.asyncio
+    async def test_loads_exact_external_identity(self) -> None:
+        reference = make_provider_subscription_reference()
+        subscription_id = await operations.resolve_provider_subscription_reference(execute, reference)
+
+        assert await operations.load_provider_subscription_reference(execute, reference) == subscription_id
+
+
+class TestResolveProviderSubscriptionReference:
+    @pytest.mark.asyncio
+    async def test_creates_and_returns_identity(self) -> None:
+        reference = make_provider_subscription_reference()
+
+        async with TableSizeDelta("sb_subscription_refs", delta=1):
+            subscription_id = await operations.resolve_provider_subscription_reference(execute, reference)
+
+        assert await operations.load_provider_subscription_reference(execute, reference) == subscription_id
+
+    @pytest.mark.asyncio
+    async def test_returns_existing_identity_without_changes(self) -> None:
+        reference = make_provider_subscription_reference()
+        subscription_id = await operations.resolve_provider_subscription_reference(execute, reference)
+
+        async with TableSizeNotChanged("sb_subscription_refs"):
+            resolved_subscription_id = await operations.resolve_provider_subscription_reference(execute, reference)
+
+        assert resolved_subscription_id == subscription_id
+
+    @pytest.mark.asyncio
+    async def test_concurrent_creation_converges_on_one_identity(self, mocker: MockerFixture) -> None:
+        assert_pool_capacity_at_least(2)
+        reference = make_provider_subscription_reference()
+        both_initial_loads_finished = asyncio.Event()
+        initial_load_count = 0
+        original_load = operations.load_provider_subscription_reference
+
+        async def synchronized_load(
+            transaction_execute: ExecuteType,
+            requested_reference: ProviderObjectReference,
+        ) -> SubscriptionId | None:
+            nonlocal initial_load_count
+            stored_subscription_id = await original_load(transaction_execute, requested_reference)
+
+            if stored_subscription_id is not None:
+                return stored_subscription_id
+
+            initial_load_count += 1
+
+            if initial_load_count == 2:
+                both_initial_loads_finished.set()
+
+            await both_initial_loads_finished.wait()
+            return None
+
+        async def resolve_once() -> SubscriptionId:
+            async with transaction() as transaction_execute:
+                return await operations.resolve_provider_subscription_reference(transaction_execute, reference)
+
+        mocker.patch.object(operations, "load_provider_subscription_reference", side_effect=synchronized_load)
+
+        async with TableSizeDelta("sb_subscription_refs", delta=1), asyncio.timeout(2):
+            first_id, second_id = await asyncio.gather(resolve_once(), resolve_once())
+
+        assert first_id == second_id
+        assert await original_load(execute, reference) == first_id
+
+
+class TestSaveSubscription:
+    @pytest.mark.asyncio
+    async def test_inserts_complete_snapshot(self) -> None:
+        subscription = make_subscription(
+            expected_renewal_at=datetime.datetime.now(tz=datetime.UTC) + datetime.timedelta(days=30)
+        )
+
+        async with TableSizeDelta("sb_subscriptions", delta=1):
+            await operations.save_subscription(execute, subscription)
+
+        assert await operations.load_subscription(execute, subscription.id) == subscription
+
+    @pytest.mark.asyncio
+    async def test_updates_complete_mutable_snapshot(self) -> None:
+        subscription = make_subscription()
+        await operations.save_subscription(execute, subscription)
+        replacement = subscription.replace(
+            state_transaction_id=BenefitTransactionId(uuid.uuid4()),
+            benefit_id=BenefitId("replacement-benefit"),
+            status=SubscriptionStatusId.ended,
+            provider_status="canceled",
+            started_at=subscription.started_at + datetime.timedelta(seconds=1),
+            ends_at=subscription.provider_updated_at,
+            provider_updated_at=subscription.provider_updated_at + datetime.timedelta(seconds=1),
+        )
+
+        async with TableSizeNotChanged("sb_subscriptions"):
+            await operations.save_subscription(execute, replacement)
+
+        assert await operations.load_subscription(execute, subscription.id) == replacement
+
+    @pytest.mark.asyncio
+    async def test_updates_only_provider_time(self) -> None:
+        subscription = make_subscription()
+        await operations.save_subscription(execute, subscription)
+        advanced = subscription.replace(
+            state_transaction_id=BenefitTransactionId(uuid.uuid4()),
+            provider_updated_at=subscription.provider_updated_at + datetime.timedelta(seconds=1),
+        )
+
+        async with TableSizeNotChanged("sb_subscriptions"):
+            await operations.save_subscription(execute, advanced)
+
+        assert await operations.load_subscription(execute, subscription.id) == advanced
+
+
+class TestLoadSubscriptions:
+    @pytest.mark.asyncio
+    async def test_empty_filter(self) -> None:
+        assert await operations.load_subscriptions(execute, []) == []
+
+    @pytest.mark.asyncio
+    async def test_filters_by_statuses(self) -> None:
+        user_id = new_user_id()
+        active = make_subscription(
+            user_id=user_id,
+        )
+        ended = make_subscription(
+            user_id=user_id,
+            status=SubscriptionStatusId.ended,
+        )
+        await operations.save_subscription(execute, active)
+        await operations.save_subscription(execute, ended)
+
+        assert await operations.load_subscriptions(
+            execute,
+            [user_id],
+            statuses=[SubscriptionStatusId.active],
+        ) == [active]
+        assert await operations.load_subscriptions(execute, [user_id], statuses=[]) == []
+
+    @pytest.mark.asyncio
+    async def test_loads_selected_users_in_deterministic_order(self) -> None:
+        selected_user_id = new_user_id()
+        other_user_id = new_user_id()
+        now = datetime.datetime.now(tz=datetime.UTC)
+        earlier = make_subscription(
+            subscription_id=SubscriptionId(uuid.UUID(int=3)),
+            user_id=selected_user_id,
+            started_at=now - datetime.timedelta(days=2),
+            status=SubscriptionStatusId.ended,
+            ends_at=now - datetime.timedelta(days=1),
+        )
+        same_start_later_identity = make_subscription(
+            subscription_id=SubscriptionId(uuid.UUID(int=2)),
+            user_id=selected_user_id,
+            started_at=now,
+        )
+        same_start_earlier_identity = make_subscription(
+            subscription_id=SubscriptionId(uuid.UUID(int=1)),
+            user_id=selected_user_id,
+            started_at=now,
+        )
+        other = make_subscription(user_id=other_user_id)
+        for subscription in (earlier, same_start_later_identity, same_start_earlier_identity, other):
+            await operations.save_subscription(execute, subscription)
+
+        loaded = await operations.load_subscriptions(execute, [selected_user_id, selected_user_id])
+
+        assert loaded == [same_start_earlier_identity, same_start_later_identity, earlier]
+
+
+class TestLoadSubscriptionIdsByBenefit:
+    @pytest.mark.asyncio
+    async def test_no_matching_subscriptions(self) -> None:
+        assert (
+            await operations.load_subscription_ids_by_benefit(
+                execute,
+                BenefitId(f"missing-benefit-{uuid.uuid4()}"),
+            )
+            == []
+        )
+
+    @pytest.mark.asyncio
+    async def test_finds_all_ids_by_benefit_in_identity_order(self) -> None:
+        benefit_id = BenefitId(f"selected-benefit-{uuid.uuid4()}")
+        subscription_ids = sorted([SubscriptionId(uuid.uuid4()), SubscriptionId(uuid.uuid4())])
+        later_identity = make_subscription(
+            subscription_id=subscription_ids[1],
+            benefit_id=benefit_id,
+            status=SubscriptionStatusId.ended,
+        )
+        earlier_identity = make_subscription(
+            subscription_id=subscription_ids[0],
+            benefit_id=benefit_id,
+        )
+        other = make_subscription(benefit_id=BenefitId(f"other-benefit-{uuid.uuid4()}"))
+        for subscription in (later_identity, earlier_identity, other):
+            await operations.save_subscription(execute, subscription)
+
+        assert await operations.load_subscription_ids_by_benefit(execute, benefit_id) == subscription_ids

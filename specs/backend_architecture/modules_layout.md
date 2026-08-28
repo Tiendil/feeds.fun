@@ -23,6 +23,14 @@ Migration files SHOULD stay in module-local `migrations` packages for the domain
 Reusable domain modules SHOULD own generic behavior, storage, validation, and extension points for their domain area.
 
 Product-specific definitions that have no more specific domain owner and represent shared registries, defaults, policies, or application-wide registration glue SHOULD live in `ffun.product` when they are independently required by multiple production top-level modules.
+`ffun.product` is the product composition center: it MAY combine the following from lower-level top-level modules into Feeds Fun product choices:
+
+- public entities.
+- values.
+- extension points.
+- domain interfaces.
+
+A top-level module used by `ffun.product` MUST NOT import `ffun.product`; higher-level workflows and edge modules that consume product choices MUST declare their dependency on `ffun.product` explicitly.
 A product-specific choice used only to implement behavior owned by one top-level module SHOULD remain in that module, even when the implementation composes public entities, values, or domain interfaces from other top-level modules.
 Importing or using another top-level module's public `domain`, `entities`, or `errors` boundary is normal cross-module interaction and MUST NOT, by itself, cause imported definitions, consumer-specific policies, or integration logic to move to `ffun.product`.
 Definitions with a natural domain owner MUST remain with that owner regardless of how many modules consume them.
@@ -36,6 +44,11 @@ For example, `ffun.user_settings` owns the generic user settings machinery, whil
 - `ffun.application` owns application construction and application-wide settings.
 - `ffun.audit` owns append-only audit records created transactionally by backend modules.
 - `ffun.auth` owns authentication and authorization logic.
+- `ffun.benefits` owns:
+  - configured benefit package templates.
+  - runtime package materialization.
+  - the immutable all-source ledger of causal benefit transactions and their source provenance.
+  - workflows that atomically apply those transactions to purchased states and entitlements.
 - `ffun.cli` owns command-line commands for managing the application.
 - `ffun.core` owns framework-level base classes, utilities, logging, metrics, PostgreSQL helpers, plugins, and shared infrastructure.
 - `ffun.data_protection` owns data protection and privacy-related behavior.
@@ -57,6 +70,7 @@ For example, `ffun.user_settings` owns the generic user settings machinery, whil
 - `ffun.meta` owns business logic that coordinates multiple domain modules.
 - `ffun.ontology` owns stored tag ontology behavior.
 - `ffun.openai` owns OpenAI service integration.
+- `ffun.one_time_purchases` owns durable provider-independent one-time-purchase identities, provider-purchase references, and lifecycle snapshots linked to causal benefit transactions.
 - `ffun.parsers` owns feed, entry, site, and OPML parsing logic.
 - `ffun.product` owns shared product-level definitions, configuration, and registration glue that have no more specific domain owner and are independently required by multiple production top-level modules.
 - `ffun.processors_quality` owns quality validation for tagging processors.
@@ -64,6 +78,7 @@ For example, `ffun.user_settings` owns the generic user settings machinery, whil
 - `ffun.resources` owns per-user quotas and resource accounting.
 - `ffun.scores` owns score rules and score calculation.
 - `ffun.site` owns backend support for serving or integrating with the site when present.
+- `ffun.subscriptions` owns durable provider-independent purchased-subscription identities, provider-subscription references, and lifecycle snapshots linked to causal benefit transactions.
 - `ffun.tags` owns tag normalization and validation logic that is not ontology storage.
 - `ffun.users` owns user storage and management.
 - `ffun.user_settings` owns user-specific settings storage and behavior.
@@ -128,6 +143,18 @@ Operation functions MAY communicate with PostgreSQL, third-party services, provi
 
 Operation functions SHOULD contain communication protocol details, low-level error translation, raw response handling, SQL, row-to-entity mapping, storage idempotency, and technical maintenance helpers owned by the module.
 
+Operation function names MUST describe caller-visible semantics rather than SQL statements or other implementation mechanisms.
+
+- `load_<object>` MUST be used to retrieve or materialize data from storage or an external system. The object name SHOULD use singular or plural form according to the result cardinality. Selection qualifiers SHOULD follow the object as `_by_<key>` or `_for_<scope>`, while state qualifiers SHOULD precede it, as in `load_active_intervals`.
+- `save_<object>` MUST be used to make a complete logical value durable when the operation may:
+  - create the value.
+  - replace the value.
+  - reuse existing data.
+  - perform an idempotent no-op.
+- `update_<object-or-aspect>` MUST be used to mutate existing logical state. When only part of an object is changed, the name SHOULD identify that aspect, as in `update_feed_info`.
+
+An operation that uses an upsert internally SHOULD still use `save_` or `update_` according to its caller-visible contract and SHOULD NOT expose the storage mechanism in its name.
+
 Operation functions SHOULD NOT own high-level business workflows. They SHOULD provide small communication primitives that the module's `domain.py` can compose.
 
 Operation functions SHOULD NOT be imported by other top-level modules. Cross-module callers SHOULD use the owning module's `domain`, `entities`, or `errors` boundary instead.
@@ -151,6 +178,22 @@ The `domain` submodule owns the parent module's internal business logic and is t
 Domain functions SHOULD compose operation functions and other module boundaries into meaningful workflows, own new transaction boundaries for business workflows, make business decisions, convert or raise module-owned errors, and shape results for callers.
 
 Domain functions SHOULD hide low-level communication details from callers. Callers should not need to know whether a workflow uses PostgreSQL, HTTP, providers, local tools, or multiple operation calls.
+
+Domain logic MUST depend only on behavior defined as part of an operation's contract, including:
+
+- accepted inputs.
+- produced outputs.
+- expected errors.
+- effects.
+- transaction semantics.
+
+When that contract is not specified separately, domain code MAY inspect the operation's implementation to understand its behavior, but MUST treat implementation choices that are not required by callers as replaceable.
+Domain logic MUST NOT depend on incidental implementation details such as:
+
+- the current number or order of external-system requests.
+- request structure.
+- storage layout.
+- internal delegation.
 
 Top/input layers such as `ffun.api`, `ffun.api.spa`, and `ffun.cli` SHOULD call domain boundaries instead of operations when invoking business behavior.
 
@@ -228,10 +271,35 @@ Tests MAY reference tables owned by other top-level modules when direct database
 
 ### Foundational modules
 
-`ffun.core`, `ffun.domain`, and `ffun.product` are foundational modules.
-They own shared technical primitives, cross-domain value types and utilities, and product-wide definitions without a more specific domain owner that bind reusable domain mechanisms to Feeds Fun product choices.
+`ffun.core` and `ffun.domain` are foundational modules.
+They own shared technical primitives, cross-domain value types, and utilities.
 Other backend modules MAY import any submodule of a foundational module when they need functionality owned by that submodule.
 Foundational modules MUST NOT depend on shared-service, domain-level, or edge-layer modules, so shared primitives do not acquire higher-level dependencies.
+
+### Product composition module
+
+`ffun.product` owns the following application-wide product definitions when they have no more specific domain owner:
+
+- entities.
+- registries.
+- defaults.
+- policies.
+- registration glue.
+
+It binds reusable domain mechanisms to Feeds Fun product choices and MAY depend on foundational, shared-service, and domain-level modules.
+When depending on another top-level module, `ffun.product` MUST use one of the following boundaries or extension points:
+
+- the module's public `domain` boundary.
+- the module's public `entities` boundary.
+- the module's public `errors` boundary.
+- an explicitly exposed configuration extension point.
+- an explicitly exposed registration extension point.
+
+`ffun.product` MUST NOT import another module's `operations` or `tests` submodules and MUST NOT depend on edge-layer modules.
+
+Modules that implement higher-level workflows and edge-layer modules MAY import public `ffun.product` submodules when they consume product-owned choices.
+Such dependencies MUST be declared explicitly in the architecture configuration; `ffun.product` MUST NOT be configured as a universally available utility module.
+A shared-service or domain-level module on which `ffun.product` depends MUST NOT import `ffun.product`, directly or transitively.
 
 ### Shared-service modules
 

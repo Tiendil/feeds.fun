@@ -10,7 +10,7 @@ files still fail loudly rather than cache a pair as checked when exact current
 working-tree text bytes are unavailable.
 
 Project journal logging belongs in ``log_project_journal``. Relation-pair
-queue records must use the isolated Taskwarrior database under
+state and operation history use the isolated SQLite database under
 ``.session/inconsistency-check``; project journal entries must use
 ``bin/taskwarior.sh`` through ``log_project_journal`` and carry the
 ``+consistency`` tag.
@@ -26,26 +26,29 @@ import copy
 import hashlib
 import json
 import shlex
-import shutil
+import sqlite3
 import subprocess  # noqa: S404
 import sys
 import time
 import tomllib
+import uuid
 from collections import Counter
-from concurrent.futures import ThreadPoolExecutor
+from concurrent.futures import Future, ThreadPoolExecutor
+from contextlib import contextmanager
 from dataclasses import dataclass
 from datetime import UTC, datetime
 from enum import IntEnum
 from pathlib import Path, PurePosixPath
 from threading import Barrier, Lock
 from types import SimpleNamespace
-from typing import Any, Callable, Iterable
+from typing import Any, Callable, Iterable, Iterator
 
 
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
 CONFIG_PATH = PROJECT_ROOT / "consistency.toml"
-TASKWARRIOR_BIN = "task"
+SQLITE_SCHEMA_VERSION = 1
 VALID_CHECK_STATUSES = {"unchecked", "consistent", "inconsistent", "outdated"}
+VALID_PAIR_OPERATIONS = {"queued", "dispatched", "checked", "marked", "status_changed"}
 
 
 @dataclass(frozen=True)
@@ -82,9 +85,7 @@ class ConsistencyConfig:
 class RuntimePaths:
     relative_runtime_dir: Path
     runtime_dir: Path
-    relative_taskrc_path: Path
-    taskrc_path: Path
-    task_data_dir: Path
+    database_path: Path
     agent_output_dir: Path
     prompt_dir: Path
     schema_dir: Path
@@ -92,6 +93,7 @@ class RuntimePaths:
 
 
 ACTIVE_CONFIG: ConsistencyConfig | None = None
+INITIALIZED_DATABASES: set[Path] = set()
 
 
 class ExitCode(IntEnum):
@@ -148,6 +150,19 @@ class CheckRecord:
     check_status: str
     report: str
     checked_at: str
+
+
+@dataclass(frozen=True)
+class PairOperation:
+    occurred_at: str
+    operation: str
+    pair_key: str
+    changed_path: str
+    related_path: str
+    relation: str
+    previous_status: str
+    next_status: str
+    source: str
 
 
 @dataclass(frozen=True)
@@ -231,6 +246,48 @@ class RunningChildCheck:
     stdout_path: Path
     stderr_path: Path
     started_at: float
+
+
+@dataclass(frozen=True)
+class PairCheckDecision:
+    check_status: str
+    report: str
+    decision_source: str
+
+
+class RunningChildRegistry:
+    def __init__(self) -> None:
+        self._lock = Lock()
+        self._running: dict[str, RunningChildCheck] = {}
+        self._stopping = False
+
+    def add(self, running: RunningChildCheck) -> None:
+        pair_key = running.prepared.current_pair.identity.pair_key
+
+        with self._lock:
+            stopping = self._stopping
+
+            if not stopping:
+                self._running[pair_key] = running
+
+        if stopping:
+            kill_running_child(running)
+            raise CheckerFailureError("pair checking was cancelled")
+
+    def discard(self, running: RunningChildCheck) -> None:
+        pair_key = running.prepared.current_pair.identity.pair_key
+
+        with self._lock:
+            if self._running.get(pair_key) is running:
+                self._running.pop(pair_key)
+
+    def terminate_all(self) -> None:
+        with self._lock:
+            self._stopping = True
+            running_children = list(self._running.values())
+
+        for running in running_children:
+            kill_running_child(running)
 
 
 @dataclass(frozen=True)
@@ -600,42 +657,12 @@ def runtime_paths() -> RuntimePaths:
     return RuntimePaths(
         relative_runtime_dir=relative_runtime_dir,
         runtime_dir=runtime_dir,
-        relative_taskrc_path=relative_runtime_dir / "taskrc",
-        taskrc_path=runtime_dir / "taskrc",
-        task_data_dir=runtime_dir / "taskwarrior",
+        database_path=runtime_dir / "state.sqlite3",
         agent_output_dir=runtime_dir / "agent-output",
         prompt_dir=runtime_dir / "prompts",
         schema_dir=runtime_dir / "schemas",
         self_check_dir=runtime_dir / "self-check",
     )
-
-
-def build_taskrc_content(paths: RuntimePaths) -> str:
-    return f"""data.location={paths.relative_runtime_dir / "taskwarrior"}
-confirmation=no
-
-uda.pair_key.type=string
-uda.pair_key.label=Relation Pair Key
-uda.file_pair.type=string
-uda.file_pair.label=File Pair
-uda.changed_path.type=string
-uda.changed_path.label=Changed Path
-uda.related_path.type=string
-uda.related_path.label=Related Path
-uda.relation.type=string
-uda.relation.label=Relation
-uda.checksum_changed.type=string
-uda.checksum_changed.label=Changed Checksum
-uda.checksum_related.type=string
-uda.checksum_related.label=Related Checksum
-uda.check_status.type=string
-uda.check_status.label=Check Status
-uda.check_status.values=unchecked,consistent,inconsistent,outdated,
-uda.report.type=string
-uda.report.label=Report
-uda.checked_at.type=string
-uda.checked_at.label=Checked At
-"""
 
 
 def format_argv(argv: Iterable[str]) -> str:
@@ -1411,102 +1438,379 @@ def log_pair_state_change(identity: PairIdentity, previous_status: str, next_sta
     )
 
 
+def pair_operation_values(record: PairOperation) -> dict[str, str]:
+    return {
+        "occurred_at": record.occurred_at,
+        "operation": record.operation,
+        "pair_key": record.pair_key,
+        "changed_path": record.changed_path,
+        "related_path": record.related_path,
+        "relation": record.relation,
+        "previous_status": record.previous_status,
+        "next_status": record.next_status,
+        "source": record.source,
+    }
+
+
+def raw_pair_operation(record: dict[str, Any], *, context: str) -> PairOperation:
+    expected_fields = {
+        "occurred_at",
+        "operation",
+        "pair_key",
+        "changed_path",
+        "related_path",
+        "relation",
+        "previous_status",
+        "next_status",
+        "source",
+    }
+
+    if set(record) != expected_fields:
+        missing = ", ".join(sorted(expected_fields - set(record))) or "(none)"
+        unexpected = ", ".join(sorted(set(record) - expected_fields)) or "(none)"
+        raise CheckerFailureError(
+            f"{context}: operation fields differ; missing: {missing}; unexpected: {unexpected}"
+        )
+
+    if any(not isinstance(record[field], str) for field in expected_fields):
+        raise CheckerFailureError(f"{context}: every operation field must be a string")
+
+    operation = PairOperation(
+        occurred_at=record["occurred_at"],
+        operation=record["operation"],
+        pair_key=record["pair_key"],
+        changed_path=record["changed_path"],
+        related_path=record["related_path"],
+        relation=record["relation"],
+        previous_status=record["previous_status"],
+        next_status=record["next_status"],
+        source=record["source"],
+    )
+
+    if operation.operation not in VALID_PAIR_OPERATIONS:
+        raise CheckerFailureError(f"{context}: unsupported operation: {operation.operation!r}")
+
+    if operation.previous_status and operation.previous_status not in VALID_CHECK_STATUSES:
+        raise CheckerFailureError(f"{context}: unsupported previous status: {operation.previous_status!r}")
+
+    if operation.next_status not in VALID_CHECK_STATUSES:
+        raise CheckerFailureError(f"{context}: unsupported next status: {operation.next_status!r}")
+
+    required_values = {
+        "occurred_at": operation.occurred_at,
+        "pair_key": operation.pair_key,
+        "changed_path": operation.changed_path,
+        "related_path": operation.related_path,
+        "relation": operation.relation,
+        "source": operation.source,
+    }
+
+    for field, value in required_values.items():
+        if not value or single_line(value) != value:
+            raise CheckerFailureError(f"{context}: {field} must be a non-empty single-line string")
+
+    return operation
+
+
+@contextmanager
+def database_connection() -> Iterator[sqlite3.Connection]:
+    path = runtime_paths().database_path
+
+    try:
+        connection = sqlite3.connect(path, timeout=30)
+    except sqlite3.Error as error:
+        raise CheckerFailureError(f"opening inconsistency-check SQLite database failed: {path}: {error}") from error
+
+    try:
+        connection.row_factory = sqlite3.Row
+        connection.execute("PRAGMA busy_timeout = 30000")
+        connection.execute("PRAGMA foreign_keys = ON")
+        yield connection
+    except sqlite3.Error as error:
+        raise CheckerFailureError(f"inconsistency-check SQLite operation failed: {path}: {error}") from error
+    finally:
+        connection.close()
+
+
+def create_database_schema(connection: sqlite3.Connection) -> None:
+    version = int(connection.execute("PRAGMA user_version").fetchone()[0])
+
+    if version not in {0, SQLITE_SCHEMA_VERSION}:
+        raise CheckerFailureError(
+            f"unsupported inconsistency-check SQLite schema version: {version}; expected {SQLITE_SCHEMA_VERSION}"
+        )
+
+    connection.executescript(
+        """
+        CREATE TABLE IF NOT EXISTS pair_checks (
+            pair_key TEXT PRIMARY KEY,
+            uuid TEXT NOT NULL UNIQUE,
+            file_pair TEXT NOT NULL,
+            changed_path TEXT NOT NULL,
+            related_path TEXT NOT NULL,
+            relation TEXT NOT NULL,
+            checksum_changed TEXT NOT NULL,
+            checksum_related TEXT NOT NULL,
+            check_status TEXT NOT NULL CHECK (
+                check_status IN ('unchecked', 'consistent', 'inconsistent', 'outdated')
+            ),
+            report TEXT NOT NULL,
+            checked_at TEXT NOT NULL
+        );
+
+        CREATE INDEX IF NOT EXISTS pair_checks_relation_idx
+        ON pair_checks (relation);
+
+        CREATE INDEX IF NOT EXISTS pair_checks_paths_idx
+        ON pair_checks (changed_path, related_path);
+
+        CREATE TABLE IF NOT EXISTS pair_operations (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            occurred_at TEXT NOT NULL,
+            operation TEXT NOT NULL CHECK (
+                operation IN ('queued', 'dispatched', 'checked', 'marked', 'status_changed')
+            ),
+            pair_key TEXT NOT NULL,
+            changed_path TEXT NOT NULL,
+            related_path TEXT NOT NULL,
+            relation TEXT NOT NULL,
+            previous_status TEXT NOT NULL CHECK (
+                previous_status IN ('', 'unchecked', 'consistent', 'inconsistent', 'outdated')
+            ),
+            next_status TEXT NOT NULL CHECK (
+                next_status IN ('unchecked', 'consistent', 'inconsistent', 'outdated')
+            ),
+            source TEXT NOT NULL
+        );
+
+        CREATE INDEX IF NOT EXISTS pair_operations_occurred_at_idx
+        ON pair_operations (occurred_at, id);
+        """
+    )
+    connection.execute(f"PRAGMA user_version = {SQLITE_SCHEMA_VERSION}")
+
+
+def check_record_values(record: CheckRecord) -> tuple[str, ...]:
+    return (
+        record.pair_key,
+        record.uuid,
+        record.file_pair,
+        record.changed_path,
+        record.related_path,
+        record.relation,
+        record.checksum_changed,
+        record.checksum_related,
+        record.check_status,
+        record.report,
+        record.checked_at,
+    )
+
+
+def check_record_from_row(row: sqlite3.Row) -> CheckRecord:
+    return CheckRecord(
+        uuid=str(row["uuid"]),
+        pair_key=str(row["pair_key"]),
+        file_pair=str(row["file_pair"]),
+        changed_path=str(row["changed_path"]),
+        related_path=str(row["related_path"]),
+        relation=str(row["relation"]),
+        checksum_changed=str(row["checksum_changed"]),
+        checksum_related=str(row["checksum_related"]),
+        check_status=str(row["check_status"]),
+        report=str(row["report"]),
+        checked_at=str(row["checked_at"]),
+    )
+
+
+def insert_check_record_row(connection: sqlite3.Connection, record: CheckRecord) -> None:
+    connection.execute(
+        """
+        INSERT INTO pair_checks (
+            pair_key, uuid, file_pair, changed_path, related_path, relation,
+            checksum_changed, checksum_related, check_status, report, checked_at
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        """,
+        check_record_values(record),
+    )
+
+
+def update_check_record_row(connection: sqlite3.Connection, record: CheckRecord) -> None:
+    cursor = connection.execute(
+        """
+        UPDATE pair_checks
+        SET uuid = ?, file_pair = ?, changed_path = ?, related_path = ?, relation = ?,
+            checksum_changed = ?, checksum_related = ?, check_status = ?, report = ?, checked_at = ?
+        WHERE pair_key = ?
+        """,
+        (
+            record.uuid,
+            record.file_pair,
+            record.changed_path,
+            record.related_path,
+            record.relation,
+            record.checksum_changed,
+            record.checksum_related,
+            record.check_status,
+            record.report,
+            record.checked_at,
+            record.pair_key,
+        ),
+    )
+
+    if cursor.rowcount != 1:
+        raise CheckerFailureError(f"cannot update missing pair record: {record_journal_subject(record)}")
+
+
+def insert_pair_operation_row(connection: sqlite3.Connection, record: PairOperation) -> None:
+    operation = raw_pair_operation(pair_operation_values(record), context="writing pair operation")
+    connection.execute(
+        """
+        INSERT INTO pair_operations (
+            occurred_at, operation, pair_key, changed_path, related_path, relation,
+            previous_status, next_status, source
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+        """,
+        (
+            operation.occurred_at,
+            operation.operation,
+            operation.pair_key,
+            operation.changed_path,
+            operation.related_path,
+            operation.relation,
+            operation.previous_status,
+            operation.next_status,
+            operation.source,
+        ),
+    )
+
+
+def initialize_database() -> None:
+    path = runtime_paths().database_path
+
+    if path in INITIALIZED_DATABASES:
+        return
+
+    with database_connection() as connection:
+        connection.execute("PRAGMA journal_mode = WAL")
+        create_database_schema(connection)
+
+    INITIALIZED_DATABASES.add(path)
+
+
 def ensure_runtime_state() -> None:
     paths = runtime_paths()
     paths.runtime_dir.mkdir(parents=True, exist_ok=True)
-    paths.task_data_dir.mkdir(parents=True, exist_ok=True)
     paths.agent_output_dir.mkdir(parents=True, exist_ok=True)
     paths.prompt_dir.mkdir(parents=True, exist_ok=True)
     paths.schema_dir.mkdir(parents=True, exist_ok=True)
     paths.self_check_dir.mkdir(parents=True, exist_ok=True)
-    paths.taskrc_path.write_text(build_taskrc_content(paths), encoding="utf-8")
+    initialize_database()
 
 
-def task_command_args(*args: str) -> list[str]:
-    return [
-        TASKWARRIOR_BIN,
-        f"rc:{runtime_paths().relative_taskrc_path.as_posix()}",
-        "rc.confirmation:no",
-        "rc.verbose:nothing",
-        *args,
-    ]
-
-
-def load_taskwarrior_records() -> list[dict[str, Any]]:
+def load_check_records() -> list[CheckRecord]:
     ensure_runtime_state()
-    result = run_command(
-        task_command_args("export"),
-        check=True,
-        failure_context="exporting isolated inconsistency-check Taskwarrior records",
-    )
 
-    try:
-        records = json.loads(result.stdout or "[]")
-    except json.JSONDecodeError as error:
-        raise CheckerFailureError(f"invalid Taskwarrior export JSON: {error}") from error
+    with database_connection() as connection:
+        rows = connection.execute(
+            """
+            SELECT pair_key, uuid, file_pair, changed_path, related_path, relation,
+                   checksum_changed, checksum_related, check_status, report, checked_at
+            FROM pair_checks
+            ORDER BY pair_key
+            """
+        ).fetchall()
 
-    if not isinstance(records, list):
-        raise CheckerFailureError("Taskwarrior export did not return a JSON list")
-
-    for record in records:
-        if not isinstance(record, dict):
-            raise CheckerFailureError(f"Taskwarrior export contained a non-object record: {record}")
-
-    return records
+    return [check_record_from_row(row) for row in rows]
 
 
-def raw_record_to_check_record(record: dict[str, Any]) -> CheckRecord:
-    return CheckRecord(
-        uuid=str(record.get("uuid") or ""),
-        pair_key=str(record.get("pair_key") or ""),
-        file_pair=str(record.get("file_pair") or ""),
-        changed_path=str(record.get("changed_path") or ""),
-        related_path=str(record.get("related_path") or ""),
-        relation=str(record.get("relation") or ""),
-        checksum_changed=str(record.get("checksum_changed") or ""),
-        checksum_related=str(record.get("checksum_related") or ""),
-        check_status=str(record.get("check_status") or ""),
-        report=str(record.get("report") or ""),
-        checked_at=str(record.get("checked_at") or ""),
-    )
+def find_check_record_by_pair_key(pair_key: str) -> CheckRecord | None:
+    ensure_runtime_state()
+
+    with database_connection() as connection:
+        row = connection.execute(
+            """
+            SELECT pair_key, uuid, file_pair, changed_path, related_path, relation,
+                   checksum_changed, checksum_related, check_status, report, checked_at
+            FROM pair_checks
+            WHERE pair_key = ?
+            """,
+            (pair_key,),
+        ).fetchone()
+
+    return check_record_from_row(row) if row is not None else None
 
 
 def load_allowed_check_records() -> list[CheckRecord]:
     allowed_relations = set(get_config().allowed_file_relations)
-
-    return [
-        raw_record_to_check_record(record)
-        for record in load_taskwarrior_records()
-        if record.get("pair_key") and record.get("relation") in allowed_relations
-    ]
+    return [record for record in load_check_records() if record.relation in allowed_relations]
 
 
 def load_allowed_check_records_read_only() -> list[CheckRecord]:
-    paths = runtime_paths()
+    return load_allowed_check_records()
 
-    if not paths.taskrc_path.is_file() or not paths.task_data_dir.is_dir():
-        return []
 
-    result = run_command(
-        task_command_args("export"),
-        check=True,
-        failure_context="exporting isolated inconsistency-check Taskwarrior records read-only",
+def build_pair_operation(
+    identity: PairIdentity,
+    *,
+    operation: str,
+    previous_status: str,
+    next_status: str,
+    source: str,
+) -> PairOperation:
+    return PairOperation(
+        occurred_at=utc_timestamp(),
+        operation=operation,
+        pair_key=identity.pair_key,
+        changed_path=identity.changed_path,
+        related_path=identity.related_path,
+        relation=identity.relation,
+        previous_status=previous_status,
+        next_status=next_status,
+        source=source,
     )
 
-    try:
-        records = json.loads(result.stdout or "[]")
-    except json.JSONDecodeError as error:
-        raise CheckerFailureError(f"invalid Taskwarrior export JSON: {error}") from error
 
-    if not isinstance(records, list) or any(not isinstance(record, dict) for record in records):
-        raise CheckerFailureError("Taskwarrior export did not return a JSON object list")
+def record_pair_operation(
+    identity: PairIdentity,
+    *,
+    operation: str,
+    previous_status: str,
+    next_status: str,
+    source: str,
+) -> None:
+    record = build_pair_operation(
+        identity,
+        operation=operation,
+        previous_status=previous_status,
+        next_status=next_status,
+        source=source,
+    )
 
-    allowed_relations = set(get_config().allowed_file_relations)
+    with database_connection() as connection, connection:
+        insert_pair_operation_row(connection, record)
+
+
+def load_pair_operations(*, last: int) -> list[PairOperation]:
+    if last <= 0:
+        raise CheckerFailureError("list-operations --last must be positive")
+
+    ensure_runtime_state()
+
+    with database_connection() as connection:
+        rows = connection.execute(
+            """
+            SELECT occurred_at, operation, pair_key, changed_path, related_path, relation,
+                   previous_status, next_status, source
+            FROM pair_operations
+            ORDER BY occurred_at DESC, id DESC
+            LIMIT ?
+            """,
+            (last,),
+        ).fetchall()
 
     return [
-        raw_record_to_check_record(record)
-        for record in records
-        if record.get("pair_key") and record.get("relation") in allowed_relations
+        raw_pair_operation(dict(row), context="reading SQLite pair-operation history")
+        for row in reversed(rows)
     ]
 
 
@@ -1534,7 +1838,7 @@ def current_pairs_read_only(
 
     for record in records:
         if record.pair_key in records_by_key:
-            raise CheckerFailureError("isolated Taskwarrior DB has duplicate pair_key records")
+            raise CheckerFailureError("inconsistency-check SQLite DB has duplicate pair_key records")
 
         records_by_key[record.pair_key] = record
 
@@ -1564,106 +1868,113 @@ def current_pairs_read_only(
     return current_pairs
 
 
-def find_raw_record_by_pair_key(records: list[dict[str, Any]], pair_key: str) -> dict[str, Any] | None:
-    matches = [record for record in records if record.get("pair_key") == pair_key]
-
-    if len(matches) > 1:
-        raise CheckerFailureError("isolated Taskwarrior DB has duplicate pair_key records")
-
-    return matches[0] if matches else None
-
-
-def identity_task_args(identity: PairIdentity) -> list[str]:
-    return [
-        f"description:{identity.changed_path} -> {identity.related_path} [{identity.relation}]",
-        f"pair_key:{identity.pair_key}",
-        f"file_pair:{identity.file_pair}",
-        f"changed_path:{identity.changed_path}",
-        f"related_path:{identity.related_path}",
-        f"relation:{identity.relation}",
-        f"checksum_changed:{identity.checksum_changed}",
-        f"checksum_related:{identity.checksum_related}",
-    ]
-
-
-def write_task_record(
+def new_check_record(
     identity: PairIdentity,
     *,
-    uuid: str | None,
+    record_uuid: str,
     check_status: str,
     report: str,
     checked_at: str,
 ) -> CheckRecord:
-    status_args = [
-        f"check_status:{check_status}",
-        f"report:{report}",
-        f"checked_at:{checked_at}",
-    ]
-
-    if uuid:
-        args = [uuid, "modify", *identity_task_args(identity), *status_args]
-    else:
-        args = ["add", *identity_task_args(identity), *status_args]
-
-    run_command(
-        task_command_args(*args),
-        check=True,
-        failure_context="writing isolated inconsistency-check Taskwarrior record",
-    )
-
-    raw_record = find_raw_record_by_pair_key(load_taskwarrior_records(), identity.pair_key)
-
-    if raw_record is None:
-        raise CheckerFailureError(f"Taskwarrior record was not found after write: {pair_journal_subject(identity)}")
-
-    return raw_record_to_check_record(raw_record)
-
-
-def upsert_unchecked_record(identity: PairIdentity) -> CheckRecord:
-    raw_record = find_raw_record_by_pair_key(load_taskwarrior_records(), identity.pair_key)
-
-    if raw_record is None:
-        record = write_task_record(identity, uuid=None, check_status="unchecked", report="", checked_at="")
-        log_pair_queued(identity, record.check_status or "unchecked")
-
-        return record
-
-    existing = raw_record_to_check_record(raw_record)
-    existing_status = existing.check_status or "unchecked"
-    should_reset_outdated = existing_status == "outdated"
-    next_status = "unchecked" if should_reset_outdated else existing_status
-    next_report = "" if should_reset_outdated else existing.report
-    next_checked_at = "" if should_reset_outdated else existing.checked_at
-
-    record = write_task_record(
-        identity,
-        uuid=existing.uuid,
-        check_status=next_status,
-        report=next_report,
-        checked_at=next_checked_at,
-    )
-
-    if should_reset_outdated:
-        log_pair_state_change(identity, "outdated", "unchecked")
-
-    return record
-
-
-def update_check_record(identity: PairIdentity, *, check_status: str, report: str, checked_at: str) -> CheckRecord:
-    raw_record = find_raw_record_by_pair_key(load_taskwarrior_records(), identity.pair_key)
-
-    if raw_record is None:
-        raise CheckerFailureError(f"cannot update missing pair record: {pair_journal_subject(identity)}")
-
-    existing = raw_record_to_check_record(raw_record)
-    previous_status = existing.check_status or "unchecked"
-    record = write_task_record(
-        identity,
-        uuid=existing.uuid,
+    return CheckRecord(
+        uuid=record_uuid,
+        pair_key=identity.pair_key,
+        file_pair=identity.file_pair,
+        changed_path=identity.changed_path,
+        related_path=identity.related_path,
+        relation=identity.relation,
+        checksum_changed=identity.checksum_changed,
+        checksum_related=identity.checksum_related,
         check_status=check_status,
         report=report,
         checked_at=checked_at,
     )
+
+
+def upsert_unchecked_record(
+    identity: PairIdentity,
+    records_by_pair_key: dict[str, CheckRecord],
+) -> CheckRecord:
+    existing = records_by_pair_key.get(identity.pair_key)
+
+    if existing is None:
+        record = new_check_record(
+            identity,
+            record_uuid=str(uuid.uuid4()),
+            check_status="unchecked",
+            report="",
+            checked_at="",
+        )
+        operation = build_pair_operation(
+            identity,
+            operation="queued",
+            previous_status="",
+            next_status="unchecked",
+            source="queue",
+        )
+
+        with database_connection() as connection, connection:
+            insert_check_record_row(connection, record)
+            insert_pair_operation_row(connection, operation)
+
+        records_by_pair_key[identity.pair_key] = record
+        log_pair_queued(identity, record.check_status or "unchecked")
+
+        return record
+
+    existing_status = existing.check_status or "unchecked"
+    should_reset_outdated = existing_status == "outdated"
+
+    if not should_reset_outdated:
+        return existing
+
+    record = update_check_record(
+        existing,
+        identity,
+        check_status="unchecked",
+        report="",
+        checked_at="",
+        operation="status_changed",
+        source="reconciliation",
+    )
+    records_by_pair_key[identity.pair_key] = record
+
+    return record
+
+
+def update_check_record(
+    existing: CheckRecord,
+    identity: PairIdentity,
+    *,
+    check_status: str,
+    report: str,
+    checked_at: str,
+    operation: str,
+    source: str,
+) -> CheckRecord:
+    if existing.pair_key != identity.pair_key:
+        raise CheckerFailureError("cannot update a pair record with a different identity")
+
+    previous_status = existing.check_status or "unchecked"
+    record = new_check_record(
+        identity,
+        record_uuid=existing.uuid,
+        check_status=check_status,
+        report=report,
+        checked_at=checked_at,
+    )
+    pair_operation = build_pair_operation(
+        identity,
+        operation=operation,
+        previous_status=previous_status,
+        next_status=check_status,
+        source=source,
+    )
+
+    with database_connection() as connection, connection:
+        update_check_record_row(connection, record)
+        insert_pair_operation_row(connection, pair_operation)
+
     log_pair_state_change(identity, previous_status, check_status)
 
     return record
@@ -1700,14 +2011,15 @@ def mark_record_outdated(record: CheckRecord, reason: str) -> CheckRecord:
         return record
 
     identity = record_identity(record)
-    updated_record = write_task_record(
+    updated_record = update_check_record(
+        record,
         identity,
-        uuid=record.uuid,
         check_status="outdated",
         report=record.report,
         checked_at=utc_timestamp(),
+        operation="status_changed",
+        source="reconciliation",
     )
-    log_pair_state_change(identity, record.check_status or "unchecked", "outdated")
     log_project_journal("step", f"outdated pair detected for {record_journal_subject(record)}: {single_line(reason)}")
 
     return updated_record
@@ -1795,14 +2107,18 @@ def set_relation_pair_check_status(
         raise CheckerFailureError(f"unsupported explicit check status: {check_status}")
 
     identity = build_pair_identity(pair)
-    upsert_unchecked_record(identity)
+    existing_records = load_allowed_check_records()
+    existing = upsert_unchecked_record(identity, {record.pair_key: record for record in existing_records})
     normalized_report = "" if check_status == "unchecked" else normalize_explicit_report(check_status, report)
     checked_at = "" if check_status == "unchecked" else utc_timestamp()
     record = update_check_record(
+        existing,
         identity,
         check_status=check_status,
         report=normalized_report,
         checked_at=checked_at,
+        operation="marked",
+        source="explicit-command",
     )
     log_project_journal(
         "step",
@@ -1815,6 +2131,7 @@ def set_relation_pair_check_status(
 def reconcile_queue(pairs: list[RelationPair]) -> list[CurrentPair]:
     current_pairs: list[CurrentPair] = []
     existing_records = load_allowed_check_records()
+    records_by_pair_key = {record.pair_key: record for record in existing_records}
     skipped_missing = 0
     superseded_records = 0
 
@@ -1832,7 +2149,7 @@ def reconcile_queue(pairs: list[RelationPair]) -> list[CurrentPair]:
             )
             continue
 
-        record = upsert_unchecked_record(identity)
+        record = upsert_unchecked_record(identity, records_by_pair_key)
         superseded_records += mark_superseded_pair_versions(identity, existing_records)
         current_pairs.append(CurrentPair(pair=pair, identity=identity, record=record))
 
@@ -1952,6 +2269,37 @@ def artifact_statuses(
     return result
 
 
+def scheduling_component_depths(graphs: DependencyGraphs) -> dict[GraphComponent, int]:
+    predecessors: dict[GraphComponent, set[GraphComponent]] = {
+        component: set() for component in graphs.scheduling_components
+    }
+
+    for source, target in graphs.scheduling_edges:
+        predecessors[target].add(source)
+
+    depths: dict[GraphComponent, int] = {}
+    pending = set(graphs.scheduling_components)
+
+    while pending:
+        ready = sorted(component for component in pending if predecessors[component].issubset(depths))
+
+        if not ready:
+            pending_text = ", ".join(path for component in sorted(pending) for path in component)
+            raise CheckerFailureError(f"dependency components have no topological order: {pending_text}")
+
+        for component in ready:
+            component_predecessors = predecessors[component]
+            depths[component] = (
+                max(depths[predecessor] for predecessor in component_predecessors) + 1
+                if component_predecessors
+                else 0
+            )
+
+        pending.difference_update(ready)
+
+    return depths
+
+
 def select_frontier(
     graphs: DependencyGraphs,
     current_pairs: Iterable[CurrentPair],
@@ -1999,11 +2347,15 @@ def select_frontier(
         for component, status in component_statuses.items()
         if status in {"unchecked", "inconsistent"}
     }
+    component_depths = scheduling_component_depths(graphs)
     frontier_components = tuple(
         sorted(
-            component
-            for component in pending_components
-            if all(component_statuses[predecessor] == "resolved" for predecessor in all_predecessors(component))
+            (
+                component
+                for component in pending_components
+                if all(component_statuses[predecessor] == "resolved" for predecessor in all_predecessors(component))
+            ),
+            key=lambda component: (component_depths[component], component),
         )
     )
 
@@ -2296,22 +2648,33 @@ def prepare_child_check(
     )
 
 
-def run_child_checker(prepared: PreparedChildCheck) -> str:
+def run_child_checker(
+    prepared: PreparedChildCheck,
+    *,
+    registry: RunningChildRegistry | None = None,
+) -> str:
     running = start_child_checker(prepared)
 
-    while running.process.poll() is None:
-        if child_checker_timed_out(running):
-            kill_running_child(running)
-            raise CheckerFailureError(
-                f"running {prepared.agent_name} child Codex checker for "
-                f"{pair_journal_subject(prepared.current_pair.identity)}: "
-                f"timed out after {prepared.agent_config.timeout_seconds} seconds: "
-                f"{format_argv(running.argv)}"
-            )
+    if registry is not None:
+        registry.add(running)
 
-        time.sleep(0.1)
+    try:
+        while running.process.poll() is None:
+            if child_checker_timed_out(running):
+                kill_running_child(running)
+                raise CheckerFailureError(
+                    f"running {prepared.agent_name} child Codex checker for "
+                    f"{pair_journal_subject(prepared.current_pair.identity)}: "
+                    f"timed out after {prepared.agent_config.timeout_seconds} seconds: "
+                    f"{format_argv(running.argv)}"
+                )
 
-    return finish_child_checker(running)
+            time.sleep(0.1)
+
+        return finish_child_checker(running)
+    finally:
+        if registry is not None:
+            registry.discard(running)
 
 
 def start_child_checker(prepared: PreparedChildCheck) -> RunningChildCheck:
@@ -2349,17 +2712,17 @@ def start_child_checker(prepared: PreparedChildCheck) -> RunningChildCheck:
             f"{pair_subject}: {format_argv(command)}: {error}"
         ) from error
 
+    running = RunningChildCheck(
+        prepared=prepared,
+        argv=command,
+        process=process,
+        stdout_path=stdout_path,
+        stderr_path=stderr_path,
+        started_at=time.monotonic(),
+    )
+
     if process.stdin is None:
-        kill_running_child(
-            RunningChildCheck(
-                prepared=prepared,
-                argv=command,
-                process=process,
-                stdout_path=stdout_path,
-                stderr_path=stderr_path,
-                started_at=time.monotonic(),
-            )
-        )
+        kill_running_child(running)
         raise CheckerFailureError(
             f"{prepared.agent_name} child Codex checker stdin was unavailable for {pair_subject}"
         )
@@ -2368,28 +2731,26 @@ def start_child_checker(prepared: PreparedChildCheck) -> RunningChildCheck:
         process.stdin.write(prepared.prompt)
         process.stdin.close()
     except OSError as error:
-        kill_running_child(
-            RunningChildCheck(
-                prepared=prepared,
-                argv=command,
-                process=process,
-                stdout_path=stdout_path,
-                stderr_path=stderr_path,
-                started_at=time.monotonic(),
-            )
-        )
+        kill_running_child(running)
         raise CheckerFailureError(
             f"writing {prepared.agent_name} child Codex checker prompt failed for {pair_subject}: {error}"
         ) from error
 
-    return RunningChildCheck(
-        prepared=prepared,
-        argv=command,
-        process=process,
-        stdout_path=stdout_path,
-        stderr_path=stderr_path,
-        started_at=time.monotonic(),
-    )
+    status = normalized_check_status(prepared.current_pair.record)
+
+    try:
+        record_pair_operation(
+            prepared.current_pair.identity,
+            operation="dispatched",
+            previous_status=status,
+            next_status=status,
+            source=prepared.agent_name,
+        )
+    except CheckerFailureError:
+        kill_running_child(running)
+        raise
+
+    return running
 
 
 def child_checker_timed_out(running: RunningChildCheck) -> bool:
@@ -2433,6 +2794,10 @@ def finish_child_checker(running: RunningChildCheck) -> str:
 
 def utc_timestamp() -> str:
     return datetime.now(UTC).isoformat()
+
+
+def local_timestamp(timestamp: str) -> str:
+    return datetime.fromisoformat(timestamp).astimezone().isoformat()
 
 
 def malformed_child_error(agent_name: str, reason: str, output: str) -> CheckerFailureError:
@@ -2522,10 +2887,13 @@ def update_record_from_decision(
     decision_source: str,
 ) -> CurrentPair:
     record = update_check_record(
+        current_pair.record,
         current_pair.identity,
         check_status=check_status,
         report=report,
         checked_at=utc_timestamp(),
+        operation="checked",
+        source=decision_source,
     )
     log_project_journal(
         "step",
@@ -2556,12 +2924,11 @@ def reviewed_report(
     ).strip()
 
 
-def update_record_from_reviewer_output(
-    current_pair: CurrentPair,
+def decision_from_reviewer_output(
     *,
     validator_report: str,
     reviewer_output: str,
-) -> CurrentPair:
+) -> PairCheckDecision:
     config = get_config()
     review_status, reviewer_report = validate_child_result(
         reviewer_output,
@@ -2573,8 +2940,7 @@ def update_record_from_reviewer_output(
     )
     check_status = "inconsistent" if review_status == "confirmed" else "consistent"
 
-    return update_record_from_decision(
-        current_pair,
+    return PairCheckDecision(
         check_status=check_status,
         report=reviewed_report(
             review_status=review_status,
@@ -2585,8 +2951,36 @@ def update_record_from_reviewer_output(
     )
 
 
-def update_record_from_validator_output(current_pair: CurrentPair, output: str) -> CurrentPair:
+def update_record_from_reviewer_output(
+    current_pair: CurrentPair,
+    *,
+    validator_report: str,
+    reviewer_output: str,
+) -> CurrentPair:
+    decision = decision_from_reviewer_output(
+        validator_report=validator_report,
+        reviewer_output=reviewer_output,
+    )
+
+    return update_record_from_decision(
+        current_pair,
+        check_status=decision.check_status,
+        report=decision.report,
+        decision_source=decision.decision_source,
+    )
+
+
+def run_pair_checker(
+    prepared_validator: PreparedChildCheck,
+    *,
+    child_runner: Callable[[PreparedChildCheck], str] = run_child_checker,
+) -> PairCheckDecision:
+    if prepared_validator.agent_name != "validator":
+        raise CheckerFailureError("pair checker must start with a prepared validator")
+
     config = get_config()
+    current_pair = prepared_validator.current_pair
+    output = child_runner(prepared_validator)
     check_status, validator_report = validate_child_result(
         output,
         agent_name="validator",
@@ -2597,8 +2991,7 @@ def update_record_from_validator_output(current_pair: CurrentPair, output: str) 
     )
 
     if check_status == "consistent":
-        return update_record_from_decision(
-            current_pair,
+        return PairCheckDecision(
             check_status="consistent",
             report=validator_report,
             decision_source="validator",
@@ -2610,51 +3003,34 @@ def update_record_from_validator_output(current_pair: CurrentPair, output: str) 
         agent_config=config.agent_reviewer,
         validator_report=validator_report,
     )
-    reviewer_output = run_child_checker(prepared_reviewer)
-    stale_reason = record_outdated_reason(current_pair.record)
+    reviewer_output = child_runner(prepared_reviewer)
 
-    if stale_reason is not None:
-        record = mark_record_outdated_during_processing(
-            current_pair.record,
-            f"pair changed during reviewer adjudication: {stale_reason}",
-        )
-        return CurrentPair(pair=current_pair.pair, identity=current_pair.identity, record=record)
-
-    return update_record_from_reviewer_output(
-        current_pair,
+    return decision_from_reviewer_output(
         validator_report=validator_report,
         reviewer_output=reviewer_output,
     )
 
 
-def wait_for_finished_children(running: dict[str, RunningChildCheck]) -> list[RunningChildCheck]:
+RunningPairCheck = tuple[CurrentPair, Future[PairCheckDecision]]
+
+
+def wait_for_finished_pair_checks(
+    running: dict[str, RunningPairCheck],
+) -> list[tuple[str, CurrentPair, Future[PairCheckDecision]]]:
     while True:
-        finished = [child for child in running.values() if child.process.poll() is not None]
+        finished = [
+            (pair_key, current_pair, future)
+            for pair_key, (current_pair, future) in running.items()
+            if future.done()
+        ]
 
         if finished:
-            return finished
-
-        timed_out = [child for child in running.values() if child_checker_timed_out(child)]
-
-        if timed_out:
-            timed_out_child = sorted(
-                timed_out,
-                key=lambda child: current_pair_sort_key(child.prepared.current_pair),
-            )[0]
-            kill_running_child(timed_out_child)
-            raise CheckerFailureError(
-                f"running {timed_out_child.prepared.agent_name} child Codex checker for "
-                f"{pair_journal_subject(timed_out_child.prepared.current_pair.identity)}: "
-                f"timed out after {timed_out_child.prepared.agent_config.timeout_seconds} seconds: "
-                f"{format_argv(timed_out_child.argv)}"
+            return sorted(
+                finished,
+                key=lambda item: current_pair_sort_key(item[1]),
             )
 
         time.sleep(0.1)
-
-
-def terminate_running_children(running: dict[str, RunningChildCheck]) -> None:
-    for child in running.values():
-        kill_running_child(child)
 
 
 def process_current_frontier(
@@ -2693,148 +3069,189 @@ def process_current_frontier(
         log_project_journal("step", f"{command_name} outcome: success after fresh no-work cycle")
         return ExitCode.SUCCESS
 
-    running: dict[str, RunningChildCheck] = {}
+    running: dict[str, RunningPairCheck] = {}
+    child_registry = RunningChildRegistry()
     inconsistency_found = False
     stale_found = False
     launched_child = False
     log_project_journal("step", f"{command_name} processing with agent-jobs:{agent_jobs}")
 
-    try:
-        while True:
+    def registered_child_runner(prepared: PreparedChildCheck) -> str:
+        return run_child_checker(prepared, registry=child_registry)
+
+    with ThreadPoolExecutor(max_workers=agent_jobs) as executor:
+        try:
             while True:
-                unchecked_pair = next_frontier_candidate(
-                    frontier_pairs,
-                    set(running),
-                    agent_jobs=agent_jobs,
-                    stop_launching=inconsistency_found or stale_found,
-                )
-
-                if unchecked_pair is None:
-                    break
-
-                checked_pair = mark_current_pair_outdated_if_needed(unchecked_pair)
-
-                if normalized_check_status(checked_pair.record) == "outdated":
-                    current_pairs = replace_current_pair(current_pairs, checked_pair)
-                    frontier_pairs = replace_current_pair(frontier_pairs, checked_pair)
-                    stale_found = True
-                    log_project_journal(
-                        "step",
-                        (
-                            f"{command_name} stale frontier detected before launch: "
-                            f"{pair_journal_subject(checked_pair.identity)}"
-                        ),
-                    )
-                    break
-
-                try:
-                    prepared = prepare_child_check(
-                        checked_pair,
-                        agent_name="validator",
-                        agent_config=get_config().agent_validator,
-                    )
-                except MissingArtifactError as error:
-                    updated_record = mark_record_outdated_during_processing(
-                        checked_pair.record,
-                        f"file is missing before child check: {error.path}",
-                    )
-                    current_pairs = replace_current_pair(
-                        current_pairs,
-                        CurrentPair(pair=checked_pair.pair, identity=checked_pair.identity, record=updated_record),
-                    )
-                    frontier_pairs = replace_current_pair(
+                while True:
+                    unchecked_pair = next_frontier_candidate(
                         frontier_pairs,
-                        CurrentPair(pair=checked_pair.pair, identity=checked_pair.identity, record=updated_record),
+                        set(running),
+                        agent_jobs=agent_jobs,
+                        stop_launching=inconsistency_found or stale_found,
                     )
-                    stale_found = True
-                    log_project_journal("step", f"{command_name} stale frontier detected before launch")
-                    break
-                except OutdatedPairError as error:
-                    updated_record = mark_record_outdated_during_processing(checked_pair.record, error.reason)
-                    current_pairs = replace_current_pair(
-                        current_pairs,
-                        CurrentPair(pair=checked_pair.pair, identity=checked_pair.identity, record=updated_record),
+
+                    if unchecked_pair is None:
+                        break
+
+                    checked_pair = mark_current_pair_outdated_if_needed(unchecked_pair)
+
+                    if normalized_check_status(checked_pair.record) == "outdated":
+                        current_pairs = replace_current_pair(current_pairs, checked_pair)
+                        frontier_pairs = replace_current_pair(frontier_pairs, checked_pair)
+                        stale_found = True
+                        log_project_journal(
+                            "step",
+                            (
+                                f"{command_name} stale frontier detected before launch: "
+                                f"{pair_journal_subject(checked_pair.identity)}"
+                            ),
+                        )
+                        break
+
+                    try:
+                        prepared = prepare_child_check(
+                            checked_pair,
+                            agent_name="validator",
+                            agent_config=get_config().agent_validator,
+                        )
+                    except MissingArtifactError as error:
+                        updated_record = mark_record_outdated_during_processing(
+                            checked_pair.record,
+                            f"file is missing before child check: {error.path}",
+                        )
+                        current_pairs = replace_current_pair(
+                            current_pairs,
+                            CurrentPair(pair=checked_pair.pair, identity=checked_pair.identity, record=updated_record),
+                        )
+                        frontier_pairs = replace_current_pair(
+                            frontier_pairs,
+                            CurrentPair(pair=checked_pair.pair, identity=checked_pair.identity, record=updated_record),
+                        )
+                        stale_found = True
+                        log_project_journal("step", f"{command_name} stale frontier detected before launch")
+                        break
+                    except OutdatedPairError as error:
+                        updated_record = mark_record_outdated_during_processing(checked_pair.record, error.reason)
+                        current_pairs = replace_current_pair(
+                            current_pairs,
+                            CurrentPair(pair=checked_pair.pair, identity=checked_pair.identity, record=updated_record),
+                        )
+                        frontier_pairs = replace_current_pair(
+                            frontier_pairs,
+                            CurrentPair(pair=checked_pair.pair, identity=checked_pair.identity, record=updated_record),
+                        )
+                        stale_found = True
+                        log_project_journal("step", f"{command_name} stale frontier detected before launch")
+                        break
+
+                    future = executor.submit(
+                        run_pair_checker,
+                        prepared,
+                        child_runner=registered_child_runner,
                     )
-                    frontier_pairs = replace_current_pair(
+                    running[checked_pair.identity.pair_key] = (checked_pair, future)
+                    launched_child = True
+
+                if not running:
+                    outcome = completed_frontier_exit_code(
                         frontier_pairs,
-                        CurrentPair(pair=checked_pair.pair, identity=checked_pair.identity, record=updated_record),
+                        launched_child=launched_child,
+                        stale_found=stale_found,
                     )
-                    stale_found = True
-                    log_project_journal("step", f"{command_name} stale frontier detected before launch")
-                    break
 
-                running[checked_pair.identity.pair_key] = start_child_checker(prepared)
-                launched_child = True
+                    if outcome == ExitCode.CONTINUE_CYCLE and stale_found:
+                        current_selection = select_frontier(graphs, current_pairs)
+                        print_frontier_summary(
+                            tracked_files,
+                            current_pairs,
+                            current_selection,
+                            fresh_cycle_required=True,
+                        )
+                        log_project_journal("step", f"{command_name} outcome: stale frontier requires rediscovery")
+                        return outcome
 
-            if not running:
-                outcome = completed_frontier_exit_code(
-                    frontier_pairs,
-                    launched_child=launched_child,
-                    stale_found=stale_found,
-                )
+                    if outcome == ExitCode.INCONSISTENCY_FOUND:
+                        inconsistent_pair = first_frontier_pair_with_status(frontier_pairs, "inconsistent")
 
-                if outcome == ExitCode.CONTINUE_CYCLE and stale_found:
-                    current_selection = select_frontier(graphs, current_pairs)
-                    print_frontier_summary(tracked_files, current_pairs, current_selection, fresh_cycle_required=True)
-                    log_project_journal("step", f"{command_name} outcome: stale frontier requires rediscovery")
-                    return outcome
+                        if inconsistent_pair is None:
+                            raise CheckerFailureError("frontier inconsistency outcome has no inconsistent pair")
 
-                if outcome == ExitCode.INCONSISTENCY_FOUND:
-                    inconsistent_pair = first_frontier_pair_with_status(frontier_pairs, "inconsistent")
+                        print_inconsistent_pair(inconsistent_pair)
+                        log_project_journal("step", f"{command_name} outcome: frontier pair task found inconsistency")
+                        return outcome
 
-                    if inconsistent_pair is None:
-                        raise CheckerFailureError("frontier inconsistency outcome has no inconsistent pair")
+                    if outcome == ExitCode.CONTINUE_CYCLE:
+                        current_selection = select_frontier(graphs, current_pairs)
+                        print_frontier_summary(
+                            tracked_files,
+                            current_pairs,
+                            current_selection,
+                            fresh_cycle_required=True,
+                        )
+                        log_project_journal("step", f"{command_name} frontier completed; fresh cycle required")
+                        log_project_journal("step", f"{command_name} outcome: continue after successful frontier")
+                        return outcome
 
-                    print_inconsistent_pair(inconsistent_pair)
-                    log_project_journal("step", f"{command_name} outcome: frontier child found inconsistency")
-                    return outcome
+                    raise CheckerFailureError(f"{command_name} produced unsupported frontier outcome: {outcome}")
 
-                if outcome == ExitCode.CONTINUE_CYCLE:
-                    current_selection = select_frontier(graphs, current_pairs)
-                    print_frontier_summary(tracked_files, current_pairs, current_selection, fresh_cycle_required=True)
-                    log_project_journal("step", f"{command_name} frontier completed; fresh cycle required")
-                    log_project_journal("step", f"{command_name} outcome: continue after successful frontier")
-                    return outcome
+                for pair_key, finished_pair, future in wait_for_finished_pair_checks(running):
+                    running.pop(pair_key)
+                    decision: PairCheckDecision | None = None
 
-                raise CheckerFailureError(f"{command_name} produced unsupported frontier outcome: {outcome}")
+                    try:
+                        decision = future.result()
+                    except MissingArtifactError as error:
+                        stale_reason = f"file is missing during pair check: {error.path}"
+                    except OutdatedPairError as error:
+                        stale_reason = error.reason
+                    else:
+                        stale_reason = record_outdated_reason(finished_pair.record)
 
-            for finished_child in wait_for_finished_children(running):
-                pair_key = finished_child.prepared.current_pair.identity.pair_key
-                running.pop(pair_key)
-                child_output = finish_child_checker(finished_child)
-                finished_pair = finished_child.prepared.current_pair
-                stale_reason = record_outdated_reason(finished_pair.record)
+                    if stale_reason is not None:
+                        updated_record = mark_record_outdated_during_processing(
+                            finished_pair.record,
+                            f"pair changed during child adjudication: {stale_reason}",
+                        )
+                        updated_pair = CurrentPair(
+                            pair=finished_pair.pair,
+                            identity=finished_pair.identity,
+                            record=updated_record,
+                        )
+                        stale_found = True
+                        log_project_journal(
+                            "step",
+                            (
+                                f"{command_name} stale frontier detected after pair-task completion: "
+                                f"{pair_journal_subject(finished_pair.identity)}"
+                            ),
+                        )
+                    else:
+                        if decision is None:
+                            raise CheckerFailureError("completed pair task produced no decision")
 
-                if stale_reason is not None:
-                    updated_record = mark_record_outdated_during_processing(finished_pair.record, stale_reason)
-                    updated_pair = CurrentPair(
-                        pair=finished_pair.pair,
-                        identity=finished_pair.identity,
-                        record=updated_record,
-                    )
-                    stale_found = True
-                    log_project_journal(
-                        "step",
-                        (
-                            f"{command_name} stale frontier detected after child completion: "
-                            f"{pair_journal_subject(finished_pair.identity)}"
-                        ),
-                    )
-                else:
-                    updated_pair = update_record_from_validator_output(finished_pair, child_output)
+                        updated_pair = update_record_from_decision(
+                            finished_pair,
+                            check_status=decision.check_status,
+                            report=decision.report,
+                            decision_source=decision.decision_source,
+                        )
 
-                current_pairs = replace_current_pair(current_pairs, updated_pair)
-                frontier_pairs = replace_current_pair(frontier_pairs, updated_pair)
+                    current_pairs = replace_current_pair(current_pairs, updated_pair)
+                    frontier_pairs = replace_current_pair(frontier_pairs, updated_pair)
 
-                updated_status = normalized_check_status(updated_pair.record)
+                    updated_status = normalized_check_status(updated_pair.record)
 
-                if updated_status == "inconsistent":
-                    inconsistency_found = True
-                elif updated_status == "outdated":
-                    stale_found = True
-    except CheckerFailureError:
-        terminate_running_children(running)
-        raise
+                    if updated_status == "inconsistent":
+                        inconsistency_found = True
+                    elif updated_status == "outdated":
+                        stale_found = True
+        except (CheckerFailureError, KeyboardInterrupt):
+            child_registry.terminate_all()
+
+            for _current_pair, future in running.values():
+                future.cancel()
+
+            raise
 
 
 def effective_agent_jobs(args: argparse.Namespace) -> int:
@@ -3135,10 +3552,10 @@ def build_progress_report(path: str) -> str:
     artifact_path = normalize_input_path(path)
     allowed_relations = set(get_config().allowed_file_relations)
     records = [
-        raw_record_to_check_record(record)
-        for record in load_taskwarrior_records()
-        if record.get("changed_path") == artifact_path or record.get("related_path") == artifact_path
-        if record.get("relation") in allowed_relations
+        record
+        for record in load_check_records()
+        if record.changed_path == artifact_path or record.related_path == artifact_path
+        if record.relation in allowed_relations
     ]
     records.sort(key=lambda record: (record.changed_path, record.relation, record.related_path, record.pair_key))
     counts = Counter(record.check_status or "unknown" for record in records)
@@ -3300,6 +3717,63 @@ def list_pairs(args: argparse.Namespace) -> ExitCode:
     return ExitCode.SUCCESS
 
 
+def build_pair_operations_report(operations: Iterable[PairOperation]) -> str:
+    operation_records = list(operations)
+    headers = [
+        "occurred at",
+        "operation",
+        "previous status",
+        "next status",
+        "source",
+        "changed file",
+        "relation",
+        "related file",
+    ]
+    operation_rows = [
+        [
+            local_timestamp(record.occurred_at),
+            record.operation,
+            record.previous_status or "(none)",
+            record.next_status,
+            record.source,
+            record.changed_path,
+            record.relation,
+            record.related_path,
+        ]
+        for record in operation_records
+    ]
+    table_rows = [headers, *operation_rows]
+    column_widths = [
+        max(len(value) for value in column)
+        for column in zip(*table_rows, strict=True)
+    ]
+    lines = [
+        " | ".join(
+            value.ljust(width)
+            for value, width in zip(row, column_widths, strict=True)
+        )
+        for row in table_rows
+    ]
+    lines.insert(1, " | ".join("-" * width for width in column_widths))
+
+    if lines:
+        lines.append("")
+
+    lines.append(f"operations: {len(operation_records)}")
+
+    return "\n".join(lines)
+
+
+def list_operations(args: argparse.Namespace) -> ExitCode:
+    ensure_runtime_state()
+    last = int(args.last)
+    log_project_journal("step", f"list-operations command started last:{last}")
+    operations = load_pair_operations(last=last)
+    print(build_pair_operations_report(operations))
+
+    return ExitCode.SUCCESS
+
+
 def print_status_update(current_pair: CurrentPair) -> None:
     record = current_pair.record
     print("Updated relation pair status")
@@ -3387,14 +3861,10 @@ def enqueue_files(paths: list[str]) -> ExitCode:
 
 def clear_queue() -> ExitCode:
     ensure_runtime_state()
-    records = load_taskwarrior_records()
-    count = len(records)
-    paths = runtime_paths()
+    with database_connection() as connection, connection:
+        count = int(connection.execute("SELECT COUNT(*) FROM pair_checks").fetchone()[0])
+        connection.execute("DELETE FROM pair_checks")
 
-    if paths.task_data_dir.exists():
-        shutil.rmtree(paths.task_data_dir)
-
-    ensure_runtime_state()
     log_project_journal("change", f"inconsistency-check cleared queue records:{count}")
     print(f"Cleared inconsistency-check queue records: {count}")
 
@@ -3407,15 +3877,25 @@ def assert_self_check(condition: bool, message: str) -> None:
 
 
 def reset_self_check_record(identity: PairIdentity) -> None:
-    raw_record = find_raw_record_by_pair_key(load_taskwarrior_records(), identity.pair_key)
+    existing = find_check_record_by_pair_key(identity.pair_key)
 
-    if raw_record is None:
+    if existing is None:
         return
 
-    existing = raw_record_to_check_record(raw_record)
     previous_status = existing.check_status or "unchecked"
-    write_task_record(identity, uuid=existing.uuid, check_status="unchecked", report="", checked_at="")
-    log_pair_state_change(identity, previous_status, "unchecked")
+
+    if previous_status == "unchecked":
+        return
+
+    update_check_record(
+        existing,
+        identity,
+        check_status="unchecked",
+        report="",
+        checked_at="",
+        operation="status_changed",
+        source="self-check",
+    )
 
 
 def runtime_artifact_path(*parts: str) -> str:
@@ -3529,6 +4009,54 @@ def run_dependency_scheduler_self_checks() -> None:
     assert_self_check(
         frontier_files(select_frontier(independent_graph, independent_pairs)) == tuple(sorted((root, independent))),
         "independent roots must share a frontier",
+    )
+
+    shallow_spec = "@/specs/shallow.md"
+    deep_code = "@/ffun/deep.py"
+    mixed_depth_graph = build_dependency_graphs(
+        [root, middle, shallow_spec, deep_code],
+        {
+            root: [],
+            middle: [root],
+            shallow_spec: [root],
+            deep_code: [middle],
+        },
+    )
+    mixed_depth_pairs = [
+        synthetic_current_pair(root, status="consistent"),
+        synthetic_current_pair(middle, status="consistent"),
+        synthetic_current_pair(shallow_spec, status="inconsistent"),
+        synthetic_current_pair(deep_code, status="inconsistent"),
+    ]
+    mixed_depth_selection = select_frontier(mixed_depth_graph, mixed_depth_pairs)
+    mixed_depth_ordered_pairs = ordered_frontier_pairs(mixed_depth_selection, mixed_depth_pairs)
+    assert_self_check(
+        frontier_files(mixed_depth_selection) == tuple(sorted((shallow_spec, deep_code))),
+        "ready artifacts from different dependency depths must share a frontier",
+    )
+    assert_self_check(
+        mixed_depth_selection.frontier_components == ((shallow_spec,), (deep_code,)),
+        "shallower frontier components must precede deeper components before lexical ordering",
+    )
+    assert_self_check(
+        first_frontier_pair_with_status(mixed_depth_ordered_pairs, "inconsistent")
+        == mixed_depth_pairs[2],
+        "a shallower inconsistency must be selected before a deeper inconsistency",
+    )
+    launchable_mixed_depth_pairs = [
+        synthetic_current_pair(current_pair.pair.changed_path, status="unchecked")
+        for current_pair in mixed_depth_ordered_pairs
+    ]
+    assert_self_check(
+        next_frontier_candidate(
+            launchable_mixed_depth_pairs,
+            set(),
+            agent_jobs=get_config().agent_jobs,
+            stop_launching=False,
+        )
+        == launchable_mixed_depth_pairs[0]
+        and launchable_mixed_depth_pairs[0].pair.changed_path == shallow_spec,
+        "shallower frontier work must launch before deeper frontier work",
     )
 
     left = "@/changed/left"
@@ -3926,6 +4454,132 @@ def run_self_check() -> ExitCode:
     assert_self_check(all(path.startswith("@/") for path in changed_files), "changed files must be artifact ids")
 
     paths = runtime_paths()
+    with database_connection() as connection:
+        schema_version = int(connection.execute("PRAGMA user_version").fetchone()[0])
+
+    assert_self_check(
+        schema_version == SQLITE_SCHEMA_VERSION,
+        "SQLite state must use the current schema version",
+    )
+    self_check_operations = (
+        PairOperation(
+            occurred_at="2026-01-01T00:00:00+00:00",
+            operation="queued",
+            pair_key="self-check-operation-1",
+            changed_path="@/self-check/operation-changed.py",
+            related_path="@/self-check/operation-related.md",
+            relation=allowed_relation,
+            previous_status="",
+            next_status="unchecked",
+            source="queue",
+        ),
+        PairOperation(
+            occurred_at="2026-01-01T00:00:01+00:00",
+            operation="marked",
+            pair_key="self-check-operation-1",
+            changed_path="@/self-check/operation-changed.py",
+            related_path="@/self-check/operation-related.md",
+            relation=allowed_relation,
+            previous_status="unchecked",
+            next_status="inconsistent",
+            source="explicit-command",
+        ),
+        PairOperation(
+            occurred_at="2026-01-01T00:00:02+00:00",
+            operation="dispatched",
+            pair_key="self-check-operation-2",
+            changed_path="@/self-check/second-operation-changed.py",
+            related_path="@/self-check/second-operation-related.md",
+            relation=allowed_relation,
+            previous_status="unchecked",
+            next_status="unchecked",
+            source="reviewer",
+        ),
+        PairOperation(
+            occurred_at="2026-01-01T00:00:03+00:00",
+            operation="checked",
+            pair_key="self-check-operation-2",
+            changed_path="@/self-check/second-operation-changed.py",
+            related_path="@/self-check/second-operation-related.md",
+            relation=allowed_relation,
+            previous_status="unchecked",
+            next_status="consistent",
+            source="validator",
+        ),
+        PairOperation(
+            occurred_at="2026-01-01T00:00:04+00:00",
+            operation="status_changed",
+            pair_key="self-check-operation-2",
+            changed_path="@/self-check/second-operation-changed.py",
+            related_path="@/self-check/second-operation-related.md",
+            relation=allowed_relation,
+            previous_status="consistent",
+            next_status="outdated",
+            source="reconciliation",
+        ),
+    )
+
+    recent_self_check_operations = list(self_check_operations[-4:])
+    operation_report = build_pair_operations_report(recent_self_check_operations)
+    report_lines = operation_report.splitlines()
+    rendered_header_columns = report_lines[0].split(" | ")
+    separator_columns = report_lines[1].split(" | ")
+    header_columns = [value.strip() for value in rendered_header_columns]
+    operation_lines = report_lines[2 : len(recent_self_check_operations) + 2]
+    operation_columns = [line.split(" | ") for line in operation_lines]
+    table_columns = [rendered_header_columns, *operation_columns]
+    assert_self_check(
+        header_columns
+        == [
+            "occurred at",
+            "operation",
+            "previous status",
+            "next status",
+            "source",
+            "changed file",
+            "relation",
+            "related file",
+        ],
+        "operation report must show the expected column headers",
+    )
+    assert_self_check(
+        all(
+            separator == "-" * len(header)
+            for separator, header in zip(separator_columns, rendered_header_columns, strict=True)
+        ),
+        "operation report must separate its header from its body with a width-aligned line",
+    )
+    assert_self_check(
+        operation_columns[0][0] == local_timestamp("2026-01-01T00:00:01+00:00")
+        and operation_columns[0][1].strip() == "marked"
+        and operation_columns[0][2].strip() == "unchecked"
+        and operation_columns[0][3].strip() == "inconsistent",
+        "operation report must show time, operation, previous status, and next status separately",
+    )
+    assert_self_check(
+        operation_columns[0][5].strip() == "@/self-check/operation-changed.py"
+        and operation_columns[0][6].strip() == allowed_relation
+        and operation_columns[0][7].strip() == "@/self-check/operation-related.md",
+        "operation report must show changed file, relation, and related file separately",
+    )
+    assert_self_check(
+        operation_columns[1][1].strip() == "dispatched"
+        and operation_columns[1][2].strip() == "unchecked"
+        and operation_columns[1][3].strip() == "unchecked"
+        and operation_columns[1][4].strip() == "reviewer",
+        "operation report must show a same-status agent dispatch",
+    )
+    assert_self_check(
+        all(
+            len({len(columns[column_index]) for columns in table_columns}) == 1
+            for column_index in range(len(header_columns))
+        ),
+        "operation report columns must use widths derived from the headers and selected operations",
+    )
+    assert_self_check(
+        operation_report.endswith("operations: 4"),
+        "operation report must show the selected operation count",
+    )
     changed_path = runtime_artifact_path("self-check", "changed.txt")
     related_path = runtime_artifact_path("self-check", "related.txt")
     second_related_path = runtime_artifact_path("self-check", "second-related.txt")
@@ -4065,34 +4719,81 @@ def run_self_check() -> ExitCode:
     selection = select_current_pair(current_pairs)
     assert_self_check(selection.unchecked is not None, "one unchecked pair must be selected")
     assert_self_check(selection.inconsistent is None, "unchecked selection must not report inconsistency")
-    consistent_pair = update_record_from_validator_output(
-        selection.unchecked,
-        self_check_child_output(
+    pair_task_agents: list[str] = []
+
+    def consistent_pair_child_runner(prepared: PreparedChildCheck) -> str:
+        pair_task_agents.append(prepared.agent_name)
+
+        return self_check_child_output(
             active_config.agent_validator,
             status_property="check_status",
             status="consistent",
             report="",
-        ),
+        )
+
+    consistent_decision = run_pair_checker(
+        prepared_validator,
+        child_runner=consistent_pair_child_runner,
+    )
+    assert_self_check(
+        pair_task_agents == ["validator"],
+        "a consistent pair task must finish without a reviewer",
+    )
+    consistent_pair = update_record_from_decision(
+        selection.unchecked,
+        check_status=consistent_decision.check_status,
+        report=consistent_decision.report,
+        decision_source=consistent_decision.decision_source,
     )
     current_pairs = replace_current_pair(current_pairs, consistent_pair)
     assert_self_check(
         has_unchecked_pair(current_pairs),
         "one processed pair must leave later unchecked pairs for exit 20",
     )
+    preserved_record_before = find_check_record_by_pair_key(consistent_pair.identity.pair_key)
     preserved_pairs = reconcile_queue([pair, second_pair])
+    preserved_record_after = find_check_record_by_pair_key(consistent_pair.identity.pair_key)
     preserved_record = next(
         item.record for item in preserved_pairs if item.identity.pair_key == consistent_pair.identity.pair_key
     )
     assert_self_check(preserved_record.check_status == "consistent", "unchanged pair key must preserve cached status")
-    inconsistent_pair = update_record_from_reviewer_output(
-        consistent_pair,
-        validator_report=validator_report,
-        reviewer_output=self_check_child_output(
+    assert_self_check(
+        preserved_record_before == preserved_record_after,
+        "unchanged pair reconciliation must not rewrite its SQLite record",
+    )
+    pair_task_agents.clear()
+
+    def reviewed_pair_child_runner(prepared: PreparedChildCheck) -> str:
+        pair_task_agents.append(prepared.agent_name)
+
+        if prepared.agent_name == "validator":
+            return self_check_child_output(
+                active_config.agent_validator,
+                status_property="check_status",
+                status="inconsistent",
+                report=validator_report,
+            )
+
+        return self_check_child_output(
             active_config.agent_reviewer,
             status_property="review_status",
             status="confirmed",
             report="## Review rationale\n\nThe candidate is valid.",
-        ),
+        )
+
+    reviewed_decision = run_pair_checker(
+        prepared_validator,
+        child_runner=reviewed_pair_child_runner,
+    )
+    assert_self_check(
+        pair_task_agents == ["validator", "reviewer"],
+        "an inconsistent validator candidate must be reviewed within the same pair task",
+    )
+    inconsistent_pair = update_record_from_decision(
+        consistent_pair,
+        check_status=reviewed_decision.check_status,
+        report=reviewed_decision.report,
+        decision_source=reviewed_decision.decision_source,
     )
     current_pairs = replace_current_pair(preserved_pairs, inconsistent_pair)
     inconsistent_selection = select_current_pair(current_pairs)
@@ -4163,9 +4864,9 @@ def run_self_check() -> ExitCode:
         "a checksum change after a child snapshot must make its result stale",
     )
     checked_count, marked_count = mark_outdated_records()
-    outdated_raw_record = find_raw_record_by_pair_key(load_taskwarrior_records(), identity.pair_key)
-    assert_self_check(outdated_raw_record is not None, "outdated source pair record must still exist")
-    outdated_record = raw_record_to_check_record(outdated_raw_record)
+    outdated_record = find_check_record_by_pair_key(identity.pair_key)
+    if outdated_record is None:
+        raise CheckerFailureError("self-check failed: outdated source pair record must still exist")
     assert_self_check(checked_count > 0, "mark-outdated helper must check pair records")
     assert_self_check(marked_count > 0, "mark-outdated helper must mark stale pair records")
     assert_self_check(outdated_record.check_status == "outdated", "changed checksum must mark old pair outdated")
@@ -4181,9 +4882,9 @@ def run_self_check() -> ExitCode:
     reset_self_check_record(changed_identity)
     changed_current_pair = reconcile_queue([pair])[0]
     assert_self_check(changed_current_pair.record.check_status == "unchecked", "changed checksum must force unchecked")
-    superseded_raw_record = find_raw_record_by_pair_key(load_taskwarrior_records(), identity.pair_key)
-    assert_self_check(superseded_raw_record is not None, "superseded checksum record must remain as history")
-    superseded_record = raw_record_to_check_record(superseded_raw_record)
+    superseded_record = find_check_record_by_pair_key(identity.pair_key)
+    if superseded_record is None:
+        raise CheckerFailureError("self-check failed: superseded checksum record must remain as history")
     assert_self_check(
         superseded_record.check_status == "outdated",
         "reconciliation must eagerly mark an older checksum version outdated",
@@ -4222,6 +4923,19 @@ def run_self_check() -> ExitCode:
     assert_self_check(
         explicitly_inconsistent_pair.record.report.startswith("## Manually marked inconsistent"),
         "explicit inconsistent reports without a section must be normalized",
+    )
+    explicitly_inconsistent_pair = set_relation_pair_check_status(
+        pair,
+        check_status="inconsistent",
+        report="Manual self-check inconsistency note.",
+    )
+    latest_operation = load_pair_operations(last=1)[0]
+    assert_self_check(
+        latest_operation.operation == "marked"
+        and latest_operation.pair_key == changed_identity.pair_key
+        and latest_operation.previous_status == "inconsistent"
+        and latest_operation.next_status == "inconsistent",
+        "explicit same-status marks must remain visible in operation history",
     )
     changed_report = build_progress_report(changed_path)
     related_report = build_progress_report(related_path)
@@ -4286,13 +5000,14 @@ def run_self_check() -> ExitCode:
     )
     assert_self_check(checked_current_records == 1, "queue synchronization must check active pair records")
     assert_self_check(marked_removed_records == 1, "queue synchronization must mark removed relations outdated")
-    removed_raw_record = find_raw_record_by_pair_key(load_taskwarrior_records(), changed_identity.pair_key)
-    assert_self_check(removed_raw_record is not None, "removed relation record must remain as history")
+    removed_record = find_check_record_by_pair_key(changed_identity.pair_key)
+    if removed_record is None:
+        raise CheckerFailureError("self-check failed: removed relation record must remain as history")
     assert_self_check(
-        raw_record_to_check_record(removed_raw_record).check_status == "outdated",
+        removed_record.check_status == "outdated",
         "removed relation record must be outdated",
     )
-    pair_records = load_taskwarrior_records()
+    pair_records = load_check_records()
     project_journal = json.loads(
         run_command(
             ["./bin/taskwarior.sh", "rc.verbose:nothing", "+journal", "export"],
@@ -4301,8 +5016,8 @@ def run_self_check() -> ExitCode:
         ).stdout
     )
     assert_self_check(
-        any(record.get("pair_key") == changed_identity.pair_key for record in pair_records),
-        "pair record must exist in isolated Taskwarrior DB",
+        any(record.pair_key == changed_identity.pair_key for record in pair_records),
+        "pair record must exist in isolated SQLite DB",
     )
     assert_self_check(
         not any(record.get("pair_key") == changed_identity.pair_key for record in project_journal),
@@ -4312,10 +5027,6 @@ def run_self_check() -> ExitCode:
         active_config.journal_cmd is None
         or any(record.get("description") == "self-check command started" for record in project_journal),
         "script operations must log to the project journal when journaling is configured",
-    )
-    assert_self_check(
-        all("journal" not in record.get("tags", []) for record in pair_records if record.get("pair_key")),
-        "relation-pair records must not use project journal tags",
     )
     log_project_journal("step", "self-check command completed")
     print("Self-check passed")
@@ -4362,7 +5073,7 @@ def add_agent_jobs_argument(parser: argparse.ArgumentParser) -> None:
         "--jobs",
         dest="agent_jobs",
         type=int,
-        help="number of child agent checks to keep running; defaults to consistency.toml agent_jobs",
+        help="number of relation-pair tasks to keep running; defaults to consistency.toml agent_jobs",
     )
 
 
@@ -4446,6 +5157,17 @@ def parse_args() -> argparse.Namespace:
         help="do not print the number of output records",
     )
 
+    list_operations_parser = subparsers.add_parser(
+        "list-operations",
+        help="list the latest pair operations in chronological order",
+    )
+    list_operations_parser.add_argument(
+        "--last",
+        type=int,
+        default=20,
+        help="number of latest operations to include; defaults to 20",
+    )
+
     mark_consistent_parser = subparsers.add_parser(
         "mark-consistent",
         help="explicitly mark one current-checksum relation pair as consistent",
@@ -4504,6 +5226,9 @@ def main() -> int:
 
         if args.command == "list-pairs":
             return int(list_pairs(args))
+
+        if args.command == "list-operations":
+            return int(list_operations(args))
 
         if args.command == "mark-consistent":
             return int(mark_pair_status(args, check_status="consistent"))

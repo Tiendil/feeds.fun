@@ -1,15 +1,53 @@
 import decimal
+import enum
 import uuid
 from typing import NewType
 
-from ffun.core.entities import NonEmptyString
+from ffun.core.entities import BaseEntity, NonEmptyString
 
 
 class SerializedId(NonEmptyString):
     __slots__ = ()
 
 
+class BenefitId(NonEmptyString):
+    __slots__ = ()
+
+
+class ProviderId(NonEmptyString):
+    __slots__ = ()
+
+
+class ProviderAccountId(NonEmptyString):
+    __slots__ = ()
+
+
+class ProviderObjectId(NonEmptyString):
+    __slots__ = ()
+
+
+class ProviderObjectReference(BaseEntity):
+    provider_id: ProviderId
+    provider_account_id: ProviderAccountId
+    provider_object_id: ProviderObjectId
+
+
+class ProviderStatus(NonEmptyString):
+    __slots__ = ()
+
+
+class PurchasedStateSaveOutcome(enum.IntEnum):
+    created = 1
+    updated = 2
+    refreshed = 3
+    same = 4
+    stale = 5
+
+
 UserId = NewType("UserId", uuid.UUID)
+BenefitTransactionId = NewType("BenefitTransactionId", uuid.UUID)
+SubscriptionId = NewType("SubscriptionId", uuid.UUID)
+OneTimePurchaseId = NewType("OneTimePurchaseId", uuid.UUID)
 EntryId = NewType("EntryId", uuid.UUID)
 FeedId = NewType("FeedId", uuid.UUID)
 CollectionId = NewType("CollectionId", uuid.UUID)

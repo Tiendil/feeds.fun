@@ -8,27 +8,31 @@
       :collections-notification_="false"
       :collections-warning_="true" />
 
-    <h3>Load feeds from an OPML file</h3>
+    <section class="mb-6">
+      <h3>Load feeds from an OPML file</h3>
 
-    <div class="ffun-info-common">
-      <p>
-        <external-url
-          url="https://en.wikipedia.org/wiki/OPML"
-          text="OPML" />
-        is a widely-used format for transferring news feed lists between platforms.
-      </p>
+      <div class="ui-reading-content mb-3">
+        <p>
+          <external-url
+            url="https://en.wikipedia.org/wiki/OPML"
+            text="OPML" />
+          is a widely-used format for transferring news feed lists between platforms.
+        </p>
 
-      <p
-        >Export your feeds from your old reader in OPML format and import them into Feeds Fun to seamlessly
-        transition.</p
-      >
-    </div>
+        <p
+          >Export your feeds from your old reader in OPML format and import them into Feeds Fun to seamlessly
+          transition.</p
+        >
+      </div>
 
-    <opml-upload class="mt-4" />
+      <opml-upload />
+    </section>
 
-    <h3>Search for a feed</h3>
+    <section>
+      <h3>Search for a feed</h3>
 
-    <discovery-form />
+      <discovery-form />
+    </section>
   </side-panel-layout>
 </template>
 

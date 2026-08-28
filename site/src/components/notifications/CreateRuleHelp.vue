@@ -1,6 +1,6 @@
 <template>
-  <div class="ffun-info-common">
-    <h4>Create your first rule</h4>
+  <ui-action-panel tone="positive">
+    <h4 class="ui-positive-guidance-title">Create your first rule</h4>
 
     <ol class="list-decimal list-inside">
       <li><strong>Click on a tag</strong> that interests you.</li>
@@ -15,5 +15,5 @@
       <li><strong>Click the "Create Rule" button</strong>.</li>
       <li>See how Feeds Fun reorganizes news based on your rule.</li>
     </ol>
-  </div>
+  </ui-action-panel>
 </template>

@@ -16,16 +16,11 @@ from ffun.dispatcher.entities import (
     ProcessorDispatchInfo,
     ProcessorDispatchRoute,
 )
-from ffun.domain.datetime_intervals import (
-    LIFETIME_INTERVAL_START_MARKER,
-    day_interval_start,
-    month_interval_start,
-)
 from ffun.domain.entities import EntryId, ProcessorId, UserId
 from ffun.entitlements.entities import EffectiveEntitlementInterval, EntitlementKindId
 from ffun.markers import domain as m_domain
 from ffun.markers.entities import Marker
-from ffun.product.entities import Resource
+from ffun.product import credits as product_credits
 from ffun.queues import domain as q_domain
 from ffun.queues.entities import QueueItemToPush, QueueKind, QueueRecord, QueueRecordId
 from ffun.resources import domain as r_domain
@@ -34,12 +29,6 @@ from ffun.resources import entities as r_entities
 SAAS_TOKENS_PER_USER_ENTRY = 1
 
 logger = logging.get_module_logger()
-
-_TOKEN_ENTITLEMENT_KINDS = (
-    EntitlementKindId.day_tokens,
-    EntitlementKindId.month_tokens,
-    EntitlementKindId.lifetime_tokens,
-)
 
 _ALLOWED_PROCESSING_STATUSES = {
     None,  # first-time processing for this processor
@@ -93,7 +82,7 @@ def _token_reservation_specification(
         user_id=user_id,
         limits=tuple(
             entitlement.value if entitlement is not None else None
-            for entitlement in (entitlements.get(kind) for kind in _TOKEN_ENTITLEMENT_KINDS)
+            for entitlement in (entitlements.get(kind) for kind in product_credits.CREDIT_ENTITLEMENT_KINDS)
         ),
     )
 
@@ -101,19 +90,12 @@ def _token_reservation_specification(
 def _token_reservation_options(
     authorization_time: datetime.datetime,
 ) -> tuple[r_entities.ResourceReservationOption, ...]:
-    return (
+    return tuple(
         r_entities.ResourceReservationOption(
-            kind=Resource.day_token_usage,
-            interval_started_at=day_interval_start(authorization_time),
-        ),
-        r_entities.ResourceReservationOption(
-            kind=Resource.month_token_usage,
-            interval_started_at=month_interval_start(authorization_time),
-        ),
-        r_entities.ResourceReservationOption(
-            kind=Resource.lifetime_token_usage,
-            interval_started_at=LIFETIME_INTERVAL_START_MARKER,
-        ),
+            kind=window.definition.resource_kind,
+            interval_started_at=window.resource_interval_started_at,
+        )
+        for window in product_credits.credit_usage_windows(authorization_time)
     )
 
 
@@ -387,7 +369,7 @@ async def dispatch_entries(
     cache = await entries_cache.create_entries_cache(
         items=[record.item for record in records],
         processors=processors,
-        entitlement_kind_ids=_TOKEN_ENTITLEMENT_KINDS,
+        entitlement_kind_ids=product_credits.CREDIT_ENTITLEMENT_KINDS,
     )
 
     results = await ConcurrentMapper(

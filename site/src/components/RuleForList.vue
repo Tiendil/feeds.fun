@@ -29,9 +29,9 @@
       </div>
     </div>
 
-    <p
+    <ui-notice
       v-if="scoreChanged"
-      class="ffun-info-good">
+      tone="success">
       Score updated
       <a
         href="#"
@@ -39,7 +39,7 @@
         @click.prevent="scoreChanged = false"
         >[close]</a
       >
-    </p>
+    </ui-notice>
   </div>
 </template>
 

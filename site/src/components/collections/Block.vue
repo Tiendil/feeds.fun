@@ -7,18 +7,20 @@
         :collectionId="collectionId"
         :selectedCollections="selectedCollections" />
 
-      <button
+      <ui-button
+        variant="primary"
         type="submit"
-        class="ffun-form-button mt-4"
-        >Subscribe</button
+        class="mt-4"
+        >Subscribe</ui-button
       >
 
-      <button
+      <ui-button
+        variant="secondary"
         type="button"
-        class="ffun-form-button ml-2"
+        class="ml-2"
         @click.prevent="router.push({name: e.MainPanelMode.Collections, params: {}})"
         >Explore Feeds Library
-      </button>
+      </ui-button>
 
       <user-setting-for-notification
         class="ml-2"

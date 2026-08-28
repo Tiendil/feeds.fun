@@ -41,10 +41,10 @@ from ffun.llms_framework.keys_rotator import (
 )
 from ffun.llms_framework.provider_interface import ProviderTest
 from ffun.llms_framework.providers import llm_providers
-from ffun.llms_framework.tests.helpers import reserve_resource
 from ffun.product.entities import Resource as AppResource
 from ffun.resources import domain as r_domain
 from ffun.resources import entities as r_entities
+from ffun.resources.tests.helpers import reserve_resource
 from ffun.user_settings import domain as us_domain
 from ffun.user_settings.entities import SettingKind
 
@@ -236,6 +236,7 @@ class TestGetUserKeyInfos:
 
             await reserve_resource(
                 user_id=user_id,
+                kind=AppResource.tokens_cost,
                 interval_started_at=interval_started_at,
                 amount=_cost_points.to_points(reserved_costs[i]),
                 limit=_cost_points.to_points(max_tokens_cost_in_month[i]),
@@ -506,13 +507,10 @@ class TestUseApiKey:
 
         await reserve_resource(
             user_id=internal_user_id,
+            kind=AppResource.tokens_cost,
             interval_started_at=interval_started_at,
             amount=_cost_points.to_points(reserved_cost),
             limit=_cost_points.to_points(USDCost(Decimal(1000))),
-        )
-
-        resources = await r_domain.load_resources(
-            user_ids=[internal_user_id], kind=AppResource.tokens_cost, interval_started_at=interval_started_at
         )
 
         used_cost = USDCost(Decimal(132))
@@ -538,19 +536,19 @@ class TestUseApiKey:
             new_key_status=KeyStatus.unknown,
         )
 
-        resources = await r_domain.load_resources(
-            user_ids=[internal_user_id], kind=AppResource.tokens_cost, interval_started_at=interval_started_at
+        resource = await r_domain.load_resource(
+            user_id=internal_user_id,
+            kind=AppResource.tokens_cost,
+            interval_started_at=interval_started_at,
         )
 
-        assert resources == {
-            internal_user_id: r_entities.Resource(
-                user_id=internal_user_id,
-                kind=AppResource.tokens_cost,
-                interval_started_at=interval_started_at,
-                used=_cost_points.to_points(used_cost),
-                reserved=0,
-            )
-        }
+        assert resource == r_entities.Resource(
+            user_id=internal_user_id,
+            kind=AppResource.tokens_cost,
+            interval_started_at=interval_started_at,
+            used=_cost_points.to_points(used_cost),
+            reserved=0,
+        )
 
     @pytest.mark.asyncio
     async def test_no_used_tokens_specified(self, internal_user_id: UserId, fake_llm_api_key: LLMApiKey) -> None:
@@ -561,13 +559,10 @@ class TestUseApiKey:
 
         await reserve_resource(
             user_id=internal_user_id,
+            kind=AppResource.tokens_cost,
             interval_started_at=interval_started_at,
             amount=_cost_points.to_points(reserved_cost),
             limit=_cost_points.to_points(USDCost(Decimal(1000))),
-        )
-
-        resources = await r_domain.load_resources(
-            user_ids=[internal_user_id], kind=AppResource.tokens_cost, interval_started_at=interval_started_at
         )
 
         key_usage = APIKeyUsage(
@@ -595,19 +590,19 @@ class TestUseApiKey:
             new_key_status=KeyStatus.works,
         )
 
-        resources = await r_domain.load_resources(
-            user_ids=[internal_user_id], kind=AppResource.tokens_cost, interval_started_at=interval_started_at
+        resource = await r_domain.load_resource(
+            user_id=internal_user_id,
+            kind=AppResource.tokens_cost,
+            interval_started_at=interval_started_at,
         )
 
-        assert resources == {
-            internal_user_id: r_entities.Resource(
-                user_id=internal_user_id,
-                kind=AppResource.tokens_cost,
-                interval_started_at=interval_started_at,
-                used=_cost_points.to_points(reserved_cost),
-                reserved=0,
-            )
-        }
+        assert resource == r_entities.Resource(
+            user_id=internal_user_id,
+            kind=AppResource.tokens_cost,
+            interval_started_at=interval_started_at,
+            used=_cost_points.to_points(reserved_cost),
+            reserved=0,
+        )
 
     @pytest.mark.asyncio
     async def test_exception_in_child_code(self, internal_user_id: UserId, fake_llm_api_key: LLMApiKey) -> None:
@@ -619,13 +614,10 @@ class TestUseApiKey:
         # TODO: differentiate tokens in all places
         await reserve_resource(
             user_id=internal_user_id,
+            kind=AppResource.tokens_cost,
             interval_started_at=interval_started_at,
             amount=_cost_points.to_points(reserved_cost),
             limit=_cost_points.to_points(USDCost(Decimal(1000))),
-        )
-
-        resources = await r_domain.load_resources(
-            user_ids=[internal_user_id], kind=AppResource.tokens_cost, interval_started_at=interval_started_at
         )
 
         class FakeError(Exception):
@@ -653,19 +645,19 @@ class TestUseApiKey:
             new_key_status=KeyStatus.unknown,
         )
 
-        resources = await r_domain.load_resources(
-            user_ids=[internal_user_id], kind=AppResource.tokens_cost, interval_started_at=interval_started_at
+        resource = await r_domain.load_resource(
+            user_id=internal_user_id,
+            kind=AppResource.tokens_cost,
+            interval_started_at=interval_started_at,
         )
 
-        assert resources == {
-            internal_user_id: r_entities.Resource(
-                user_id=internal_user_id,
-                kind=AppResource.tokens_cost,
-                interval_started_at=interval_started_at,
-                used=_cost_points.to_points(reserved_cost),
-                reserved=0,
-            )
-        }
+        assert resource == r_entities.Resource(
+            user_id=internal_user_id,
+            kind=AppResource.tokens_cost,
+            interval_started_at=interval_started_at,
+            used=_cost_points.to_points(reserved_cost),
+            reserved=0,
+        )
 
     @pytest.mark.asyncio
     async def test_no_user_in_key_usage(self, fake_llm_api_key: LLMApiKey) -> None:

@@ -2,35 +2,39 @@
   <side-panel-layout :reload-button="true">
     <template #main-header>
       Rules
-      <span v-if="rules">[{{ rulesNumber }}]</span>
+      <span v-if="rulesState === 'populated'">[{{ rulesNumber }}]</span>
     </template>
 
-    <template #side-menu-item-2>
+    <template
+      v-if="rulesState === 'populated'"
+      #side-menu-item-2>
       Sorted by
       <config-selector
         :values="e.RulesOrderProperties"
         v-model:property="globalSettings.rulesOrder" />
     </template>
 
-    <template #side-footer>
+    <template
+      v-if="rulesState === 'populated'"
+      #side-footer>
       <tags-filter
         :tags="tagsCount"
         :show-create-rule="false" />
     </template>
 
-    <div class="ffun-info-common mb-2">
-      <p
-        >You can create new rules on the
-        <a
-          href="#"
-          @click.prevent="goToNews()"
-          >news</a
-        >
-        tab.</p
+    <div
+      v-if="rulesState === 'empty'"
+      class="ui-empty-state-action-row">
+      <span><strong>No rules yet.</strong> Create one by selecting tags on the News page.</span>
+      <ui-button
+        variant="tonal"
+        @click="goToNews()"
+        >Go to News</ui-button
       >
     </div>
 
     <rules-list
+      v-else
       :loading="loading"
       :rules="sortedRules" />
   </side-panel-layout>
@@ -48,6 +52,8 @@
   import type * as t from "@/logic/types";
   import * as e from "@/logic/enums";
   import * as tagsFilterState from "@/logic/tagsFilterState";
+
+  type RulesState = "loading" | "empty" | "populated";
 
   const route = useRoute();
   const router = useRouter();
@@ -88,6 +94,14 @@
     globalSettings.dataVersion;
     return await api.getRules();
   }, null);
+
+  const rulesState = computed<RulesState>(() => {
+    if (loading.value || rules.value === null) {
+      return "loading";
+    }
+
+    return rules.value.length === 0 ? "empty" : "populated";
+  });
 
   const sortedRules = computed(() => {
     if (!rules.value || !readyToUseSettings.value) {

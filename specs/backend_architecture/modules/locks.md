@@ -2,151 +2,81 @@
 
 ## Goal of the document
 
-This document describes the public contract and observable behavior of the `ffun.locks` backend module.
+This document describes the responsibility and observable coordination behavior of the `ffun.locks` backend module.
 
 ## Scope
 
-This specification covers logical-mutex identity, validation, acquisition, release, transaction participation, concurrency, and failure behavior.
-
-Reader-writer locks, semaphores, long-lived leases, leader election, work queues, cross-system distributed coordination, and administrative repair are out of scope.
+This specification applies to transaction-scoped logical mutual exclusion provided by `ffun.locks` for backend work.
+Business decisions about when coordination is required and forms of coordination other than logical mutual exclusion are outside the module's responsibility.
 
 ## Dictionary
 
-- `logical mutex` - exclusive coordination identified by an application-defined kind and ordered arguments rather than by an existing business row.
-- `lock kind` - a stable, module-namespaced string that identifies the purpose and argument semantics of a logical mutex.
-- `lock arguments` - ordered scalar values that identify one mutex within a lock kind.
-- `canonical lock key` - the deterministic serialization of lock arguments used to compare logical-mutex identity.
-- `holder transaction` - the transaction that owns a logical mutex until it commits or rolls back.
+- `logical mutex` - exclusive coordination identified by a caller-defined purpose and ordered identifying values rather than by an existing business entity.
+- `lock kind` - a stable, module-namespaced purpose that distinguishes one family of logical mutexes.
+- `protected work` - work whose effects require exclusive ownership of one logical mutex.
+- `holder transaction` - the database transaction that contains the protected work and whose outcome determines the logical-mutex lifetime.
 
 ## Module responsibility
 
-The module MUST own logical-mutex identity, key validation and canonicalization, collision-free mutual exclusion, and caller-owned and module-owned transaction contexts.
+The module owns validity and equivalence of logical-mutex identities, exclusive ownership of each logical mutex, and the lifecycle invariants that bind that ownership to protected work.
+Calling modules own each lock kind's business meaning, the selection and ordering of identifying values, the decision to coordinate, and every business effect produced by protected work.
+The module provides technical coordination and MUST NOT become the authority for protected business policy.
 
-Calling modules MUST own the business meaning of each lock kind, argument selection and ordering, transaction-boundary choice, and all protected state changes.
+## Special module rules
 
-The module MUST provide technical transaction coordination only.
+`ffun.locks` is intentionally available to other top-level backend modules as an approved participant in their database transactions.
+Its participation MUST remain limited to logical mutual exclusion and, when requested by a caller, the technical lifecycle of the holder transaction.
+Participation MUST NOT transfer ownership of the business workflow or its state changes to `ffun.locks`.
+
+## Domain model
+
+A logical mutex is a transient coordination entity for protected work that must not overlap.
+Its immutable identity combines one caller-owned lock kind with an ordered sequence of identifying scalar values; a lock kind alone MAY form a complete identity.
+The identity MUST be deterministic, unambiguous across value boundaries, and stable across application versions that may run concurrently.
+Callers MUST prevent accidental reuse of a lock kind and preserve its identity semantics after production use.
+
+Each logical-mutex holding belongs to exactly one holder transaction that contains all protected database effects.
+A logical mutex MUST have at most one current holder transaction.
+The holding MUST end only when the holder transaction commits or rolls back; the module owns no historical state for a completed holding.
 
 ## Domain behavior
 
-### Lock identity
+### Identity validity
 
-A logical mutex MUST be identified by the exact pair of lock kind and canonical lock key.
+The module MUST reject a proposed identity when its kind or identifying values cannot produce a stable and unambiguous logical-mutex identity.
+Rejection MUST occur before the proposed identity has any coordination effect.
 
-A lock kind MUST be a non-empty lowercase `snake_case` string.
-Calling modules MUST namespace kinds sufficiently to prevent accidental reuse.
-A kind's meaning, argument count, argument order, and canonical conversions MUST remain stable after production use.
-
-Lock kinds form an open namespace owned by callers.
-
-Lock arguments MUST be ordered.
-Their canonical values and positions are part of the identity, while their original language-level types are not.
-
-The interface MUST accept these argument categories:
-
-- strings, preserved unchanged.
-- integers, encoded in canonical base-10 form.
-- integer categorical values, encoded by their integer value.
-- UUID values, encoded in canonical lowercase hyphenated form.
-- booleans, encoded as lowercase `true` or `false`.
-
-Floating-point values, byte sequences, containers, arbitrary objects, and other unsupported values MUST be rejected.
-
-Each encoded argument MUST be non-empty and contain only ASCII letters, ASCII digits, `.`, `_`, `:`, `@`, `/`, or `-`.
-Adjacent arguments MUST be separated by `|`, which MUST NOT occur inside an argument.
-No escaping, leading separator, or trailing separator is permitted.
-
-A mutex MAY have no arguments, in which case its canonical key is empty.
-Empty argument values MUST be rejected so a one-argument mutex cannot share the no-argument identity.
-
-Values from different supported categories that have the same canonical text intentionally identify the same mutex.
-For example, integer `1` and string `"1"` have the same identity.
-
-Canonicalization MUST be deterministic and collision-free with respect to argument boundaries.
-It MUST NOT use object hashes, randomized representations, lossy normalization, or concatenation without separators.
-Canonicalization changes MUST preserve coordination between concurrently deployed application versions.
-
-A lock kind MUST NOT exceed 128 bytes, and a canonical lock key MUST NOT exceed 1024 bytes.
-Invalid, unsupported, or oversized identities MUST fail before coordination state is accessed.
+Identity behavior MUST remain compatible across concurrently deployed application versions.
+A version change MUST NOT allow protected work that previously shared one identity to overlap.
 
 ### Mutual exclusion
 
-The protected body MUST begin only after the logical mutex has been acquired.
+Protected work MUST begin only after its holder transaction holds the logical mutex.
+When one holder transaction holds an identity, competing transactions MUST wait until it commits or rolls back before one becomes the next holder.
+Different logical-mutex identities MUST remain independently acquirable.
 
-When another transaction holds the same identity, acquisition MUST wait until that transaction commits or rolls back and then acquire the mutex.
-Different identities MUST be independently acquirable.
+The logical mutex MUST NOT become available before the holder transaction commits or rolls back.
+Either transaction outcome MUST leave no live holding.
 
-The mutex MUST remain held until the holder transaction completes.
-Leaving a caller-owned lock context MUST therefore not make the identity available while its surrounding transaction remains open.
+### Transaction participation
 
-Successful transaction completion MUST leave no live coordination state.
-Rollback at any point MUST also leave no live coordination state.
+The module MUST support both participation in an existing caller-owned holder transaction and establishment of a holder transaction for protected work.
+When the holder transaction is caller-owned, its outcome remains under the caller's workflow authority and the logical mutex remains bound to that outcome.
 
-### Transaction contract
+When coordination establishes the holder transaction, all protected effects and the mutex lifecycle MUST share its outcome.
+Successful protected work MUST commit before the logical mutex becomes available, while failed protected work MUST roll back before the mutex becomes available.
 
-Every logical mutex MUST belong to one explicit transaction that also contains all protected work.
+### Failure behavior
 
-The caller-owned context MUST participate in the transaction supplied by its caller.
-It MUST NOT open, commit, or roll back that transaction.
+The same holder transaction MUST NOT acquire the same logical-mutex identity more than once; such an attempt MUST fail the transaction.
 
-The module-owned context MUST create one transaction and use it for acquisition, protected work, and release.
-It MUST commit after successful protected work and roll back after exceptional protected work.
-
-Protected transactional reads and writes MUST use the holder transaction.
-Using another transaction would allow mutex lifecycle and protected state changes to succeed or fail independently.
-
-Calling code MUST NOT use the module-owned context inside an existing transaction.
-It MUST use the caller-owned context when the mutex must participate in a transaction whose boundary already exists.
-
-### Context completion and failures
-
-On normal exit, a context MUST complete its release behavior without suppressing caller behavior.
-
-On exceptional exit from a caller-owned context, release SHOULD be attempted while the transaction remains usable.
-If release fails while a protected-body exception is already propagating, the cleanup failure MUST NOT replace the original exception.
-
-On exceptional exit from a module-owned context, the holder transaction MUST roll back and the protected-body exception MUST propagate.
-
-Unexpected transaction failures, timeouts, cancellation, deadlock detection, and connection failures MUST propagate and cause the holder transaction to roll back.
-
-The mutex MUST NOT be reentrant.
-Acquiring the same identity twice within one transaction MUST fail and require rollback.
-
-When one transaction needs multiple logical mutexes, callers MUST acquire them in deterministic identity order and release their contexts in reverse order.
-Callers SHOULD acquire logical mutexes before locking or mutating other state to reduce deadlock risk.
-
-### Lifecycle invariant failures
-
-Committed coordination state violates the mutex lifecycle.
-Normal acquisition MUST NOT silently delete, replace, or take ownership of such state.
-
-Acquisition MUST report a module-level invariant failure when it encounters committed coordination state or same-transaction reentrant acquisition.
-Release MUST report the same category of failure when the expected held identity is absent.
-The affected transaction MUST roll back.
-
-## Public interface
-
-The public interface MUST provide:
-
-- `Lock`, an asynchronous caller-owned transaction context.
-- `locked_transaction`, an asynchronous module-owned transaction context.
-
-`Lock` MUST accept the caller's transaction execution context, one lock kind, and zero or more positional lock arguments.
-It MUST validate the identity, wait for acquisition, and enter the protected body only after acquisition.
-It MUST not suppress exceptions from the protected body.
-
-`locked_transaction` MUST accept one lock kind and zero or more positional lock arguments.
-It MUST validate the identity before opening a transaction.
-After acquisition, it MUST yield the owned transaction execution context for all protected database work.
-
-Successful exit from `locked_transaction` MUST commit protected work and make the mutex available.
-Exceptional exit MUST roll back protected work and make the mutex available before propagating the exception.
-
-Both contexts MUST use the same identity, acquisition, release, and lifecycle-invariant behavior.
+If the module cannot establish or preserve exclusive ownership, it MUST report a coordination failure rather than continue or silently assume ownership, and the protected work MUST NOT succeed.
+An error produced by the protected work MUST remain the primary reported failure even when ending the holding also fails.
 
 ## Audit records
 
-Module does not produce audit records because mutex acquisition is transient technical coordination rather than a durable business fact.
+This module produces no audit records because logical-mutex holdings are transient technical coordination rather than durable business facts.
 
 ## Business events
 
-Module does not produce business events because calling modules own events generated by protected state changes.
+This module produces no business events because calling modules own the events produced by protected state changes.

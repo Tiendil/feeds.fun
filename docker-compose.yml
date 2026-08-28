@@ -7,9 +7,6 @@ volumes:
 networks:
   ffun_network:
     driver: bridge
-    ipam:
-      config:
-        - subnet: 172.22.0.0/16
 
 x-backend-api-environment: &backend-api-environment
   FFUN_ENABLE_API_SPA: "${FFUN_ENABLE_API_SPA:-True}"

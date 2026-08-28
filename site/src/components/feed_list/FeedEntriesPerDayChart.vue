@@ -1,7 +1,7 @@
 <template>
   <div class="w-full mb-1">
     <div class="h-24">
-      <Bar
+      <ChartBar
         :data="chartData"
         :options="chartOptions" />
     </div>
@@ -12,19 +12,12 @@
 
 <script lang="ts" setup>
   import {computed} from "vue";
-  import {
-    BarElement,
-    CategoryScale,
-    Chart as ChartJS,
-    LinearScale,
-    Tooltip,
-    type ChartData,
-    type ChartOptions,
-    type TooltipItem
-  } from "chart.js";
-  import {Bar} from "vue-chartjs";
+  import type {ChartData, ChartOptions, TooltipItem} from "chart.js";
 
-  ChartJS.register(BarElement, CategoryScale, LinearScale, Tooltip);
+  import * as e from "@/logic/enums";
+  import {barPlotOptionFragments, getPlotColors} from "@/logic/plots";
+
+  const plotColors = getPlotColors();
 
   const properties = defineProps<{
     entriesLoadedDetails: number[];
@@ -35,11 +28,11 @@
     padded: boolean;
   };
 
-  const chartDays = 30;
+  const windowSize = e.windowSizes.get(e.TimeGranularity.Day)!;
 
   const chartSlots = computed<ChartSlot[]>(() => {
-    const details = properties.entriesLoadedDetails.slice(-chartDays);
-    const missingDays = chartDays - details.length;
+    const details = properties.entriesLoadedDetails.slice(-windowSize);
+    const missingDays = windowSize - details.length;
 
     const paddedSlots = Array.from({length: missingDays}, () => {
       return {value: 0, padded: true};
@@ -71,14 +64,14 @@
   const barColors = computed(() => {
     return chartSlots.value.map((slot) => {
       if (slot.padded) {
-        return "#e5e7eb";
+        return plotColors.feedEntries.missingData;
       }
 
       if (slot.value === 0) {
-        return "#bfdbfe";
+        return plotColors.feedEntries.zero;
       }
 
-      return "#93c5fd";
+      return plotColors.feedEntries.value;
     });
   });
 
@@ -126,7 +119,7 @@
   });
 
   const label = computed(() => {
-    return `Daily news entries loaded over the last ${chartDays} days`;
+    return `Daily news entries loaded over the last ${windowSize} days`;
   });
 
   const chartData = computed<ChartData<"bar", number[], string>>(() => {
@@ -148,9 +141,6 @@
 
   const chartOptions = computed<ChartOptions<"bar">>(() => {
     return {
-      responsive: true,
-      maintainAspectRatio: false,
-      animation: false,
       layout: {
         padding: {
           bottom: 0,
@@ -159,18 +149,15 @@
       },
       scales: {
         x: {
+          ...barPlotOptionFragments.xAxis,
           offset: true,
           border: {
-            display: true,
-            color: "#e5e7eb",
-            width: 1
-          },
-          grid: {
-            display: false
+            ...barPlotOptionFragments.xAxis.border,
+            color: plotColors.axis
           },
           ticks: {
             display: false,
-            color: "#4b5563",
+            color: plotColors.text,
             font: {
               size: 9
             },
@@ -180,30 +167,20 @@
           }
         },
         y: {
-          beginAtZero: true,
+          ...barPlotOptionFragments.yAxis,
           suggestedMax: suggestedMax.value,
-          border: {
-            display: false
-          },
           grid: {
             display: false
           },
           ticks: {
-            display: false,
-            precision: 0
+            ...barPlotOptionFragments.yAxis.ticks,
+            display: false
           }
         }
       },
       plugins: {
-        legend: {
-          display: false
-        },
         tooltip: {
-          backgroundColor: "#111827",
-          borderColor: "#374151",
-          borderWidth: 1,
           displayColors: false,
-          padding: 8,
           callbacks: {
             title: () => "",
             label: (context: TooltipItem<"bar">) => {

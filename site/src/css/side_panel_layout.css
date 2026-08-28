@@ -8,11 +8,6 @@
       .ffun-side-panel-controls-list {
         @apply space-y-2;
       }
-
-      /* TODO: move this style our layout? */
-      .ffun-side-panel-refresh-button {
-        @apply ffun-form-button my-1 block w-full text-center;
-      }
     }
 
     .ffun-side-panel-collapsed {
@@ -34,5 +29,23 @@
 
   .ffun-body-list-icon-column {
     @apply flex-shrink-0 mr-2 cursor-default;
+  }
+
+  .ui-section-nav-title {
+    @apply mb-1 text-xs font-semibold uppercase tracking-wide text-slate-500;
+  }
+
+  .ui-section-nav-list {
+    @apply m-0 space-y-1 p-0;
+  }
+
+  .ui-section-nav-item {
+    @apply list-none;
+  }
+
+  .ui-section-nav-link {
+    @apply block rounded px-2 py-1 text-sm text-slate-700;
+    @apply hover:bg-slate-100 hover:text-slate-900;
+    @apply focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-400;
   }
 }

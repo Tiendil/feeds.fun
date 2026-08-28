@@ -22,7 +22,6 @@ The following topics are out of scope:
 - `unit test` - a test focused on one backend module or one small group of closely related functions or entities.
 - `integration test` - a test that checks multiple backend modules through a public boundary such as API handler execution, application setup, parser execution, feed loading, or command execution.
 - `fixture` - test data or setup used by one or more tests.
-- `architecture test` - a test that verifies a backend-wide convention from an architecture specification.
 
 ## General principles
 
@@ -47,6 +46,14 @@ Tests SHOULD be deterministic for the same repository state and filesystem state
 Tests SHOULD prefer a real current-time value as the baseline for time-related cases when the exact calendar date is not part of the behavior under test. Hard-coded calendar datetimes SHOULD be used only when the specific date, month, year, weekday, or timezone boundary is itself relevant to the tested behavior.
 
 Tests that require specific shared state MUST prepare that state at the start of the relevant test or with an autouse fixture at the test class or test module level.
+
+Tests MUST prepare and mutate application-owned state through the production code that owns the corresponding state transition and invariants.
+
+Tests MUST NOT bypass production logic by writing directly to databases, files, queues, caches, or other application-owned state unless the developer explicitly approves the exception.
+
+An approved exception MUST be documented next to the bypass and MUST explain why the required state cannot be produced through production code.
+
+Tests MAY inspect application-owned state directly to assert observable effects; this permission does not allow direct mutation.
 
 Tests MUST NOT clean up shared state after themselves unless the developer explicitly requests cleanup behavior.
 

@@ -1,9 +1,11 @@
 <template>
   <div>
-    <h3>{{ collection.name }}</h3>
-    <p class="">{{ collection.description }}</p>
+    <h3 class="m-0 text-lg font-semibold leading-snug text-slate-900">{{ collection.name }}</h3>
+    <p class="mb-0 mt-1 text-sm leading-relaxed text-slate-600">{{ collection.description }}</p>
 
-    <div v-if="showFeeds">
+    <div
+      v-if="showFeeds"
+      class="mt-2">
       <ul
         v-for="feed in feeds"
         :key="feed.url"
@@ -12,33 +14,35 @@
       </ul>
     </div>
 
-    <button
-      @click.prevent="subscribe"
-      class="ffun-form-button mr-2">
-      <template v-if="collection.feedsNumber === 1"> Subscribe to 1 feed </template>
+    <div class="mt-2 flex flex-wrap items-center gap-2">
+      <ui-button
+        variant="tonal"
+        @click.prevent="subscribe">
+        <template v-if="collection.feedsNumber === 1"> Subscribe to 1 feed </template>
 
-      <template v-else> Subscribe to {{ collection.feedsNumber }} feeds </template>
-    </button>
+        <template v-else> Subscribe to {{ collection.feedsNumber }} feeds </template>
+      </ui-button>
 
-    <button
-      v-if="!showFeeds"
-      @click.prevent="show"
-      class="ffun-form-button"
-      >Show feeds</button
-    >
+      <ui-button
+        variant="secondary"
+        v-if="!showFeeds"
+        @click.prevent="show"
+        >Show feeds</ui-button
+      >
 
-    <button
-      v-if="showFeeds"
-      @click.prevent="hide"
-      class="ffun-form-button"
-      >Hide feeds</button
-    >
+      <ui-button
+        variant="secondary"
+        v-if="showFeeds"
+        @click.prevent="hide"
+        >Hide feeds</ui-button
+      >
 
-    <a
-      :href="router.resolve({name: 'public-collection', params: {collectionSlug: collection.slug}}).href"
-      class="ffun-normal-link ml-2"
-      >Read news in the collection</a
-    >
+      <a
+        :href="router.resolve({name: 'public-collection', params: {collectionSlug: collection.slug}}).href"
+        class="ffun-normal-link text-sm font-medium"
+        >Read news in the collection</a
+      >
+    </div>
 
     <collections-subscribing-progress
       :loading="loading"

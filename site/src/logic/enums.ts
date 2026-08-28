@@ -189,6 +189,68 @@ export const ReferenceKindProperties = new Map<ReferenceKind, ReferenceKindPrope
   [ReferenceKind.Document, {title: "Document", icon: "file-text", priority: 60}]
 ]);
 
+///////////////////
+// Resource statistics
+///////////////////
+
+export enum ResourceKind {
+  TokensCost = "tokens_cost",
+  DayTokenUsage = "day_token_usage",
+  MonthTokenUsage = "month_token_usage",
+  LifetimeTokenUsage = "lifetime_token_usage"
+}
+
+export type ResourceKindProperty = {
+  readonly text: string;
+  readonly shortText?: string;
+  readonly plotColor?: string;
+};
+
+export const ResourceKindProperties = new Map<ResourceKind, ResourceKindProperty>([
+  [ResourceKind.TokensCost, {text: "tokens cost"}],
+  [ResourceKind.DayTokenUsage, {text: "daily tokens", shortText: "day", plotColor: "day"}],
+  [ResourceKind.MonthTokenUsage, {text: "monthly tokens", shortText: "month", plotColor: "month"}],
+  [ResourceKind.LifetimeTokenUsage, {text: "lifetime tokens", shortText: "lifetime", plotColor: "lifetime"}]
+]);
+
+export type ResourceStatisticsApiId = "day" | "month" | "year";
+
+export enum TimeGranularity {
+  Day = "day",
+  Month = "month",
+  Year = "year"
+}
+
+export type TimeGranularityProperty = {
+  readonly text: string;
+  readonly resourceApiId: ResourceStatisticsApiId;
+};
+
+export const TimeGranularityProperties = new Map<TimeGranularity, TimeGranularityProperty>([
+  [TimeGranularity.Day, {text: "daily", resourceApiId: "day"}],
+  [TimeGranularity.Month, {text: "monthly", resourceApiId: "month"}],
+  [TimeGranularity.Year, {text: "yearly", resourceApiId: "year"}]
+]);
+
+export const windowSizes = new Map<TimeGranularity, number>([
+  [TimeGranularity.Day, 30],
+  [TimeGranularity.Month, 12],
+  [TimeGranularity.Year, 5]
+]);
+
+////////////////////////
+// Subscription status
+////////////////////////
+
+export enum SubscriptionStatus {
+  Pending = "pending",
+  Trialing = "trialing",
+  Active = "active",
+  PastDue = "past_due",
+  Paused = "paused",
+  Ended = "ended"
+}
+
 //////////////
 // Feeds order
 //////////////

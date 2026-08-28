@@ -1,7 +1,14 @@
 import {describe, expect, it} from "vitest";
 
 import * as e from "@/logic/enums";
-import {entryFromJSON, feedFromJSON, type RawEntry, type RawFeed} from "@/logic/types";
+import {
+  entryFromJSON,
+  feedFromJSON,
+  productStateFromJSON,
+  resourceStatisticsFromJSON,
+  type RawEntry,
+  type RawFeed
+} from "@/logic/types";
 
 function rawFeed(overrides: Partial<RawFeed> = {}): RawFeed {
   return {
@@ -105,5 +112,166 @@ describe("entryFromJSON", () => {
 
   it("rejects unknown integer markers", () => {
     expect(() => entryFromJSON(rawEntry([100]), {})).toThrow("Unknown marker: 100");
+  });
+});
+
+describe("resourceStatisticsFromJSON", () => {
+  it("translates an empty statistics record", () => {
+    expect(
+      resourceStatisticsFromJSON({
+        interval: "day",
+        statistics: {}
+      })
+    ).toEqual({
+      interval: "day",
+      statistics: {}
+    });
+  });
+
+  it("translates a resource series with no values", () => {
+    const statistics = resourceStatisticsFromJSON({
+      interval: "month",
+      statistics: {
+        [e.ResourceKind.TokensCost]: {firstDate: "2025-01-01", values: []}
+      }
+    });
+
+    expect(statistics.statistics[e.ResourceKind.TokensCost]).toEqual({
+      firstDate: new Date("2025-01-01T00:00:00Z"),
+      values: []
+    });
+  });
+
+  it("translates all resource series and the year interval", () => {
+    const statistics = resourceStatisticsFromJSON({
+      interval: "year",
+      statistics: {
+        [e.ResourceKind.TokensCost]: {firstDate: "2025-01-01", values: [0]},
+        [e.ResourceKind.DayTokenUsage]: {firstDate: "2023-01-01", values: [1, "2.5", 0]},
+        [e.ResourceKind.MonthTokenUsage]: {firstDate: "2025-01-01", values: [0]},
+        [e.ResourceKind.LifetimeTokenUsage]: {firstDate: "2024-01-01", values: ["7"]}
+      }
+    });
+
+    expect(statistics.interval).toBe("year");
+    expect(statistics.statistics[e.ResourceKind.TokensCost]).toEqual({
+      firstDate: new Date("2025-01-01T00:00:00Z"),
+      values: [0]
+    });
+    expect(statistics.statistics[e.ResourceKind.DayTokenUsage]).toEqual({
+      firstDate: new Date("2023-01-01T00:00:00Z"),
+      values: [1, 2.5, 0]
+    });
+    expect(statistics.statistics[e.ResourceKind.MonthTokenUsage]).toEqual({
+      firstDate: new Date("2025-01-01T00:00:00Z"),
+      values: [0]
+    });
+    expect(statistics.statistics[e.ResourceKind.LifetimeTokenUsage]).toEqual({
+      firstDate: new Date("2024-01-01T00:00:00Z"),
+      values: [7]
+    });
+  });
+});
+
+describe("productStateFromJSON", () => {
+  const tokens = {
+    day: {
+      limit: 1000,
+      balance: 750,
+      periodStartsAt: "2026-08-10T00:00:00Z",
+      periodEndsAt: "2026-08-11T00:00:00Z"
+    },
+    month: {
+      limit: 10000,
+      balance: 8000,
+      periodStartsAt: "2026-08-01T00:00:00Z",
+      periodEndsAt: "2026-09-01T00:00:00Z"
+    },
+    lifetime: {
+      limit: null,
+      balance: 500,
+      periodStartsAt: null,
+      periodEndsAt: null
+    }
+  };
+
+  it("parses recurring periods and preserves lifetime nulls", () => {
+    const productState = productStateFromJSON({
+      subscriptions: [
+        {
+          status: e.SubscriptionStatus.Active,
+          startedAt: "2026-07-01T00:00:00Z",
+          periodStartsAt: "2026-08-01T00:00:00Z",
+          periodEndsAt: "2026-09-01T00:00:00Z",
+          expectedRenewalAt: "2026-09-01T00:00:00Z",
+          endsAt: null
+        }
+      ],
+      tokens
+    });
+
+    expect(productState.subscriptions).toEqual([
+      {
+        status: e.SubscriptionStatus.Active,
+        startedAt: new Date("2026-07-01T00:00:00Z"),
+        periodStartsAt: new Date("2026-08-01T00:00:00Z"),
+        periodEndsAt: new Date("2026-09-01T00:00:00Z"),
+        expectedRenewalAt: new Date("2026-09-01T00:00:00Z"),
+        endsAt: null
+      }
+    ]);
+    expect(productState.tokens).toEqual({
+      [e.ResourceKind.DayTokenUsage]: {
+        limit: 1000,
+        balance: 750,
+        periodStartsAt: new Date("2026-08-10T00:00:00Z"),
+        periodEndsAt: new Date("2026-08-11T00:00:00Z")
+      },
+      [e.ResourceKind.MonthTokenUsage]: {
+        limit: 10000,
+        balance: 8000,
+        periodStartsAt: new Date("2026-08-01T00:00:00Z"),
+        periodEndsAt: new Date("2026-09-01T00:00:00Z")
+      },
+      [e.ResourceKind.LifetimeTokenUsage]: {
+        limit: null,
+        balance: 500,
+        periodStartsAt: null,
+        periodEndsAt: null
+      }
+    });
+  });
+
+  it("parses empty subscriptions", () => {
+    const productState = productStateFromJSON({subscriptions: [], tokens});
+
+    expect(productState.subscriptions).toEqual([]);
+  });
+
+  it("parses a missing renewal and a scheduled end", () => {
+    const productState = productStateFromJSON({
+      subscriptions: [
+        {
+          status: e.SubscriptionStatus.Paused,
+          startedAt: "2026-07-01T00:00:00Z",
+          periodStartsAt: "2026-08-01T00:00:00Z",
+          periodEndsAt: "2026-09-01T00:00:00Z",
+          expectedRenewalAt: null,
+          endsAt: "2026-09-01T00:00:00Z"
+        }
+      ],
+      tokens
+    });
+
+    expect(productState.subscriptions).toEqual([
+      {
+        status: e.SubscriptionStatus.Paused,
+        startedAt: new Date("2026-07-01T00:00:00Z"),
+        periodStartsAt: new Date("2026-08-01T00:00:00Z"),
+        periodEndsAt: new Date("2026-09-01T00:00:00Z"),
+        expectedRenewalAt: null,
+        endsAt: new Date("2026-09-01T00:00:00Z")
+      }
+    ]);
   });
 });

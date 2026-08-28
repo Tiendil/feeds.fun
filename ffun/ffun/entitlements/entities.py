@@ -1,24 +1,23 @@
 import datetime
 import enum
-from typing import TypeAlias
+from typing import Annotated, TypeAlias
 
 import pydantic
 
 from ffun.core import utils
-from ffun.core.entities import BaseEntity, NonEmptyString
+from ffun.core.entities import BaseEntity
 from ffun.domain.datetime_intervals import LIFETIME_INTERVAL_END_MARKER
-from ffun.domain.entities import UserId
-
-
-class EntitlementSourceId(NonEmptyString):
-    __slots__ = ()
-
-
-class EntitlementTransactionId(NonEmptyString):
-    __slots__ = ()
-
+from ffun.domain.entities import BenefitTransactionId, OneTimePurchaseId, SubscriptionId, UserId
 
 EffectiveEntitlementState: TypeAlias = tuple[bool, int | None]
+
+MIN_ENTITLEMENT_VALUE = 1
+MAX_ENTITLEMENT_VALUE = 2**63 - 1
+
+EntitlementValue: TypeAlias = Annotated[
+    int,
+    pydantic.Field(strict=True, ge=MIN_ENTITLEMENT_VALUE, le=MAX_ENTITLEMENT_VALUE),
+]
 
 
 class EntitlementKindId(enum.IntEnum):
@@ -37,6 +36,24 @@ class EntitlementKind(BaseEntity):
     id: EntitlementKindId
     merge_policy: MergePolicy
     is_lifetime: bool
+    minimum_value: EntitlementValue = MIN_ENTITLEMENT_VALUE
+    maximum_value: EntitlementValue = MAX_ENTITLEMENT_VALUE
+
+    @pydantic.model_validator(mode="after")
+    def validate_value_bounds(self) -> "EntitlementKind":
+        if self.minimum_value > self.maximum_value:
+            raise ValueError("Entitlement kind minimum value must not exceed maximum value")
+
+        return self
+
+    def validate_value(self, value: EntitlementValue) -> None:
+        if not self.minimum_value <= value <= self.maximum_value:
+            raise ValueError("Entitlement value must be within entitlement kind bounds")
+
+
+class EntitlementGuarantee(BaseEntity):
+    kind_id: EntitlementKindId
+    value: EntitlementValue
 
 
 ENTITLEMENT_KINDS: tuple[EntitlementKind, ...] = (
@@ -47,14 +64,23 @@ ENTITLEMENT_KINDS: tuple[EntitlementKind, ...] = (
 
 
 class SourceEntitlement(BaseEntity):
-    source: EntitlementSourceId
-    transaction_id: EntitlementTransactionId
+    grant_transaction_id: BenefitTransactionId
     user_id: UserId
+    subscription_id: SubscriptionId | None = None
+    one_time_purchase_id: OneTimePurchaseId | None = None
     kind_id: EntitlementKindId
-    value: int = pydantic.Field(strict=True)
+    value: EntitlementValue
     starts_at: datetime.datetime
     expires_at: datetime.datetime
     revoked_at: datetime.datetime | None = None
+    revoked_by_transaction_id: BenefitTransactionId | None = None
+
+    @pydantic.model_validator(mode="after")
+    def validate_owner(self) -> "SourceEntitlement":
+        if self.subscription_id is not None and self.one_time_purchase_id is not None:
+            raise ValueError("A source entitlement may have at most one purchased-state owner")
+
+        return self
 
     @pydantic.model_validator(mode="after")
     def validate_state(self) -> "SourceEntitlement":  # noqa: CCR001
@@ -72,6 +98,13 @@ class SourceEntitlement(BaseEntity):
 
         return self
 
+    @pydantic.model_validator(mode="after")
+    def validate_revocation_reference(self) -> "SourceEntitlement":
+        if (self.revoked_at is None) != (self.revoked_by_transaction_id is None):
+            raise ValueError("Entitlement revocation time and transaction must be defined together")
+
+        return self
+
     @property
     def granted(self) -> bool:
         return self.revoked_at is None
@@ -79,6 +112,8 @@ class SourceEntitlement(BaseEntity):
     def validate_grant(self, kind: EntitlementKind) -> None:
         if self.kind_id != kind.id:
             raise ValueError("Source entitlement kind must match entitlement kind")
+
+        kind.validate_value(self.value)
 
         if not self.granted:
             raise ValueError("A source entitlement grant must not be revoked")
@@ -91,32 +126,21 @@ class SourceEntitlement(BaseEntity):
 
     def has_same_grant_as(self, other: "SourceEntitlement") -> bool:
         return (
-            self.source == other.source
-            and self.transaction_id == other.transaction_id
+            self.grant_transaction_id == other.grant_transaction_id
             and self.user_id == other.user_id
+            and self.subscription_id == other.subscription_id
+            and self.one_time_purchase_id == other.one_time_purchase_id
             and self.kind_id == other.kind_id
             and self.value == other.value
             and self.starts_at == other.starts_at
             and self.expires_at == other.expires_at
         )
 
-    def to_revoked(self, *, revoked_at: datetime.datetime) -> "SourceEntitlement":
-        return SourceEntitlement(
-            source=self.source,
-            transaction_id=self.transaction_id,
-            user_id=self.user_id,
-            kind_id=self.kind_id,
-            value=self.value,
-            starts_at=self.starts_at,
-            expires_at=self.expires_at,
-            revoked_at=revoked_at,
-        )
-
 
 class EffectiveEntitlementInterval(BaseEntity):
     user_id: UserId
     kind_id: EntitlementKindId
-    value: int
+    value: EntitlementValue
     starts_at: datetime.datetime
     expires_at: datetime.datetime
 
@@ -132,3 +156,10 @@ class EffectiveEntitlementInterval(BaseEntity):
             raise ValueError("Effective entitlement activation timestamp must be earlier than expiration")
 
         return self
+
+
+class SourceEntitlementChange(BaseEntity):
+    changed: bool
+    effective_state: EffectiveEntitlementState
+    effective_intervals: list[EffectiveEntitlementInterval]
+    source_state: SourceEntitlement

@@ -11,9 +11,9 @@
 
       <p
         v-if="collection"
-        class="ffun-info-common my-2"
-        >{{ collection.description }}</p
-      >
+        class="mt-2 text-sm leading-relaxed text-slate-600">
+        {{ collection.description }}
+      </p>
     </template>
     <template #side-menu-item-2>
       For
@@ -38,13 +38,15 @@
         on-text="yes"
         off-text="no" />
 
-      <button
-        class="ffun-form-button py-0 ml-1"
+      <ui-button
+        variant="secondary"
+        size="compact"
+        class="ml-1"
         title='Undo last "mark read" operation'
         :disabled="!entriesStore.canUndoMarkRead"
         @click="entriesStore.undoMarkRead()">
         ↶
-      </button>
+      </ui-button>
     </template>
 
     <template #side-footer>
@@ -61,6 +63,8 @@
 
     <template #main-footer> </template>
 
+    <news-toolbar class="mb-2" />
+
     <!-- currently we have a "nuance" with tags user experience in this block -->
     <!-- The tags work as expected till the user selects their own tags from other places -->
     <!-- after that we can get a situation, when, after clicking on a tag in the block, there will be no news displayed -->
@@ -74,15 +78,15 @@
       :tag2Uid="medianTag2"
       :tag2Count="tagsCount[medianTag2] || 0" />
 
-    <div
+    <ui-advisory
       v-if="collection && globalState.loginConfirmed"
-      class="ffun-info-good">
-      <p
-        >Welcome to curated <strong>{{ collection.name }}</strong> news collection!</p
-      >
+      tone="positive">
+      <h4 class="ui-positive-guidance-title">
+        Welcome to curated <strong>{{ collection.name }}</strong> news collection!
+      </h4>
 
       <p>Collection news is always shown in the order of publication.</p>
-    </div>
+    </ui-advisory>
 
     <notifications-loaded-old-news
       :entries="entriesStore.loadedEntriesReport || []"
