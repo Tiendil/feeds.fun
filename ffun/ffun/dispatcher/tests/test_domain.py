@@ -405,6 +405,27 @@ class TestAuthorizeEntry:
         )
 
     @pytest.mark.asyncio
+    async def test_entitlements_not_enforced(self, loaded_feed: Feed, mocker: MockerFixture) -> None:
+        mocker.patch.object(domain.settings, "enforce_entitlements", False)
+        user_id = new_user_id()
+        entry = next(iter((await l_make.n_entries(loaded_feed, 1)).values()))
+        await fl_domain.add_link(user_id, loaded_feed.id)
+        item = EntryToProcess(entry_id=entry.id)
+        cache = await entries_cache.create_entries_cache(
+            [item],
+            [],
+            entitlement_kind_ids=list(EntitlementKindId),
+        )
+
+        authorization = await domain._authorize_entry(item, cache)
+
+        assert authorization == EntryAuthorization(
+            entry_id=entry.id,
+            globally_visible=True,
+            reservations=(),
+        )
+
+    @pytest.mark.asyncio
     async def test_reserves_each_entitled_user(self, loaded_feed: Feed) -> None:
         user_ids = [new_user_id() for _ in range(3)]
         entry = next(iter((await l_make.n_entries(loaded_feed, 1)).values()))

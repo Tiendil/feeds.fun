@@ -16,6 +16,7 @@ from ffun.dispatcher.entities import (
     ProcessorDispatchInfo,
     ProcessorDispatchRoute,
 )
+from ffun.dispatcher.settings import settings
 from ffun.domain.entities import EntryId, ProcessorId, UserId
 from ffun.entitlements.entities import EffectiveEntitlementInterval, EntitlementKindId
 from ffun.markers import domain as m_domain
@@ -108,6 +109,9 @@ async def _authorize_entry(item: EntryToProcess, cache: entries_cache.EntriesCac
     # TODO: temporary global authorization for entries linked to users with API keys.
     #       Remove together with the legacy API-key consumption logic.
     if cache.users_have_api_keys(user_ids):
+        return EntryAuthorization(entry_id=item.entry_id, globally_visible=True, reservations=())
+
+    if not settings.enforce_entitlements:
         return EntryAuthorization(entry_id=item.entry_id, globally_visible=True, reservations=())
 
     authorization_time = utils.now()

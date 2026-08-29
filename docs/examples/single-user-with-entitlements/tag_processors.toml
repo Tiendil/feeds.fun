@@ -1,0 +1,41 @@
+# These processors do not need external API keys, which makes entitlement
+# reservation behavior easy to exercise in this example.
+
+[[tag_processors]]
+  id = 1
+  enabled = true
+  workers = 10
+  name = "domain"
+  type = "domain"
+
+  [[tag_processors.routes]]
+    id = "default"
+    allowed_for_collections = true
+    allowed_for_users = true
+    allowed_for_quality_tests = true
+
+[[tag_processors]]
+  id = 2
+  enabled = true
+  workers = 10
+  name = "native_tags"
+  type = "native_tags"
+
+  [[tag_processors.routes]]
+    id = "default"
+    allowed_for_collections = true
+    allowed_for_users = true
+    allowed_for_quality_tests = true
+
+[[tag_processors]]
+  id = 3
+  enabled = true
+  workers = 10
+  name = "upper_case_title"
+  type = "upper_case_title"
+
+  [[tag_processors.routes]]
+    id = "default"
+    allowed_for_collections = true
+    allowed_for_users = true
+    allowed_for_quality_tests = true
