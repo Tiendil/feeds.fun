@@ -66,7 +66,7 @@
                 </div>
 
                 <div class="flex gap-1.5">
-                  <dt class="font-medium text-slate-500">Period</dt>
+                  <dt class="font-medium text-slate-500">Subscription period</dt>
                   <dd class="m-0 text-slate-800">
                     {{ formatSubscriptionDate(subscription.periodStartsAt) }}–{{
                       formatSubscriptionDate(subscription.periodEndsAt)
@@ -224,22 +224,28 @@
         id="settings-token-usage"
         title="Token usage">
         <template #description>
-          <p> Tagging one news item uses one token. Tokens are spent in this order: daily, monthly, then lifetime. </p>
+          <p>
+            Tagging one news item uses one token. Tokens are spent from the daily pool first, then monthly, then
+            lifetime.
+          </p>
 
-          <p>Your subscription tier sets the daily and monthly token limits.</p>
+          <p>
+            Daily and monthly limits apply to UTC calendar periods, independently of your subscription period. A
+            subscription change can update the current limit, but it does not start a new token period.
+          </p>
 
           <ul class="list-disc space-y-1 pl-5">
             <li>
               <strong class="font-medium text-slate-800">Daily tokens</strong>
-              — refill daily at 00:00 UTC.
+              — refill each day at 00:00 UTC.
             </li>
             <li>
               <strong class="font-medium text-slate-800">Monthly tokens</strong>
-              — refill on the first day of each month at 00:00 UTC.
+              — refill at 00:00 UTC on the first day of each month.
             </li>
             <li>
               <strong class="font-medium text-slate-800">Lifetime tokens</strong>
-              — bought separately as a one-time purchase and never reset.
+              — purchased separately and remain available until used.
             </li>
           </ul>
 
