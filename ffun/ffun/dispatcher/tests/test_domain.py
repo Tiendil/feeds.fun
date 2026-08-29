@@ -381,6 +381,7 @@ class TestAuthorizeEntry:
             entry_id=entry.id,
             globally_visible=True,
             reservations=(),
+            use_user_api_key=False,
         )
 
     @pytest.mark.asyncio
@@ -402,6 +403,7 @@ class TestAuthorizeEntry:
             entry_id=entry.id,
             globally_visible=True,
             reservations=(),
+            use_user_api_key=True,
         )
 
     @pytest.mark.asyncio
@@ -423,6 +425,7 @@ class TestAuthorizeEntry:
             entry_id=entry.id,
             globally_visible=True,
             reservations=(),
+            use_user_api_key=False,
         )
 
     @pytest.mark.asyncio
@@ -510,6 +513,7 @@ class TestAuthorizeEntry:
             entry_id=entry.id,
             globally_visible=False,
             reservations=(),
+            use_user_api_key=False,
         )
 
 
@@ -518,7 +522,12 @@ class TestEntryAuthorization:
     async def test_consumes_reservations_on_success(self, mocker: MockerFixture) -> None:
         item = EntryToProcess(entry_id=new_entry_id())
         cache = make_entries_cache()
-        authorization = EntryAuthorization(entry_id=item.entry_id, globally_visible=False, reservations=())
+        authorization = EntryAuthorization(
+            entry_id=item.entry_id,
+            globally_visible=False,
+            reservations=(),
+            use_user_api_key=False,
+        )
         authorize_entry = mocker.patch.object(domain, "_authorize_entry", return_value=authorization)
         convert_reservations = mocker.patch.object(r_domain, "convert_reserved_to_used")
 
@@ -535,7 +544,12 @@ class TestEntryAuthorization:
     async def test_releases_reservations_on_failure(self, mocker: MockerFixture) -> None:
         item = EntryToProcess(entry_id=new_entry_id())
         cache = make_entries_cache()
-        authorization = EntryAuthorization(entry_id=item.entry_id, globally_visible=False, reservations=())
+        authorization = EntryAuthorization(
+            entry_id=item.entry_id,
+            globally_visible=False,
+            reservations=(),
+            use_user_api_key=False,
+        )
         authorize_entry = mocker.patch.object(domain, "_authorize_entry", return_value=authorization)
         convert_reservations = mocker.patch.object(r_domain, "convert_reserved_to_used")
 
@@ -551,7 +565,12 @@ class TestMarkEntryTagsVisible:
     @pytest.mark.asyncio
     async def test_global_visibility(self) -> None:
         entry_id = new_entry_id()
-        authorization = EntryAuthorization(entry_id=entry_id, globally_visible=True, reservations=())
+        authorization = EntryAuthorization(
+            entry_id=entry_id,
+            globally_visible=True,
+            reservations=(),
+            use_user_api_key=False,
+        )
 
         await domain._mark_entry_tags_visible(authorization, [])
 
@@ -561,7 +580,12 @@ class TestMarkEntryTagsVisible:
     async def test_user_visibility(self) -> None:
         entry_id = new_entry_id()
         user_ids = {new_user_id(), new_user_id()}
-        authorization = EntryAuthorization(entry_id=entry_id, globally_visible=False, reservations=())
+        authorization = EntryAuthorization(
+            entry_id=entry_id,
+            globally_visible=False,
+            reservations=(),
+            use_user_api_key=False,
+        )
 
         await domain._mark_entry_tags_visible(authorization, user_ids)
 
@@ -575,7 +599,12 @@ class TestMarkEntryTagsVisible:
     @pytest.mark.asyncio
     async def test_no_authorized_users(self) -> None:
         entry_id = new_entry_id()
-        authorization = EntryAuthorization(entry_id=entry_id, globally_visible=False, reservations=())
+        authorization = EntryAuthorization(
+            entry_id=entry_id,
+            globally_visible=False,
+            reservations=(),
+            use_user_api_key=False,
+        )
 
         async with TableSizeNotChanged("m_markers"):
             await domain._mark_entry_tags_visible(authorization, [])
@@ -927,6 +956,7 @@ class TestDispatchEntryToProcessors:
             processors=processors,
             item=EntryToProcess(entry_id=entry_id),
             cache=make_entries_cache(),
+            use_user_api_key=True,
         )
 
         for processor in processors:
@@ -938,6 +968,7 @@ class TestDispatchEntryToProcessors:
 
             assert record_entry_ids(records) == {entry_id}
             assert {record.item.route_id for record in records} == {processor.routes[0].id}
+            assert {record.item.use_user_api_key for record in records} == {True}
 
         processor_ids = [processor.processor_id for processor in processors]
         processing_statuses = await domain.get_entries_processing_statuses(processor_ids, [entry_id])
@@ -962,6 +993,7 @@ class TestDispatchEntryToProcessors:
             processors=[processor],
             item=EntryToProcess(entry_id=entry_id),
             cache=make_entries_cache(),
+            use_user_api_key=False,
         )
 
         assert (
@@ -982,7 +1014,12 @@ class TestProcessEntry:
         processor = make.processor_dispatch_info(fake_processor_id)
         processors: list[ProcessorDispatchInfo] = [processor]
         entry_ids: list[EntryId] = [item.entry_id]
-        authorization = EntryAuthorization(entry_id=item.entry_id, globally_visible=True, reservations=())
+        authorization = EntryAuthorization(
+            entry_id=item.entry_id,
+            globally_visible=True,
+            reservations=(),
+            use_user_api_key=True,
+        )
         settled_user_ids: set[UserId] = set()
         mocker.patch.object(domain, "_authorize_entry", return_value=authorization)
         convert_reservations = mocker.patch.object(r_domain, "convert_reserved_to_used")
@@ -996,6 +1033,7 @@ class TestProcessEntry:
             processors,
             item,
             cache,
+            use_user_api_key=True,
         )
         mark_tags_visible.assert_awaited_once_with(authorization, settled_user_ids)
         convert_reservations.assert_awaited_once_with(
@@ -1019,7 +1057,12 @@ class TestProcessEntry:
             [item.entry_id],
             EntryProcessingStatus.skipped_by_dispatcher,
         )
-        authorization = EntryAuthorization(entry_id=item.entry_id, globally_visible=False, reservations=())
+        authorization = EntryAuthorization(
+            entry_id=item.entry_id,
+            globally_visible=False,
+            reservations=(),
+            use_user_api_key=False,
+        )
         mocker.patch.object(domain, "_authorize_entry", return_value=authorization)
         convert_reservations = mocker.patch.object(r_domain, "convert_reserved_to_used")
         dispatch_to_processors = mocker.patch.object(domain, "_dispatch_entry_to_processors")
@@ -1045,7 +1088,12 @@ class TestProcessEntry:
         cache = make_entries_cache()
         processor = make.processor_dispatch_info(fake_processor_id)
         processors: list[ProcessorDispatchInfo] = [processor]
-        authorization = EntryAuthorization(entry_id=item.entry_id, globally_visible=True, reservations=())
+        authorization = EntryAuthorization(
+            entry_id=item.entry_id,
+            globally_visible=True,
+            reservations=(),
+            use_user_api_key=False,
+        )
         mocker.patch.object(domain, "_authorize_entry", return_value=authorization)
         convert_reservations = mocker.patch.object(r_domain, "convert_reserved_to_used")
         mocker.patch.object(
@@ -1070,7 +1118,12 @@ class TestProcessEntry:
         cache = make_entries_cache()
         processor = make.processor_dispatch_info(fake_processor_id)
         processors: list[ProcessorDispatchInfo] = [processor]
-        authorization = EntryAuthorization(entry_id=item.entry_id, globally_visible=True, reservations=())
+        authorization = EntryAuthorization(
+            entry_id=item.entry_id,
+            globally_visible=True,
+            reservations=(),
+            use_user_api_key=False,
+        )
         mocker.patch.object(domain, "_authorize_entry", return_value=authorization)
         convert_reservations = mocker.patch.object(r_domain, "convert_reserved_to_used")
         dispatch_to_processors = mocker.patch.object(domain, "_dispatch_entry_to_processors")
@@ -1084,7 +1137,12 @@ class TestProcessEntry:
         with pytest.raises(RuntimeError, match="status write failed"):
             await domain._process_entry(record, processors, cache)
 
-        dispatch_to_processors.assert_awaited_once_with(processors, item, cache)
+        dispatch_to_processors.assert_awaited_once_with(
+            processors,
+            item,
+            cache,
+            use_user_api_key=False,
+        )
         mark_tags_visible.assert_awaited_once_with(authorization, set[UserId]())
         convert_reservations.assert_awaited_once_with(list[ResourceReservation](), used=0)
 
@@ -1112,7 +1170,12 @@ class TestProcessRetryEntry:
 
         await domain._process_retry_entry(record, processors, cache)
 
-        dispatch_to_processors.assert_awaited_once_with(processors, item, cache)
+        dispatch_to_processors.assert_awaited_once_with(
+            processors,
+            item,
+            cache,
+            use_user_api_key=False,
+        )
         authorize_entry.assert_not_awaited()
         convert_reservations.assert_not_awaited()
         mark_tags_visible.assert_not_awaited()
@@ -1198,7 +1261,11 @@ class TestDispatchRecord:
 
         assert dispatched
         process_entry.assert_not_awaited()
-        process_retry_entry.assert_awaited_once_with(record, processors, cache)
+        process_retry_entry.assert_awaited_once_with(
+            record,
+            processors,
+            cache,
+        )
 
     @pytest.mark.asyncio
     async def test_failure(self, fake_processor_id: ProcessorId, mocker: MockerFixture) -> None:
@@ -1356,6 +1423,7 @@ class TestDispatchEntries:
             )
 
             assert record_entry_ids(records) == set(entry_ids)
+            assert all(record.item.use_user_api_key for record in records)
 
     @pytest.mark.asyncio
     async def test_dispatch_marks_entries_tags_visible(
@@ -1388,6 +1456,15 @@ class TestDispatchEntries:
         assert dispatched == len(entry_ids)
         assert await m_domain.get_markers(user_id=None, entries_ids=entry_ids) == {
             entry_id: {Marker.can_see_tags} for entry_id in entry_ids
+        }
+        records = await q_domain.tech_get_queue_records(
+            QueueKind.entries_to_tag,
+            EntryToTag,
+            secondary_id=QueueSecondaryId(fake_processor_id),
+        )
+        assert {record.item.entry_id: record.item.use_user_api_key for record in records} == {
+            **{entry_id: True for entry_id in user_entry_ids},
+            **{entry_id: False for entry_id in collection_entry_ids},
         }
 
     @pytest.mark.asyncio
@@ -1453,13 +1530,13 @@ class TestDispatchEntries:
         )
 
         assert dispatched == 1
-        assert record_entry_ids(
-            await q_domain.tech_get_queue_records(
-                QueueKind.entries_to_tag,
-                EntryToTag,
-                secondary_id=QueueSecondaryId(fake_processor_id),
-            )
-        ) == {entry_id}
+        records = await q_domain.tech_get_queue_records(
+            QueueKind.entries_to_tag,
+            EntryToTag,
+            secondary_id=QueueSecondaryId(fake_processor_id),
+        )
+        assert record_entry_ids(records) == {entry_id}
+        assert not records[0].item.use_user_api_key
         assert await m_domain.get_markers(user_id=None, entries_ids=[entry_id]) == {}
         assert await m_domain.get_markers(user_id=user_id, entries_ids=[entry_id]) == {entry_id: {Marker.can_see_tags}}
         await assert_resource_counters(
@@ -1494,6 +1571,13 @@ class TestDispatchEntries:
             concurrency=10,
         )
 
+        records = await q_domain.tech_get_queue_records(
+            QueueKind.entries_to_tag,
+            EntryToTag,
+            secondary_id=QueueSecondaryId(fake_processor_id),
+        )
+        assert record_entry_ids(records) == {entry_id}
+        assert records[0].item.use_user_api_key
         assert await m_domain.get_markers(user_id=None, entries_ids=[entry_id]) == {entry_id: {Marker.can_see_tags}}
         await assert_no_resource_record(
             user_id=entitled_user_id,
@@ -1541,13 +1625,13 @@ class TestDispatchEntries:
         )
 
         assert retry_dispatch_count == 1
-        assert record_entry_ids(
-            await q_domain.tech_get_queue_records(
-                QueueKind.entries_to_tag,
-                EntryToTag,
-                secondary_id=QueueSecondaryId(fake_processor_id),
-            )
-        ) == {entry_id}
+        records = await q_domain.tech_get_queue_records(
+            QueueKind.entries_to_tag,
+            EntryToTag,
+            secondary_id=QueueSecondaryId(fake_processor_id),
+        )
+        assert record_entry_ids(records) == {entry_id}
+        assert not records[0].item.use_user_api_key
         await assert_resource_counters(
             user_id=user_id,
             kind=Resource.day_token_usage,
@@ -1704,6 +1788,8 @@ class TestDispatchEntries:
             processors: Sequence[ProcessorDispatchInfo],
             item: EntryToProcess,
             cache: entries_cache.EntriesCache,
+            *,
+            use_user_api_key: bool,
         ) -> None:
             if item.entry_id == failed_entry_id:
                 raise RuntimeError("processor fanout failed")
@@ -1712,6 +1798,7 @@ class TestDispatchEntries:
                 processors,
                 item,
                 cache,
+                use_user_api_key=use_user_api_key,
             )
 
         mocker.patch.object(domain, "_dispatch_entry_to_processors", new=dispatch_to_processors)

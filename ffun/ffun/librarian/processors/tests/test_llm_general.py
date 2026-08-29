@@ -118,13 +118,16 @@ class TestProcessor:
         )
 
     @pytest.mark.asyncio
-    async def test__api_key_usage__configured_key_fallback(
+    async def test__api_key_usage__configured_key_mode(
         self, llm_processor: Processor, cataloged_entry: Entry, fake_llm_api_key: LLMApiKey
     ) -> None:
         api_key_usage = await llm_processor._api_key_usage(
             entry=cataloged_entry,
             requests=self._requests(llm_processor, "some text"),
-            context=ProcessorContext(route_id=FALLBACK_KEY_ROUTE_ID),
+            context=ProcessorContext(
+                route_id=FALLBACK_KEY_ROUTE_ID,
+                use_user_api_key=False,
+            ),
         )
 
         assert api_key_usage is not None
@@ -149,7 +152,10 @@ class TestProcessor:
         api_key_usage = await llm_processor._api_key_usage(
             entry=entry,
             requests=self._requests(llm_processor, "some text"),
-            context=ProcessorContext(route_id=CONFIGURED_KEY_ROUTE_ID),
+            context=ProcessorContext(
+                route_id=CONFIGURED_KEY_ROUTE_ID,
+                use_user_api_key=False,
+            ),
         )
 
         assert api_key_usage is not None
@@ -180,7 +186,10 @@ class TestProcessor:
         api_key_usage = await llm_processor._api_key_usage(
             entry=cataloged_entry,
             requests=self._requests(llm_processor, "some text"),
-            context=ProcessorContext(route_id=FALLBACK_KEY_ROUTE_ID),
+            context=ProcessorContext(
+                route_id=FALLBACK_KEY_ROUTE_ID,
+                use_user_api_key=True,
+            ),
         )
 
         assert api_key_usage is not None
@@ -193,7 +202,28 @@ class TestProcessor:
             await llm_processor._api_key_usage(
                 entry=cataloged_entry,
                 requests=self._requests(llm_processor, "some text"),
-                context=ProcessorContext(route_id=USER_KEY_ROUTE_ID),
+                context=ProcessorContext(
+                    route_id=USER_KEY_ROUTE_ID,
+                    use_user_api_key=True,
+                ),
+            )
+            is None
+        )
+
+    @pytest.mark.asyncio
+    async def test__api_key_usage__user_key_mode_does_not_fallback_to_configured_key(
+        self,
+        llm_processor: Processor,
+        cataloged_entry: Entry,
+    ) -> None:
+        assert (
+            await llm_processor._api_key_usage(
+                entry=cataloged_entry,
+                requests=self._requests(llm_processor, "some text"),
+                context=ProcessorContext(
+                    route_id=FALLBACK_KEY_ROUTE_ID,
+                    use_user_api_key=True,
+                ),
             )
             is None
         )
@@ -201,7 +231,13 @@ class TestProcessor:
     @pytest.mark.asyncio
     async def test_process__no_api_key_found(self, llm_processor: Processor, cataloged_entry: Entry) -> None:
         with pytest.raises(errors.SkipEntryProcessing):
-            await llm_processor.process(cataloged_entry, context=ProcessorContext(route_id=USER_KEY_ROUTE_ID))
+            await llm_processor.process(
+                cataloged_entry,
+                context=ProcessorContext(
+                    route_id=USER_KEY_ROUTE_ID,
+                    use_user_api_key=True,
+                ),
+            )
 
     @pytest.mark.asyncio
     async def test_process__has_api_key_found(self, llm_processor: Processor, cataloged_entry: Entry) -> None:

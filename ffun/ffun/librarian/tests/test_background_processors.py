@@ -1,4 +1,5 @@
 from collections.abc import Sequence
+from typing import cast
 
 import pytest
 from pytest_mock import MockerFixture
@@ -18,7 +19,7 @@ from ffun.feeds.entities import Feed
 from ffun.librarian import background_processors
 from ffun.librarian.background_processors import EntriesProcessor
 from ffun.librarian.entities import ProcessorType
-from ffun.librarian.processors.base import AlwaysConstantProcessor
+from ffun.librarian.processors.base import AlwaysConstantProcessor, ProcessorContext
 from ffun.library.entities import Entry
 from ffun.library.tests import helpers as l_helpers
 from ffun.library.tests import make as l_make
@@ -39,12 +40,18 @@ async def enqueue_entries_to_tag(
     processor_id: ProcessorId,
     entry_ids: Sequence[EntryId],
     route_id: ProcessorRouteId,
+    *,
+    use_user_api_key: bool = False,
 ) -> None:
     await q_operations.push(
         QueueKind.entries_to_tag,
         [
             QueueItemToPush(
-                item=EntryToTag(entry_id=entry_id, route_id=route_id),
+                item=EntryToTag(
+                    entry_id=entry_id,
+                    route_id=route_id,
+                    use_user_api_key=use_user_api_key,
+                ),
                 secondary_id=QueueSecondaryId(processor_id),
             )
             for entry_id in entry_ids
@@ -236,6 +243,39 @@ class TestEntriesProcessor:
             no_entries_to_process=1,
             unexisted_entry_in_queue=0,
             entry_without_feeds_in_queue=0,
+        )
+
+    @pytest.mark.asyncio
+    async def test_single_run__passes_user_api_key_mode_to_processor(
+        self,
+        fake_entries_processor: EntriesProcessor,
+        loaded_feed: Feed,
+        mocker: MockerFixture,
+    ) -> None:
+        await q_operations.tech_clear_queue(
+            QueueKind.entries_to_tag,
+            secondary_id=QueueSecondaryId(fake_entries_processor.id),
+        )
+        entry = next(iter((await l_make.n_entries(loaded_feed, 1)).values()))
+        route_id = ProcessorRouteId("default")
+        await enqueue_entries_to_tag(
+            fake_entries_processor.id,
+            [entry.id],
+            route_id=route_id,
+            use_user_api_key=True,
+        )
+        process_entry = mocker.patch.object(background_processors.domain, "process_entry")
+
+        await fake_entries_processor.single_run()
+
+        process_entry.assert_awaited_once_with(
+            processor_id=fake_entries_processor.id,
+            processor=cast(object, mocker.ANY),
+            entry=entry,
+            context=ProcessorContext(
+                route_id=route_id,
+                use_user_api_key=True,
+            ),
         )
 
     @pytest.mark.asyncio

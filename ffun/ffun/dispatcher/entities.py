@@ -33,6 +33,7 @@ class EntryToProcess(BaseQueueItem):
 class EntryToTag(BaseQueueItem):
     entry_id: EntryId
     route_id: ProcessorRouteId
+    use_user_api_key: bool
 
 
 class DispatchDecision(BaseEntity):
@@ -43,6 +44,7 @@ class EntryAuthorization(BaseEntity):
     entry_id: EntryId
     globally_visible: bool
     reservations: tuple[ResourceReservation, ...]
+    use_user_api_key: bool
 
     @cached_property
     def dispatch_allowed(self) -> bool:
