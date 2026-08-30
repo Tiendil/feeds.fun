@@ -582,7 +582,15 @@ export type ProductStateToken = {
   readonly periodEndsAt: Date | null;
 };
 
+export type ProductStateSubscriptionBenefit = {
+  readonly kind: e.EntitlementKind;
+  readonly value: number;
+};
+
 export type RawProductStateSubscription = {
+  readonly benefitTitle: string;
+  readonly benefitDescription: string;
+  readonly activeBenefits: ProductStateSubscriptionBenefit[];
   readonly status: e.SubscriptionStatus;
   readonly startedAt: string;
   readonly periodStartsAt: string;
@@ -592,6 +600,9 @@ export type RawProductStateSubscription = {
 };
 
 export type ProductStateSubscription = {
+  readonly benefitTitle: string;
+  readonly benefitDescription: string;
+  readonly activeBenefits: ProductStateSubscriptionBenefit[];
   readonly status: e.SubscriptionStatus;
   readonly startedAt: Date;
   readonly periodStartsAt: Date;
@@ -620,6 +631,9 @@ function productStateTokenFromJSON(token: RawProductStateToken): ProductStateTok
 
 function productStateSubscriptionFromJSON(subscription: RawProductStateSubscription): ProductStateSubscription {
   return {
+    benefitTitle: subscription.benefitTitle,
+    benefitDescription: subscription.benefitDescription,
+    activeBenefits: subscription.activeBenefits,
     status: subscription.status,
     startedAt: new Date(subscription.startedAt),
     periodStartsAt: new Date(subscription.periodStartsAt),

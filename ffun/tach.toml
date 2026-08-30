@@ -72,6 +72,7 @@ path = "ffun.api"
 depends_on = [
     "ffun.application",
     "ffun.auth",
+    "ffun.benefits",
     "ffun.data_protection",
     "ffun.entitlements",
     "ffun.feeds",

@@ -199,6 +199,12 @@ describe("productStateFromJSON", () => {
     const productState = productStateFromJSON({
       subscriptions: [
         {
+          benefitTitle: "Monthly reader",
+          benefitDescription: "Recurring daily and monthly entry-processing token allowance.",
+          activeBenefits: [
+            {kind: e.EntitlementKind.DayTokens, value: 1000},
+            {kind: e.EntitlementKind.MonthTokens, value: 10000}
+          ],
           status: e.SubscriptionStatus.Active,
           startedAt: "2026-07-01T00:00:00Z",
           periodStartsAt: "2026-08-01T00:00:00Z",
@@ -212,6 +218,12 @@ describe("productStateFromJSON", () => {
 
     expect(productState.subscriptions).toEqual([
       {
+        benefitTitle: "Monthly reader",
+        benefitDescription: "Recurring daily and monthly entry-processing token allowance.",
+        activeBenefits: [
+          {kind: e.EntitlementKind.DayTokens, value: 1000},
+          {kind: e.EntitlementKind.MonthTokens, value: 10000}
+        ],
         status: e.SubscriptionStatus.Active,
         startedAt: new Date("2026-07-01T00:00:00Z"),
         periodStartsAt: new Date("2026-08-01T00:00:00Z"),
@@ -252,6 +264,9 @@ describe("productStateFromJSON", () => {
     const productState = productStateFromJSON({
       subscriptions: [
         {
+          benefitTitle: "Monthly reader",
+          benefitDescription: "Recurring daily and monthly entry-processing token allowance.",
+          activeBenefits: [],
           status: e.SubscriptionStatus.Paused,
           startedAt: "2026-07-01T00:00:00Z",
           periodStartsAt: "2026-08-01T00:00:00Z",
@@ -265,6 +280,9 @@ describe("productStateFromJSON", () => {
 
     expect(productState.subscriptions).toEqual([
       {
+        benefitTitle: "Monthly reader",
+        benefitDescription: "Recurring daily and monthly entry-processing token allowance.",
+        activeBenefits: [],
         status: e.SubscriptionStatus.Paused,
         startedAt: new Date("2026-07-01T00:00:00Z"),
         periodStartsAt: new Date("2026-08-01T00:00:00Z"),

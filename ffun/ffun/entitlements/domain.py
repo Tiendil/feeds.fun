@@ -534,6 +534,30 @@ async def revoke_one_time_purchase_entitlements(  # noqa: CFQ002
     return outcomes, event_callbacks
 
 
+async def get_active_source_entitlements_for_subscriptions(
+    subscription_ids: list[SubscriptionId],
+) -> Mapping[SubscriptionId, list[SourceEntitlement]]:
+    selected_subscription_ids = list({subscription_id: None for subscription_id in subscription_ids})
+    result: dict[SubscriptionId, list[SourceEntitlement]] = {
+        subscription_id: [] for subscription_id in selected_subscription_ids
+    }
+
+    if not selected_subscription_ids:
+        return result
+
+    evaluation_time = datetime.datetime.now(tz=datetime.UTC)
+
+    for subscription_id in selected_subscription_ids:
+        source_entitlements = await operations.load_source_entitlements_for_subscription(execute, subscription_id)
+        result[subscription_id] = [
+            entitlement
+            for entitlement in source_entitlements
+            if entitlement.revoked_at is None and entitlement.starts_at <= evaluation_time < entitlement.expires_at
+        ]
+
+    return result
+
+
 async def get_entitlements(
     user_ids: list[UserId], kind_ids: list[EntitlementKindId]
 ) -> Mapping[UserId, Mapping[EntitlementKindId, EffectiveEntitlementInterval | None]]:
