@@ -59,33 +59,7 @@
                 {{ subscriptionStatusProperties[subscription.status].text }}
               </span>
 
-              <dl class="m-0 flex flex-1 flex-wrap gap-x-6 gap-y-1 text-sm">
-                <div class="flex gap-1.5">
-                  <dt class="font-medium text-slate-500">Started</dt>
-                  <dd class="m-0 text-slate-800">{{ formatSubscriptionDate(subscription.startedAt) }}</dd>
-                </div>
-
-                <div class="flex gap-1.5">
-                  <dt class="font-medium text-slate-500">Subscription period</dt>
-                  <dd class="m-0 text-slate-800">
-                    {{ formatSubscriptionDate(subscription.periodStartsAt) }}–{{
-                      formatSubscriptionDate(subscription.periodEndsAt)
-                    }}
-                  </dd>
-                </div>
-
-                <div class="flex gap-1.5">
-                  <dt class="font-medium text-slate-500">Expected renewal</dt>
-                  <dd class="m-0 text-slate-800">
-                    {{ formatSubscriptionDate(subscription.expectedRenewalAt) }}
-                  </dd>
-                </div>
-
-                <div class="flex gap-1.5">
-                  <dt class="font-medium text-slate-500">Ends</dt>
-                  <dd class="m-0 text-slate-800">{{ formatSubscriptionDate(subscription.endsAt) }}</dd>
-                </div>
-              </dl>
+              <span class="text-sm text-slate-700">{{ subscriptionNextEvent(subscription) }}</span>
             </div>
           </li>
         </ul>
@@ -321,13 +295,18 @@
     [e.SubscriptionStatus.Ended]: {text: "Ended", class: "bg-slate-200 text-slate-700"}
   };
 
-  const subscriptionDateFormatter = new Intl.DateTimeFormat("en-US", {
-    dateStyle: "medium",
-    timeStyle: "short"
-  });
+  const subscriptionDateFormatter = new Intl.DateTimeFormat("en-US", {dateStyle: "medium"});
 
-  function formatSubscriptionDate(date: Date | null): string {
-    return date === null ? "—" : subscriptionDateFormatter.format(date);
+  function subscriptionNextEvent(subscription: t.ProductStateSubscription): string {
+    if (subscription.endsAt !== null) {
+      return `Ends ${subscriptionDateFormatter.format(subscription.endsAt)}`;
+    }
+
+    if (subscription.expectedRenewalAt !== null) {
+      return `Renews ${subscriptionDateFormatter.format(subscription.expectedRenewalAt)}`;
+    }
+
+    return `Current period ends ${subscriptionDateFormatter.format(subscription.periodEndsAt)}`;
   }
 
   const userId = computed(() => {
