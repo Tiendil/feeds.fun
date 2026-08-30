@@ -11,7 +11,9 @@ from ffun.feeds_collections import domain as fc_domain
 from ffun.feeds_links import domain as fl_domain
 from ffun.library import domain as l_domain
 
-# Temporary exception for legacy user API keys; remove it with user API key support.
+# Temporary architecture exception: this direct llms_framework.keys_rotator import is intentional.
+# Consistency checks should ignore only this dependency while the legacy personal API-key bypass is supported.
+# Remove it together with that bypass.
 from ffun.llms_framework.keys_rotator import user_api_key_is_available  # tach-ignore
 from ffun.product.entities import UserSetting
 from ffun.user_settings import domain as us_domain
