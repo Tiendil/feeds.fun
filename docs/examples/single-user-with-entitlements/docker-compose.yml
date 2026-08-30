@@ -68,6 +68,11 @@ services:
       postgres:
         condition: service_healthy
 
+    # We always run DB migrations on startup to ensure the DB schema is up to date with the code
+    #
+    # Workers are specified by `--loader` and `--librarian` flags
+    # You can run them in separate containers if you want to tune load on your server
+    # but most likely you will not need to do that in the single-user setup
     command:
       - /bin/bash
       - -c
