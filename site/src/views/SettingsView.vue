@@ -42,7 +42,7 @@
         </p>
 
         <ui-empty-state v-else-if="productState.subscriptions.length === 0">
-          No current subscriptions.
+          No current subscriptions. Subscription plans are under development and coming soon.
         </ui-empty-state>
 
         <ul
@@ -52,15 +52,39 @@
             v-for="(subscription, index) of productState.subscriptions"
             :key="`${subscription.startedAt.toISOString()}-${index}`"
             class="rounded border border-slate-300 bg-white px-3 py-2.5">
-            <div class="flex flex-wrap items-center gap-x-6 gap-y-2">
+            <div class="flex flex-wrap items-center gap-x-3 gap-y-2">
+              <span class="font-semibold text-slate-900">{{ subscription.benefitTitle }}</span>
+
               <span
                 class="inline-block rounded px-2 py-0.5 text-sm font-semibold"
                 :class="subscriptionStatusProperties[subscription.status].class">
                 {{ subscriptionStatusProperties[subscription.status].text }}
               </span>
-
-              <span class="text-sm text-slate-700">{{ subscriptionNextEvent(subscription) }}</span>
             </div>
+
+            <p class="m-0 mt-1 text-sm text-slate-700">{{ subscription.benefitDescription }}</p>
+
+            <ul
+              v-if="subscription.activeBenefits.length > 0"
+              class="m-0 mt-2 list-disc pl-5 text-sm text-slate-700">
+              <li
+                v-for="benefit of subscription.activeBenefits"
+                :key="benefit.kind">
+                <span class="font-medium text-slate-900">{{
+                  subscriptionBenefitNumberFormatter.format(benefit.value)
+                }}</span>
+                {{ e.EntitlementKindProperties.get(benefit.kind)?.text }}
+                {{ benefit.value === 1 ? "token" : "tokens" }}
+              </li>
+            </ul>
+
+            <p
+              v-else
+              class="m-0 mt-2 text-sm text-slate-500">
+              No benefits currently active.
+            </p>
+
+            <p class="m-0 mt-1 text-sm text-slate-500">{{ subscriptionNextEvent(subscription) }}</p>
           </li>
         </ul>
       </ui-page-section>
@@ -307,6 +331,7 @@
   };
 
   const subscriptionDateFormatter = new Intl.DateTimeFormat("en-US", {dateStyle: "medium"});
+  const subscriptionBenefitNumberFormatter = new Intl.NumberFormat("en-US");
 
   function subscriptionNextEvent(subscription: t.ProductStateSubscription): string {
     if (subscription.endsAt !== null) {

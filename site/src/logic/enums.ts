@@ -242,6 +242,22 @@ export const windowSizes = new Map<TimeGranularity, number>([
 // Subscription status
 ////////////////////////
 
+export enum EntitlementKind {
+  DayTokens = "day_tokens",
+  MonthTokens = "month_tokens",
+  LifetimeTokens = "lifetime_tokens"
+}
+
+export type EntitlementKindProperty = {
+  readonly text: string;
+};
+
+export const EntitlementKindProperties = new Map<EntitlementKind, EntitlementKindProperty>([
+  [EntitlementKind.DayTokens, {text: "daily"}],
+  [EntitlementKind.MonthTokens, {text: "monthly"}],
+  [EntitlementKind.LifetimeTokens, {text: "lifetime"}]
+]);
+
 export enum SubscriptionStatus {
   Pending = "pending",
   Trialing = "trialing",

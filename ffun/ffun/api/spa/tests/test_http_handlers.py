@@ -2,6 +2,7 @@ import datetime
 from decimal import Decimal
 
 import pytest
+from pytest_mock import MockerFixture
 
 from ffun.api.spa import entities
 from ffun.api.spa.http_handlers import (
@@ -12,9 +13,14 @@ from ffun.api.spa.http_handlers import (
     api_get_resource_statistics,
 )
 from ffun.audit.entities import AuditEntityKind
+from ffun.benefits import domain as b_domain
+from ffun.benefits.tests.make import make_benefit_package_template
 from ffun.core import utils
 from ffun.core.postgresql import transaction
 from ffun.domain.entities import SerializedId, UserId
+from ffun.entitlements.entities import EntitlementKindId
+from ffun.entitlements.tests.helpers import _grant
+from ffun.entitlements.tests.make import make_source_entitlement
 from ffun.feeds.entities import Feed
 from ffun.feeds_links import domain as fl_domain
 from ffun.library import domain as l_domain
@@ -146,8 +152,14 @@ class TestApiGetProductState:
         assert response.tokens[entities.TokenKind.lifetime].periodEndsAt is None
 
     @pytest.mark.asyncio
-    async def test_returns_only_alive_subscriptions(self, internal_user_id: UserId) -> None:
-        alive_subscription = make_subscription(user_id=internal_user_id)
+    async def test_returns_only_alive_subscriptions(
+        self,
+        mocker: MockerFixture,
+        internal_user_id: UserId,
+    ) -> None:
+        benefit = make_benefit_package_template()
+        mocker.patch.object(b_domain, "get_benefit", return_value=benefit)
+        alive_subscription = make_subscription(user_id=internal_user_id, benefit_id=benefit.id)
         ended_subscription = make_subscription(
             user_id=internal_user_id,
             status=SubscriptionStatusId.ended,
@@ -166,9 +178,21 @@ class TestApiGetProductState:
 
             callback()
 
+        source_entitlement = make_source_entitlement(
+            user_id=internal_user_id,
+            subscription_id=alive_subscription.id,
+            kind_id=EntitlementKindId.day_tokens,
+            value=3,
+            starts_at=alive_subscription.period_starts_at,
+            expires_at=alive_subscription.period_ends_at,
+        )
+        await _grant(source_entitlement)
+
         response = await api_get_product_state(entities.GetProductStateRequest(), User(id=internal_user_id))
 
-        assert response.subscriptions == [entities.ProductStateSubscription.from_internal(alive_subscription)]
+        assert response.subscriptions == [
+            entities.ProductStateSubscription.from_internal(alive_subscription, benefit, [source_entitlement])
+        ]
 
 
 class TestApiGetResourceStatistics:

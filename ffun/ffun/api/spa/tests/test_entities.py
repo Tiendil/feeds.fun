@@ -13,6 +13,7 @@ from ffun.api.spa.entities import (
     MutableMarker,
     ProductStateEntitlement,
     ProductStateSubscription,
+    ProductStateSubscriptionBenefit,
     ProductStateToken,
     RemoveMarkerRequest,
     ResourceKind,
@@ -22,11 +23,12 @@ from ffun.api.spa.entities import (
     SubscriptionStatus,
     TokenKind,
 )
+from ffun.benefits.tests.make import make_benefit_package_template
 from ffun.core import utils
 from ffun.domain.domain import new_entry_id, new_user_id
 from ffun.domain.urls import str_to_absolute_url, str_to_feed_url, url_to_uid
 from ffun.entitlements.entities import EntitlementKindId
-from ffun.entitlements.tests.make import make_effective_entitlement_interval
+from ffun.entitlements.tests.make import make_effective_entitlement_interval, make_source_entitlement
 from ffun.feeds.entities import Feed as InternalFeed
 from ffun.feeds.entities import FeedError
 from ffun.parsers import entities as p_entities
@@ -216,8 +218,19 @@ class TestSubscriptionStatus:
         assert SubscriptionStatus.from_internal(internal_status) == status
 
 
+class TestProductStateSubscriptionBenefit:
+    def test_from_internal__kind_and_value(self) -> None:
+        entitlement = make_source_entitlement(kind_id=EntitlementKindId.month_tokens, value=1000)
+
+        assert ProductStateSubscriptionBenefit.from_internal(entitlement) == ProductStateSubscriptionBenefit(
+            kind=EntitlementKind.month_tokens,
+            value=1000,
+        )
+
+
 class TestProductStateSubscription:
     def test_from_internal__user_facing_fields(self) -> None:
+        benefit = make_benefit_package_template()
         now = utils.now()
         started_at = now - datetime.timedelta(days=30)
         expected_renewal_at = now + datetime.timedelta(days=1)
@@ -228,10 +241,33 @@ class TestProductStateSubscription:
             expected_renewal_at=expected_renewal_at,
             ends_at=ends_at,
         )
+        active_entitlements = [
+            make_source_entitlement(
+                user_id=subscription.user_id,
+                subscription_id=subscription.id,
+                kind_id=EntitlementKindId.day_tokens,
+                value=3,
+            ),
+            make_source_entitlement(
+                user_id=subscription.user_id,
+                subscription_id=subscription.id,
+                kind_id=EntitlementKindId.month_tokens,
+                value=1000,
+            ),
+        ]
 
-        serialized = cast(dict[str, object], ProductStateSubscription.from_internal(subscription).model_dump())
+        serialized = cast(
+            dict[str, object],
+            ProductStateSubscription.from_internal(subscription, benefit, active_entitlements).model_dump(),
+        )
 
         assert serialized == {
+            "benefitTitle": benefit.title,
+            "benefitDescription": benefit.description,
+            "activeBenefits": [
+                {"kind": EntitlementKind.day_tokens, "value": 3},
+                {"kind": EntitlementKind.month_tokens, "value": 1000},
+            ],
             "status": SubscriptionStatus.past_due,
             "startedAt": started_at,
             "periodStartsAt": subscription.period_starts_at,
@@ -241,11 +277,17 @@ class TestProductStateSubscription:
         }
 
     def test_from_internal__optional_fields_absent(self) -> None:
+        benefit = make_benefit_package_template()
         subscription = make_subscription(expected_renewal_at=None, ends_at=None)
 
-        serialized = cast(dict[str, object], ProductStateSubscription.from_internal(subscription).model_dump())
+        serialized = cast(
+            dict[str, object], ProductStateSubscription.from_internal(subscription, benefit, []).model_dump()
+        )
 
         assert serialized == {
+            "benefitTitle": benefit.title,
+            "benefitDescription": benefit.description,
+            "activeBenefits": [],
             "status": SubscriptionStatus.active,
             "startedAt": subscription.started_at,
             "periodStartsAt": subscription.period_starts_at,

@@ -13,6 +13,7 @@ from ffun.api.spa.settings import settings
 from ffun.auth import domain as a_domain
 from ffun.auth.dependencies import User
 from ffun.auth.settings import settings as auth_settings
+from ffun.benefits import domain as b_domain
 from ffun.core import logging, utils
 from ffun.core.api import Message, MessageType
 from ffun.core.errors import APIError
@@ -351,6 +352,9 @@ async def api_get_product_state(
         r_domain.load_resources(resource_identities),
         sub_domain.get_alive_subscriptions_for_user(user.id),
     )
+    active_entitlements_by_subscription = await en_domain.get_active_source_entitlements_for_subscriptions(
+        [subscription.id for subscription in internal_subscriptions]
+    )
 
     internal_entitlements = entitlements_by_user[user.id]
     entitlements = {
@@ -369,7 +373,12 @@ async def api_get_product_state(
 
     return entities.GetProductStateResponse(
         subscriptions=[
-            entities.ProductStateSubscription.from_internal(subscription) for subscription in internal_subscriptions
+            entities.ProductStateSubscription.from_internal(
+                subscription,
+                b_domain.get_benefit(subscription.benefit_id),
+                active_entitlements_by_subscription[subscription.id],
+            )
+            for subscription in internal_subscriptions
         ],
         entitlements=entitlements,
         tokens=tokens,

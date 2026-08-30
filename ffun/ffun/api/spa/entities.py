@@ -7,6 +7,7 @@ from typing import Callable, Iterable
 import pydantic
 
 from ffun.api.spa import front_events
+from ffun.benefits import entities as b_entities
 from ffun.core import api
 from ffun.core.entities import BaseEntity
 from ffun.domain.entities import (
@@ -409,7 +410,22 @@ class SubscriptionStatus(enum.StrEnum):
         return cls[status.name]
 
 
+class ProductStateSubscriptionBenefit(pydantic.BaseModel):
+    kind: EntitlementKind
+    value: int
+
+    @classmethod
+    def from_internal(cls, entitlement: en_entities.SourceEntitlement) -> "ProductStateSubscriptionBenefit":
+        return cls(
+            kind=EntitlementKind.from_internal(entitlement.kind_id),
+            value=entitlement.value,
+        )
+
+
 class ProductStateSubscription(pydantic.BaseModel):
+    benefitTitle: str
+    benefitDescription: str
+    activeBenefits: list[ProductStateSubscriptionBenefit]
     status: SubscriptionStatus
     startedAt: datetime.datetime
     periodStartsAt: datetime.datetime
@@ -418,8 +434,18 @@ class ProductStateSubscription(pydantic.BaseModel):
     endsAt: datetime.datetime | None
 
     @classmethod
-    def from_internal(cls, subscription: sub_entities.Subscription) -> "ProductStateSubscription":
+    def from_internal(
+        cls,
+        subscription: sub_entities.Subscription,
+        benefit: b_entities.BenefitPackageTemplate,
+        active_entitlements: list[en_entities.SourceEntitlement],
+    ) -> "ProductStateSubscription":
         return cls(
+            benefitTitle=benefit.title,
+            benefitDescription=benefit.description,
+            activeBenefits=[
+                ProductStateSubscriptionBenefit.from_internal(entitlement) for entitlement in active_entitlements
+            ],
             status=SubscriptionStatus.from_internal(subscription.status),
             startedAt=subscription.started_at,
             periodStartsAt=subscription.period_starts_at,

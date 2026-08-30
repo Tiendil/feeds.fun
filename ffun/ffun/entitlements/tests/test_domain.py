@@ -1430,6 +1430,84 @@ class TestRevokeOneTimePurchaseEntitlements:
         )
 
 
+class TestGetActiveSourceEntitlementsForSubscriptions:
+    @pytest.mark.asyncio
+    async def test_empty_subscription_list(self) -> None:
+        assert await domain.get_active_source_entitlements_for_subscriptions([]) == {}
+
+    @pytest.mark.asyncio
+    async def test_returns_current_unrevoked_grants_by_subscription(self) -> None:
+        user_id = new_user_id()
+        selected_subscription_id = new_subscription_id()
+        empty_subscription_id = new_subscription_id()
+        other_subscription_id = new_subscription_id()
+        evaluation_time = datetime.datetime.now(tz=datetime.UTC)
+        transaction_ids = _ordered_transaction_ids(6)
+        active_day = make_source_entitlement(
+            grant_transaction_id=transaction_ids[0],
+            user_id=user_id,
+            kind_id=_DAY_TOKENS,
+            subscription_id=selected_subscription_id,
+            value=3,
+            starts_at=evaluation_time - datetime.timedelta(days=2),
+            expires_at=evaluation_time + datetime.timedelta(days=2),
+        )
+        active_month = make_source_entitlement(
+            grant_transaction_id=transaction_ids[1],
+            user_id=user_id,
+            kind_id=_MONTH_TOKENS,
+            subscription_id=selected_subscription_id,
+            value=1000,
+            starts_at=evaluation_time - datetime.timedelta(days=2),
+            expires_at=evaluation_time + datetime.timedelta(days=2),
+        )
+        expired = make_source_entitlement(
+            grant_transaction_id=transaction_ids[2],
+            user_id=user_id,
+            kind_id=_DAY_TOKENS,
+            subscription_id=selected_subscription_id,
+            starts_at=evaluation_time - datetime.timedelta(days=2),
+            expires_at=evaluation_time - datetime.timedelta(days=1),
+        )
+        future = make_source_entitlement(
+            grant_transaction_id=transaction_ids[3],
+            user_id=user_id,
+            kind_id=_MONTH_TOKENS,
+            subscription_id=selected_subscription_id,
+            starts_at=evaluation_time + datetime.timedelta(days=1),
+            expires_at=evaluation_time + datetime.timedelta(days=2),
+        )
+        revoked = make_source_entitlement(
+            grant_transaction_id=transaction_ids[4],
+            user_id=user_id,
+            kind_id=_DAY_TOKENS,
+            subscription_id=selected_subscription_id,
+            starts_at=evaluation_time - datetime.timedelta(days=2),
+            expires_at=evaluation_time + datetime.timedelta(days=2),
+        )
+        other = make_source_entitlement(
+            grant_transaction_id=transaction_ids[5],
+            user_id=user_id,
+            kind_id=_DAY_TOKENS,
+            subscription_id=other_subscription_id,
+            starts_at=evaluation_time - datetime.timedelta(days=2),
+            expires_at=evaluation_time + datetime.timedelta(days=2),
+        )
+
+        for source_entitlement in (active_day, active_month, expired, future, revoked, other):
+            await _grant(source_entitlement, evaluation_time=evaluation_time, emit_event=False)
+
+        await _revoke(revoked, evaluation_time=evaluation_time, emit_event=False)
+
+        assert await domain.get_active_source_entitlements_for_subscriptions(
+            [selected_subscription_id, empty_subscription_id, other_subscription_id, selected_subscription_id]
+        ) == {
+            selected_subscription_id: [active_day, active_month],
+            empty_subscription_id: [],
+            other_subscription_id: [other],
+        }
+
+
 class TestGetEntitlements:
     @pytest.mark.asyncio
     async def test_returns_every_user_and_selected_kind(self) -> None:
