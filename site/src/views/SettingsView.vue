@@ -75,21 +75,30 @@
       </ui-page-section>
 
       <ui-page-section
-        id="settings-tagging"
-        title="Tagging">
+        id="settings-personal-feed-tagging"
+        title="Personal feed tagging">
         <template #description>
           <p>
-            Feeds from
-            <a
-              href="#"
-              @click.prevent="goToCollections()"
-              >collections</a
-            >
-            are tagged automatically and do not use your tokens.
+            Choose how old news from your personal feeds may be when Feeds Fun schedules it for tagging. This limit
+            applies whether tagging uses your tokens or a user-supplied API key. News from predefined collections is
+            not affected.
           </p>
+        </template>
 
+        <div class="mb-4">
+          <user-setting
+            kind="process_entries_not_older_than"
+            class="!mb-1" />
+          <ui-field-hint> A news item's age is based on the publication time reported by its feed. </ui-field-hint>
+        </div>
+      </ui-page-section>
+
+      <ui-page-section
+        id="settings-api-keys"
+        title="Your API keys">
+        <template #description>
           <p>
-            To tag your personal feeds, provide an
+            Optionally provide an
             <external-url
               url="https://platform.openai.com/docs/api-reference/introduction"
               text="OpenAI" />
@@ -97,7 +106,17 @@
             <external-url
               url="https://ai.google.dev/gemini-api/docs/api-key"
               text="Gemini" />
-            API key.
+            API key to tag personal feeds using your provider account instead of Feeds Fun tokens.
+          </p>
+
+          <p>
+            Feeds from
+            <a
+              href="#"
+              @click.prevent="goToCollections()"
+              >collections</a
+            >
+            are tagged automatically and do not use your API keys or tokens.
           </p>
         </template>
 
@@ -112,7 +131,6 @@
                 If a feed has multiple subscribers with API keys, we use the key with the lowest usage in the current
                 month.
               </li>
-              <li>We do not process old news until you tell us to.</li>
             </ul>
 
             <p class="font-medium text-slate-700">
@@ -126,18 +144,11 @@
         <user-setting kind="openai_api_key" />
         <user-setting kind="gemini_api_key" />
         <user-setting kind="max_tokens_cost_in_month" />
-
-        <div class="mb-4">
-          <user-setting
-            kind="process_entries_not_older_than"
-            class="!mb-1" />
-          <ui-field-hint> A news item's age is based on the publication time reported by its feed. </ui-field-hint>
-        </div>
       </ui-page-section>
 
       <ui-page-section
-        id="settings-api-usage"
-        title="API usage">
+        id="settings-api-key-usage"
+        title="API key usage">
         <template #description>
           <p>Estimated monthly token cost for requests made with your API keys.</p>
 
@@ -323,8 +334,9 @@
     {id: "settings-general", title: "General"},
     {id: "settings-subscriptions", title: "Subscriptions"},
     {id: "settings-messages", title: "Messages"},
-    {id: "settings-tagging", title: "Tagging"},
-    {id: "settings-api-usage", title: "API usage"},
+    {id: "settings-personal-feed-tagging", title: "Personal feed tagging"},
+    {id: "settings-api-keys", title: "Your API keys"},
+    {id: "settings-api-key-usage", title: "API key usage"},
     {id: "settings-token-usage", title: "Token usage"},
     {id: "settings-danger-zone", title: "Danger zone"}
   ] as const;
