@@ -2,7 +2,7 @@
 ### Migration
 
 - Run migrations `ffun migrate`.
-- **Set `FFUN_DISPATCHER_ENFORCE_ENTITLEMENTS=False`** for backend services unless you want to manage entitlements (like token limits) for your users. The `False` value preserves the old behavior of the system, where all users can see all tagged news by default.
+- **Set `FFUN_DISPATCHER_ENFORCE_ENTITLEMENTS="False"`** for backend services unless you want to manage entitlements (like token limits) for your users. The `False` value preserves the old behavior of the system, where all users can see all tagged news by default.
 - If `FFUN_DISPATCHER_DISPATCH_CHUNK` is configured, replace it with `FFUN_DISPATCHER_DISPATCH_BATCH_SIZE`; configure `FFUN_DISPATCHER_DISPATCH_CONCURRENCY` as needed or use its default.
 
 ### Changes
