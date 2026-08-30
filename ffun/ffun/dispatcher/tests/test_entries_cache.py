@@ -369,10 +369,12 @@ class TestCreateEntriesCache:
     @pytest.mark.asyncio
     async def test_skips_missing_entries(self, mocker: MockerFixture) -> None:
         entry_id = new_entry_id()
+        entries_by_id: dict[EntryId, None] = {entry_id: None}
+        selected_entry_ids: list[EntryId] = [entry_id]
         entries_mock = mocker.patch.object(
             entries_cache.l_domain,
             "get_entries_by_ids",
-            return_value={entry_id: None},
+            return_value=entries_by_id,
         )
 
         cache = await entries_cache.create_entries_cache(
@@ -381,7 +383,7 @@ class TestCreateEntriesCache:
             entitlement_kind_ids=[],
         )
 
-        entries_mock.assert_awaited_once_with([entry_id])
+        entries_mock.assert_awaited_once_with(selected_entry_ids)
         assert cache._entry_ages == {}  # noqa: SLF001
 
     @pytest.mark.asyncio

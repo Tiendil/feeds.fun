@@ -38,8 +38,8 @@ from ffun.llms_framework.keys_rotator import (
     _get_candidates,
     _get_user_key_infos,
     choose_user_api_key,
-    user_api_key_is_available,
     use_api_key,
+    user_api_key_is_available,
 )
 from ffun.llms_framework.provider_interface import ProviderTest
 from ffun.llms_framework.providers import llm_providers
@@ -72,9 +72,7 @@ class TestUserApiKeyIsAvailable:
     def test_status(self, status: KeyStatus, expected: bool, fake_llm_api_key: LLMApiKey) -> None:
         llm_providers.get(LLMProvider.test).provider.api_keys_statuses.set(fake_llm_api_key, status)
 
-        assert (
-            user_api_key_is_available(USER_API_KEY_SETTING_KINDS[LLMProvider.test], fake_llm_api_key) == expected
-        )
+        assert user_api_key_is_available(USER_API_KEY_SETTING_KINDS[LLMProvider.test], fake_llm_api_key) == expected
 
 
 class TestAPIKeyIsWorking:
