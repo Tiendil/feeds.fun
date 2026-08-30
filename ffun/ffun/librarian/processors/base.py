@@ -8,6 +8,7 @@ from ffun.tags.entities import TagCategory
 
 class ProcessorContext(BaseEntity):
     route_id: ProcessorRouteId
+    use_user_api_key: bool = False
 
 
 class Processor:

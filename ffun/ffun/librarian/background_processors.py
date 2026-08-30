@@ -219,7 +219,10 @@ class EntriesProcessor(InfiniteTask):
 
         for entry in entries_to_process:
             item = items_by_entry_id[entry.id]
-            context = ProcessorContext(route_id=item.route_id)
+            context = ProcessorContext(
+                route_id=item.route_id,
+                use_user_api_key=item.use_user_api_key,
+            )
             tasks.append(
                 domain.process_entry(
                     processor_id=processor_id, processor=self._processor_info.processor, entry=entry, context=context

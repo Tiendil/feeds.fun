@@ -51,6 +51,7 @@ Check instructions in the [docs/examples/single-user](docs/examples/single-user)
 Instructions for docker-based installation:
 
 - [single-user setup](docs/examples/single-user)
+- [single-user setup with entitlements](docs/examples/single-user-with-entitlements)
 - [multi-user setup](docs/examples/multi-user)
 - [how to use third-party LLM models](docs/examples/third-party-models)
 

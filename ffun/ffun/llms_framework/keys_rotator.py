@@ -21,6 +21,7 @@ from ffun.llms_framework.entities import (
     UserKeyInfo,
 )
 from ffun.llms_framework.provider_interface import ProviderInterface
+from ffun.product.entities import UserSetting
 from ffun.resources import domain as r_domain
 from ffun.resources import entities as r_entities
 from ffun.user_settings import domain as us_domain
@@ -44,6 +45,25 @@ class CostPoints:
 
 
 _cost_points = CostPoints(k=1_000_000_000)
+
+
+USER_API_KEY_SETTING_KINDS = {
+    LLMProvider.openai: us_entities.SettingKind(int(UserSetting.openai_api_key)),
+    LLMProvider.google: us_entities.SettingKind(int(UserSetting.gemini_api_key)),
+    LLMProvider.test: us_entities.SettingKind(int(UserSetting.test_api_key)),
+}
+
+_USER_API_KEY_PROVIDERS = {kind: provider for provider, kind in USER_API_KEY_SETTING_KINDS.items()}
+_AVAILABLE_API_KEY_STATUSES = frozenset((KeyStatus.unknown, KeyStatus.works))
+
+
+def user_api_key_is_available(kind: us_entities.SettingKind, api_key: LLMApiKey) -> bool:
+    from ffun.llms_framework.providers import llm_providers
+
+    provider = _USER_API_KEY_PROVIDERS[kind]
+    status = llm_providers.get(provider).provider.api_keys_statuses.get(api_key)
+
+    return status in _AVAILABLE_API_KEY_STATUSES
 
 
 # Note: this code is not about billing, it is about protection from the overuse of keys
@@ -125,26 +145,18 @@ async def _get_user_key_infos(  # pylint: disable=R0914
     provider: LLMProvider, user_ids: Iterable[UserId], interval_started_at: datetime.datetime
 ) -> list[UserKeyInfo]:
     from ffun.product.entities import Resource as AppResource
-    from ffun.product.entities import UserSetting
 
     user_ids = list(user_ids)
-
-    # TODO: move somewhere in configs
-    provider_to_settings = {
-        LLMProvider.openai: UserSetting.openai_api_key,
-        LLMProvider.google: UserSetting.gemini_api_key,
-        LLMProvider.test: UserSetting.test_api_key,
-    }
-
-    key_setting = provider_to_settings[provider]
 
     def setting_kind(setting: UserSetting) -> us_entities.SettingKind:
         return us_entities.SettingKind(int(setting))
 
+    key_setting = USER_API_KEY_SETTING_KINDS[provider]
+
     kinds = [
         setting_kind(UserSetting.max_tokens_cost_in_month),
         setting_kind(UserSetting.process_entries_not_older_than),
-        setting_kind(key_setting),
+        key_setting,
     ]
 
     users_settings = await us_domain.load_settings_for_users(
@@ -177,7 +189,7 @@ async def _get_user_key_infos(  # pylint: disable=R0914
         assert isinstance(max_tokens_cost_in_month_raw, Decimal)
         max_tokens_cost_in_month = USDCost(max_tokens_cost_in_month_raw)
 
-        api_key_raw = settings.get(setting_kind(key_setting))
+        api_key_raw = settings.get(key_setting)
         assert isinstance(api_key_raw, str)
         api_key = LLMApiKey(api_key_raw)
 

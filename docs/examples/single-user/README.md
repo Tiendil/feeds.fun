@@ -1,5 +1,7 @@
 # An example of a single-user setup of Feeds Fun
 
+**Version compatibility:** These instructions match the version of the repository you are viewing. On the `main` branch, they may describe development code that is not yet available in the `latest` Docker images because development images are not published to Docker Hub. If you encounter installation problems, use the instructions from the latest release tag and pin every Feeds Fun image in `docker-compose.yml` to that same version. Most of the time, the instructions on `main` should still work with the latest images.
+
 You can run Feeds Fun in a single-user mode by following these steps:
 
 ```

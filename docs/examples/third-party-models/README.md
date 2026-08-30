@@ -1,5 +1,7 @@
 # An example of using third-party LLM models
 
+**Version compatibility:** These instructions match the version of the repository you are viewing. On the `main` branch, they may describe development code that is not yet available in the `latest` Docker images because development images are not published to Docker Hub. If you encounter installation problems, use the instructions from the latest release tag and pin every Feeds Fun image in `docker-compose.yml` to that same version. Most of the time, the instructions on `main` should still work with the latest images.
+
 This example is based on [single-user setup example](docs/examples/single-user) and covers using third-party LLM models for tag processing. Check the original example for more details about single-user setup. This example covers only additional configs required to use third-party LLM models.
 
 You can run this example instance locally using Docker Compose:

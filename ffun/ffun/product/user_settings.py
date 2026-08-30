@@ -58,7 +58,7 @@ user_settings.add(
 user_settings.add(
     Value(
         key=SettingKind(int(UserSetting.process_entries_not_older_than)),
-        name="Process entries not older than N days",
+        name="Maximum news age for tagging (days)",
         type=types.Integer(),
         default=1,
     )

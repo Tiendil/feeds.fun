@@ -11,6 +11,7 @@ class TestEntryAuthorization:
             entry_id=new_entry_id(),
             globally_visible=True,
             reservations=(),
+            use_user_api_key=False,
         )
 
         assert authorization.dispatch_allowed
@@ -26,6 +27,7 @@ class TestEntryAuthorization:
             entry_id=new_entry_id(),
             globally_visible=False,
             reservations=(reservation,),
+            use_user_api_key=False,
         )
 
         assert authorization.dispatch_allowed
@@ -35,6 +37,7 @@ class TestEntryAuthorization:
             entry_id=new_entry_id(),
             globally_visible=False,
             reservations=(),
+            use_user_api_key=False,
         )
 
         assert not authorization.dispatch_allowed

@@ -1,10 +1,42 @@
 <template>
   <tr>
     <td>{{ period }}</td>
-    <td style="text-align: right">{{ cost_used }}</td>
-    <td style="text-align: right">{{ cost_reserved }}</td>
-    <td style="text-align: right">{{ cost_total }}</td>
-    <td style="text-align: right">{{ percents }}%</td>
+    <td style="text-align: right">
+      <app-tooltip :text="fullValue(properties.usage.used, ' USD')">
+        <span
+          class="cursor-help rounded-sm tabular-nums focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
+          tabindex="0">
+          {{ cost_used }}
+        </span>
+      </app-tooltip>
+    </td>
+    <td style="text-align: right">
+      <app-tooltip :text="fullValue(properties.usage.reserved, ' USD')">
+        <span
+          class="cursor-help rounded-sm tabular-nums focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
+          tabindex="0">
+          {{ cost_reserved }}
+        </span>
+      </app-tooltip>
+    </td>
+    <td style="text-align: right">
+      <app-tooltip :text="fullValue(properties.usage.total(), ' USD')">
+        <span
+          class="cursor-help rounded-sm tabular-nums focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
+          tabindex="0">
+          {{ cost_total }}
+        </span>
+      </app-tooltip>
+    </td>
+    <td style="text-align: right">
+      <app-tooltip :text="percents_full">
+        <span
+          class="cursor-help rounded-sm tabular-nums focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
+          tabindex="0">
+          {{ percents }}%
+        </span>
+      </app-tooltip>
+    </td>
   </tr>
 </template>
 
@@ -26,44 +58,59 @@
     return properties.usage.intervalStartedAt.toLocaleString("default", {month: "long", year: "numeric"});
   });
 
-  const k = 2;
+  const digits = 2;
+  const multiplier = 10 ** digits;
 
-  const percents = computed(() => {
+  const percent = computed<number | null>(() => {
     if (!globalSettings.userSettingsPresent) {
-      return "—";
+      return null;
     }
 
     const setting = globalSettings.max_tokens_cost_in_month;
 
     if (!setting) {
-      return "—";
+      return null;
     }
 
     if (typeof setting.value !== "number") {
-      return "—";
+      return null;
     }
 
     const limit: number = setting.value;
     const total = properties.usage.total();
 
     if (limit == 0) {
-      return "—";
+      return null;
     }
 
-    return ((total / limit) * 100).toFixed(k);
+    return (total / limit) * 100;
   });
 
+  const percents = computed(() => (percent.value === null ? "—" : roundUp(percent.value)));
+  const percents_full = computed(() => (percent.value === null ? "" : fullValue(percent.value, "%")));
+
   const cost_used = computed(() => {
-    return properties.usage.used.toFixed(k);
+    return roundUp(properties.usage.used);
   });
 
   const cost_reserved = computed(() => {
-    return properties.usage.reserved.toFixed(k);
+    return roundUp(properties.usage.reserved);
   });
 
   const cost_total = computed(() => {
-    return properties.usage.total().toFixed(k);
+    return roundUp(properties.usage.total());
   });
+
+  function roundUp(value: number): string {
+    const scaled = value * multiplier;
+    const floatingPointTolerance = Number.EPSILON * Math.max(1, Math.abs(scaled));
+
+    return (Math.ceil(scaled - floatingPointTolerance) / multiplier).toFixed(digits);
+  }
+
+  function fullValue(value: number, suffix: string): string {
+    return `${value}${suffix}`;
+  }
 </script>
 
 <style></style>

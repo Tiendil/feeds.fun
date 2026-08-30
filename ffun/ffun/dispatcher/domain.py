@@ -16,6 +16,7 @@ from ffun.dispatcher.entities import (
     ProcessorDispatchInfo,
     ProcessorDispatchRoute,
 )
+from ffun.dispatcher.settings import settings
 from ffun.domain.entities import EntryId, ProcessorId, UserId
 from ffun.entitlements.entities import EffectiveEntitlementInterval, EntitlementKindId
 from ffun.markers import domain as m_domain
@@ -101,19 +102,38 @@ def _token_reservation_options(
 
 async def _authorize_entry(item: EntryToProcess, cache: entries_cache.EntriesCache) -> EntryAuthorization:
     if cache.entry_in_collection(item.entry_id):
-        return EntryAuthorization(entry_id=item.entry_id, globally_visible=True, reservations=())
+        return EntryAuthorization(
+            entry_id=item.entry_id,
+            globally_visible=True,
+            reservations=(),
+            use_user_api_key=False,
+        )
 
     user_ids = cache.entry_user_ids(item.entry_id)
 
     # TODO: temporary global authorization for entries linked to users with API keys.
     #       Remove together with the legacy API-key consumption logic.
     if cache.users_have_api_keys(user_ids):
-        return EntryAuthorization(entry_id=item.entry_id, globally_visible=True, reservations=())
+        return EntryAuthorization(
+            entry_id=item.entry_id,
+            globally_visible=True,
+            reservations=(),
+            use_user_api_key=True,
+        )
+
+    if not settings.enforce_entitlements:
+        return EntryAuthorization(
+            entry_id=item.entry_id,
+            globally_visible=True,
+            reservations=(),
+            use_user_api_key=False,
+        )
 
     authorization_time = utils.now()
     specifications = [
         _token_reservation_specification(user_id, cache.user_entitlements(user_id))
         for user_id in sorted(user_ids, key=str)
+        if cache.user_can_process_entry(user_id, item.entry_id)
     ]
     reservations = await r_domain.try_to_reserve_in_order(
         amount=SAAS_TOKENS_PER_USER_ENTRY,
@@ -125,6 +145,7 @@ async def _authorize_entry(item: EntryToProcess, cache: entries_cache.EntriesCac
         entry_id=item.entry_id,
         globally_visible=False,
         reservations=tuple(reservations),
+        use_user_api_key=False,
     )
 
 
@@ -223,6 +244,8 @@ async def _dispatch_entry_to_processors(
     processors: Sequence[ProcessorDispatchInfo],
     item: EntryToProcess,
     cache: entries_cache.EntriesCache,
+    *,
+    use_user_api_key: bool,
 ) -> None:
     items_to_push = []
     status_updates = []
@@ -250,7 +273,11 @@ async def _dispatch_entry_to_processors(
         )
         items_to_push.append(
             QueueItemToPush(
-                item=EntryToTag(entry_id=item.entry_id, route_id=decision.route_id),
+                item=EntryToTag(
+                    entry_id=item.entry_id,
+                    route_id=decision.route_id,
+                    use_user_api_key=use_user_api_key,
+                ),
                 secondary_id=processor.subqueue_id,
             )
         )
@@ -290,6 +317,7 @@ async def _process_entry(
             item_processors,
             item,
             cache,
+            use_user_api_key=authorization.use_user_api_key,
         )
 
         settled_user_ids = {reservation.user_id for reservation in authorization.reservations}
@@ -312,6 +340,11 @@ async def _process_retry_entry(
         _processors_for_item(item, processors, cache),
         item,
         cache,
+        # 1. retrying is a manual operation (now)
+        # 2. user api keys will be removed in the future
+        # 3. retrying is not initiated by users, but by the admins, so, it shouldn't spend user resources
+        # => we always set use_user_api_key to False when retrying.
+        use_user_api_key=False,
     )
 
 

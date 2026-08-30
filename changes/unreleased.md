@@ -4,6 +4,7 @@
 Run migrations `ffun migrate`.
 
 - If `FFUN_DISPATCHER_DISPATCH_CHUNK` is configured, replace it with `FFUN_DISPATCHER_DISPATCH_BATCH_SIZE`; configure `FFUN_DISPATCHER_DISPATCH_CONCURRENCY` as needed or use its default.
+- Set `FFUN_DISPATCHER_ENFORCE_ENTITLEMENTS=False` unless you want to manage entitlements (like token limits) for your users. The `False` value preserves the old behavior of the system, where all users can see all tagged news by default.
 
 ### Changes
 

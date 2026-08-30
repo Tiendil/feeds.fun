@@ -1,6 +1,6 @@
 <template>
   <div class="flex flex-wrap items-center justify-end gap-x-3 gap-y-1 text-xs text-slate-700">
-    <span class="font-medium text-slate-500">Tokens left</span>
+    <span class="font-medium text-slate-500">Tokens available</span>
 
     <app-tooltip
       v-for="item of tokenItems"
@@ -20,11 +20,12 @@
 
       <template #content>
         <div class="font-medium">{{ item.description }}</div>
-        <div>
-          {{ formatAmount(item.token.balance) }} left
-          <template v-if="hasRecurringLimit(item)"> · {{ formatAmount(recurringLimit(item)) }} limit </template>
+        <div>{{ availabilityText(item) }}</div>
+        <div
+          v-if="refillText(item) !== null"
+          class="text-slate-300">
+          {{ refillText(item) }}
         </div>
-        <div class="text-slate-300">{{ resetText(item) }}</div>
       </template>
     </app-tooltip>
   </div>
@@ -52,9 +53,15 @@
 
   const plotColors = getPlotColors();
   const numberFormatter = new Intl.NumberFormat("en-US");
-  const dateTimeFormatter = new Intl.DateTimeFormat("en-US", {
+  const refillDateFormatter = new Intl.DateTimeFormat("en-US", {
     dateStyle: "medium",
-    timeStyle: "short"
+    timeZone: "UTC"
+  });
+  const refillTimeFormatter = new Intl.DateTimeFormat("en-US", {
+    hour: "2-digit",
+    minute: "2-digit",
+    hourCycle: "h23",
+    timeZone: "UTC"
   });
 
   const tokenItems = computed<TokenItem[]>(() =>
@@ -79,19 +86,41 @@
     return numberFormatter.format(amount);
   }
 
-  function hasRecurringLimit(item: TokenItem): boolean {
+  function isRecurring(item: TokenItem): boolean {
     return item.kind !== e.ResourceKind.LifetimeTokenUsage;
+  }
+
+  function hasRecurringLimit(item: TokenItem): boolean {
+    return isRecurring(item) && item.token.limit !== null;
   }
 
   function recurringLimit(item: TokenItem): number {
     return item.token.limit ?? 0;
   }
 
-  function resetText(item: TokenItem): string {
-    if (item.token.periodEndsAt === null) {
-      return "Does not reset";
+  function availabilityText(item: TokenItem): string {
+    if (isRecurring(item) && !hasRecurringLimit(item)) {
+      return "Not currently available";
     }
 
-    return `Resets ${dateTimeFormatter.format(item.token.periodEndsAt)}`;
+    const available = `${formatAmount(item.token.balance)} available`;
+
+    if (!hasRecurringLimit(item)) {
+      return available;
+    }
+
+    return `${available} · ${formatAmount(recurringLimit(item))}-token limit`;
+  }
+
+  function refillText(item: TokenItem): string | null {
+    if (isRecurring(item) && !hasRecurringLimit(item)) {
+      return null;
+    }
+
+    if (item.token.periodEndsAt === null) {
+      return "Available until used";
+    }
+
+    return `Refills ${refillDateFormatter.format(item.token.periodEndsAt)} at ${refillTimeFormatter.format(item.token.periodEndsAt)} UTC`;
   }
 </script>

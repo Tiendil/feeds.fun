@@ -59,33 +59,7 @@
                 {{ subscriptionStatusProperties[subscription.status].text }}
               </span>
 
-              <dl class="m-0 flex flex-1 flex-wrap gap-x-6 gap-y-1 text-sm">
-                <div class="flex gap-1.5">
-                  <dt class="font-medium text-slate-500">Started</dt>
-                  <dd class="m-0 text-slate-800">{{ formatSubscriptionDate(subscription.startedAt) }}</dd>
-                </div>
-
-                <div class="flex gap-1.5">
-                  <dt class="font-medium text-slate-500">Period</dt>
-                  <dd class="m-0 text-slate-800">
-                    {{ formatSubscriptionDate(subscription.periodStartsAt) }}–{{
-                      formatSubscriptionDate(subscription.periodEndsAt)
-                    }}
-                  </dd>
-                </div>
-
-                <div class="flex gap-1.5">
-                  <dt class="font-medium text-slate-500">Expected renewal</dt>
-                  <dd class="m-0 text-slate-800">
-                    {{ formatSubscriptionDate(subscription.expectedRenewalAt) }}
-                  </dd>
-                </div>
-
-                <div class="flex gap-1.5">
-                  <dt class="font-medium text-slate-500">Ends</dt>
-                  <dd class="m-0 text-slate-800">{{ formatSubscriptionDate(subscription.endsAt) }}</dd>
-                </div>
-              </dl>
+              <span class="text-sm text-slate-700">{{ subscriptionNextEvent(subscription) }}</span>
             </div>
           </li>
         </ul>
@@ -101,21 +75,30 @@
       </ui-page-section>
 
       <ui-page-section
-        id="settings-tagging"
-        title="Tagging">
+        id="settings-personal-feed-tagging"
+        title="Personal feed tagging">
         <template #description>
           <p>
-            Feeds from
-            <a
-              href="#"
-              @click.prevent="goToCollections()"
-              >collections</a
-            >
-            are tagged automatically and do not use your tokens.
+            Choose how old news from your personal feeds may be when Feeds Fun schedules it for tagging. This limit
+            applies whether tagging uses your tokens or a user-supplied API key. News from predefined collections is
+            not affected.
           </p>
+        </template>
 
+        <div class="mb-4">
+          <user-setting
+            kind="process_entries_not_older_than"
+            class="!mb-1" />
+          <ui-field-hint> A news item's age is based on the publication time reported by its feed. </ui-field-hint>
+        </div>
+      </ui-page-section>
+
+      <ui-page-section
+        id="settings-api-keys"
+        title="Your API keys">
+        <template #description>
           <p>
-            To tag your personal feeds, provide an
+            Optionally provide an
             <external-url
               url="https://platform.openai.com/docs/api-reference/introduction"
               text="OpenAI" />
@@ -123,7 +106,17 @@
             <external-url
               url="https://ai.google.dev/gemini-api/docs/api-key"
               text="Gemini" />
-            API key.
+            API key to tag personal feeds using your provider account instead of Feeds Fun tokens.
+          </p>
+
+          <p>
+            Feeds from
+            <a
+              href="#"
+              @click.prevent="goToCollections()"
+              >collections</a
+            >
+            are tagged automatically and do not use your API keys or tokens.
           </p>
         </template>
 
@@ -138,7 +131,6 @@
                 If a feed has multiple subscribers with API keys, we use the key with the lowest usage in the current
                 month.
               </li>
-              <li>We do not process old news until you tell us to.</li>
             </ul>
 
             <p class="font-medium text-slate-700">
@@ -152,18 +144,11 @@
         <user-setting kind="openai_api_key" />
         <user-setting kind="gemini_api_key" />
         <user-setting kind="max_tokens_cost_in_month" />
-
-        <div class="mb-4">
-          <user-setting
-            kind="process_entries_not_older_than"
-            class="!mb-1" />
-          <ui-field-hint> A news item's age is based on the publication time reported by its feed. </ui-field-hint>
-        </div>
       </ui-page-section>
 
       <ui-page-section
-        id="settings-api-usage"
-        title="API usage">
+        id="settings-api-key-usage"
+        title="API key usage">
         <template #description>
           <p>Estimated monthly token cost for requests made with your API keys.</p>
 
@@ -224,22 +209,28 @@
         id="settings-token-usage"
         title="Token usage">
         <template #description>
-          <p> Tagging one news item uses one token. Tokens are spent in this order: daily, monthly, then lifetime. </p>
+          <p>
+            Tagging one news item uses one token. Tokens are spent from the daily pool first, then monthly, then
+            lifetime.
+          </p>
 
-          <p>Your subscription tier sets the daily and monthly token limits.</p>
+          <p>
+            Daily and monthly limits apply to UTC calendar periods, independently of your subscription period. A
+            subscription change can update the current limit, but it does not start a new token period.
+          </p>
 
           <ul class="list-disc space-y-1 pl-5">
             <li>
               <strong class="font-medium text-slate-800">Daily tokens</strong>
-              — refill daily at 00:00 UTC.
+              — refill each day at 00:00 UTC.
             </li>
             <li>
               <strong class="font-medium text-slate-800">Monthly tokens</strong>
-              — refill on the first day of each month at 00:00 UTC.
+              — refill at 00:00 UTC on the first day of each month.
             </li>
             <li>
               <strong class="font-medium text-slate-800">Lifetime tokens</strong>
-              — bought separately as a one-time purchase and never reset.
+              — purchased separately and remain available until used.
             </li>
           </ul>
 
@@ -315,13 +306,18 @@
     [e.SubscriptionStatus.Ended]: {text: "Ended", class: "bg-slate-200 text-slate-700"}
   };
 
-  const subscriptionDateFormatter = new Intl.DateTimeFormat("en-US", {
-    dateStyle: "medium",
-    timeStyle: "short"
-  });
+  const subscriptionDateFormatter = new Intl.DateTimeFormat("en-US", {dateStyle: "medium"});
 
-  function formatSubscriptionDate(date: Date | null): string {
-    return date === null ? "—" : subscriptionDateFormatter.format(date);
+  function subscriptionNextEvent(subscription: t.ProductStateSubscription): string {
+    if (subscription.endsAt !== null) {
+      return `Ends ${subscriptionDateFormatter.format(subscription.endsAt)}`;
+    }
+
+    if (subscription.expectedRenewalAt !== null) {
+      return `Renews ${subscriptionDateFormatter.format(subscription.expectedRenewalAt)}`;
+    }
+
+    return `Current period ends ${subscriptionDateFormatter.format(subscription.periodEndsAt)}`;
   }
 
   const userId = computed(() => {
@@ -338,8 +334,9 @@
     {id: "settings-general", title: "General"},
     {id: "settings-subscriptions", title: "Subscriptions"},
     {id: "settings-messages", title: "Messages"},
-    {id: "settings-tagging", title: "Tagging"},
-    {id: "settings-api-usage", title: "API usage"},
+    {id: "settings-personal-feed-tagging", title: "Personal feed tagging"},
+    {id: "settings-api-keys", title: "Your API keys"},
+    {id: "settings-api-key-usage", title: "API key usage"},
     {id: "settings-token-usage", title: "Token usage"},
     {id: "settings-danger-zone", title: "Danger zone"}
   ] as const;

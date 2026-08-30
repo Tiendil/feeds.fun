@@ -1,7 +1,6 @@
 from typing import Any, Sequence
 
 from ffun.core import logging
-from ffun.dispatcher import domain as d_domain
 from ffun.domain.entities import LLMTokens
 from ffun.librarian import errors
 from ffun.librarian.entities import LLMGeneralProcessorRoute, TagsExtractor, TextCleaner
@@ -84,29 +83,13 @@ class Processor(base.Processor):
         if route is None:
             raise errors.UnknownProcessorRoute(route_id=context.route_id)
 
-        # Temporary solution until collection access handling moves fully to the dispatcher.
-        entries_in_collections = await d_domain.entries_in_collections([entry.id])
-        entry_is_from_collection = entry.id in entries_in_collections
-
-        if entry_is_from_collection:
-            assert route.api_key is not None
-
-            return configured_api_key_usage(
+        if context.use_user_api_key:
+            return await search_for_user_api_key(
                 llm=self.llm_provider,
                 llm_config=self.llm_config,
-                api_key=route.api_key,
+                entry=entry,
                 requests=requests,
             )
-
-        api_key_usage = await search_for_user_api_key(
-            llm=self.llm_provider,
-            llm_config=self.llm_config,
-            entry=entry,
-            requests=requests,
-        )
-
-        if api_key_usage is not None:
-            return api_key_usage
 
         if route.api_key is None:
             return None
