@@ -15,6 +15,8 @@ from ffun.feeds_collections.entities import CollectionId
 from ffun.feeds_collections.tests import helpers as fc_helpers
 from ffun.library import domain as l_domain
 from ffun.library.tests import make as l_make
+from ffun.llms_framework.entities import KeyStatus, LLMProvider
+from ffun.llms_framework.providers import llm_providers
 from ffun.product.entities import UserSetting
 from ffun.user_settings import domain as us_domain
 from ffun.user_settings.entities import SettingKind
@@ -162,6 +164,52 @@ class TestUsersWithApiKeys:
         )
 
         assert await entries_cache._users_with_api_keys(user_ids) == set(user_ids[:3])  # noqa: SLF001
+
+    @pytest.mark.asyncio
+    @pytest.mark.parametrize(
+        ("status", "expected"),
+        (
+            (KeyStatus.unknown, True),
+            (KeyStatus.works, True),
+            (KeyStatus.broken, False),
+            (KeyStatus.quota, False),
+        ),
+    )
+    async def test_filters_by_api_key_status(self, status: KeyStatus, expected: bool) -> None:
+        user_id = new_user_id()
+        api_key = uuid.uuid4().hex
+        await us_domain.save_setting(
+            user_id=user_id,
+            kind=SettingKind(int(UserSetting.test_api_key)),
+            value=api_key,
+        )
+        llm_providers.get(LLMProvider.test).provider.api_keys_statuses.set(api_key, status)
+
+        users_with_api_keys = await entries_cache._users_with_api_keys([user_id])  # noqa: SLF001
+
+        assert (user_id in users_with_api_keys) is expected
+
+    @pytest.mark.asyncio
+    async def test_uses_status_of_matching_provider(self) -> None:
+        openai_user_id = new_user_id()
+        gemini_user_id = new_user_id()
+        api_key = uuid.uuid4().hex
+        await us_domain.save_setting(
+            user_id=openai_user_id,
+            kind=SettingKind(int(UserSetting.openai_api_key)),
+            value=api_key,
+        )
+        await us_domain.save_setting(
+            user_id=gemini_user_id,
+            kind=SettingKind(int(UserSetting.gemini_api_key)),
+            value=api_key,
+        )
+        llm_providers.get(LLMProvider.openai).provider.api_keys_statuses.set(api_key, KeyStatus.broken)
+        llm_providers.get(LLMProvider.google).provider.api_keys_statuses.set(api_key, KeyStatus.works)
+
+        assert await entries_cache._users_with_api_keys([openai_user_id, gemini_user_id]) == {  # noqa: SLF001
+            gemini_user_id
+        }
 
 
 class TestEntriesCache:

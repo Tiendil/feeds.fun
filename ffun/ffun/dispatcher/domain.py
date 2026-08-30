@@ -341,7 +341,7 @@ async def _process_retry_entry(
         cache,
         # 1. retrying is a manual operation (now)
         # 2. user api keys will be removed in the future
-        # 3. retyring is not initiated by users, but by the admins, so, it shouldn't spend user resources
+        # 3. retrying is not initiated by users, but by the admins, so, it shouldn't spend user resources
         # => we always set use_user_api_key to False when retrying.
         use_user_api_key=False,
     )

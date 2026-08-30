@@ -9,6 +9,9 @@ from ffun.entitlements.entities import EffectiveEntitlementInterval, Entitlement
 from ffun.feeds_collections import domain as fc_domain
 from ffun.feeds_links import domain as fl_domain
 from ffun.library import domain as l_domain
+
+# Temporary exception for legacy user API keys; remove it with user API key support.
+from ffun.llms_framework.keys_rotator import user_api_key_is_available  # tach-ignore
 from ffun.product.entities import UserSetting
 from ffun.user_settings import domain as us_domain
 from ffun.user_settings.entities import SettingKind
@@ -110,7 +113,11 @@ async def _users_with_api_keys(user_ids: Iterable[UserId]) -> set[UserId]:
     return {
         user_id
         for user_id, settings in users_settings.items()
-        if any(settings.get(kind) for kind in _API_KEY_SETTING_KINDS)
+        if any(
+            user_api_key_is_available(kind, api_key)
+            for kind in _API_KEY_SETTING_KINDS
+            if isinstance(api_key := settings.get(kind), str) and api_key
+        )
     }
 
 
