@@ -57,7 +57,7 @@ _USER_API_KEY_PROVIDERS = {kind: provider for provider, kind in USER_API_KEY_SET
 _AVAILABLE_API_KEY_STATUSES = frozenset((KeyStatus.unknown, KeyStatus.works))
 
 
-def user_api_key_is_available(kind: us_entities.SettingKind, api_key: str) -> bool:
+def user_api_key_is_available(kind: us_entities.SettingKind, api_key: LLMApiKey) -> bool:
     from ffun.llms_framework.providers import llm_providers
 
     provider = _USER_API_KEY_PROVIDERS[kind]

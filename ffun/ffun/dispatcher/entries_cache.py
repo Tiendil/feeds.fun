@@ -10,6 +10,7 @@ from ffun.entitlements.entities import EffectiveEntitlementInterval, Entitlement
 from ffun.feeds_collections import domain as fc_domain
 from ffun.feeds_links import domain as fl_domain
 from ffun.library import domain as l_domain
+from ffun.llms_framework.entities import LLMApiKey
 
 # TODO: Temporary architecture exception: this direct llms_framework.keys_rotator import is intentional.
 # Consistency checks should ignore only this dependency while the legacy personal API-key bypass is supported.
@@ -134,7 +135,7 @@ async def _users_with_api_keys(user_ids: Iterable[UserId]) -> set[UserId]:
         user_id
         for user_id, settings in users_settings.items()
         if any(
-            user_api_key_is_available(kind, api_key)
+            user_api_key_is_available(kind, LLMApiKey(api_key))
             for kind in _API_KEY_SETTING_KINDS
             if isinstance(api_key := settings.get(kind), str) and api_key
         )

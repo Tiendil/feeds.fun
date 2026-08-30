@@ -135,6 +135,28 @@ class TestProcessor:
         assert api_key_usage.user_id is None
 
     @pytest.mark.asyncio
+    async def test__api_key_usage__configured_key_mode_without_configured_key(
+        self,
+        llm_processor: Processor,
+        cataloged_entry: Entry,
+        loaded_feed_id: FeedId,
+        user_key_info: UserKeyInfo,
+    ) -> None:
+        await fl_domain.add_link(user_key_info.user_id, loaded_feed_id)
+
+        assert (
+            await llm_processor._api_key_usage(
+                entry=cataloged_entry,
+                requests=self._requests(llm_processor, "some text"),
+                context=ProcessorContext(
+                    route_id=USER_KEY_ROUTE_ID,
+                    use_user_api_key=False,
+                ),
+            )
+            is None
+        )
+
+    @pytest.mark.asyncio
     async def test__api_key_usage__collection_uses_configured_key(
         self,
         llm_processor: Processor,
