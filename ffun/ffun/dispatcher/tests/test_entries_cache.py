@@ -188,7 +188,7 @@ class TestUsersWithApiKeys:
 
         users_with_api_keys = await entries_cache._users_with_api_keys([user_id])  # noqa: SLF001
 
-        assert (user_id in users_with_api_keys) is expected
+        assert (user_id in users_with_api_keys) == expected
 
     @pytest.mark.asyncio
     async def test_uses_status_of_matching_provider(self) -> None:
