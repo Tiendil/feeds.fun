@@ -158,7 +158,7 @@ class TestApiGetProductState:
         internal_user_id: UserId,
     ) -> None:
         benefit = make_benefit_package_template()
-        mocker.patch.object(b_domain.settings, "package_templates", (benefit,))
+        mocker.patch.object(b_domain, "get_benefit", return_value=benefit)
         alive_subscription = make_subscription(user_id=internal_user_id, benefit_id=benefit.id)
         ended_subscription = make_subscription(
             user_id=internal_user_id,

@@ -219,7 +219,7 @@ class TestSubscriptionStatus:
 
 
 class TestProductStateSubscriptionBenefit:
-    def test_from_internal(self) -> None:
+    def test_from_internal__kind_and_value(self) -> None:
         entitlement = make_source_entitlement(kind_id=EntitlementKindId.month_tokens, value=1000)
 
         assert ProductStateSubscriptionBenefit.from_internal(entitlement) == ProductStateSubscriptionBenefit(
