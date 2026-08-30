@@ -25,6 +25,7 @@ from ffun.llms_framework.entities import (
     UserKeyInfo,
 )
 from ffun.llms_framework.keys_rotator import (
+    USER_API_KEY_SETTING_KINDS,
     _api_key_is_working,
     _choose_user,
     _cost_points,
@@ -37,6 +38,7 @@ from ffun.llms_framework.keys_rotator import (
     _get_candidates,
     _get_user_key_infos,
     choose_user_api_key,
+    user_api_key_is_available,
     use_api_key,
 )
 from ffun.llms_framework.provider_interface import ProviderTest
@@ -55,6 +57,24 @@ _llm_config = LLMConfiguration(
     temperature=0.3,
     top_p=0.9,
 )
+
+
+class TestUserApiKeyIsAvailable:
+    @pytest.mark.parametrize(
+        ("status", "expected"),
+        (
+            (KeyStatus.unknown, True),
+            (KeyStatus.works, True),
+            (KeyStatus.broken, False),
+            (KeyStatus.quota, False),
+        ),
+    )
+    def test_status(self, status: KeyStatus, expected: bool, fake_llm_api_key: LLMApiKey) -> None:
+        llm_providers.get(LLMProvider.test).provider.api_keys_statuses.set(fake_llm_api_key, status)
+
+        assert (
+            user_api_key_is_available(USER_API_KEY_SETTING_KINDS[LLMProvider.test], fake_llm_api_key) == expected
+        )
 
 
 class TestAPIKeyIsWorking:

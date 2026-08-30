@@ -367,6 +367,24 @@ class TestCreateEntriesCache:
         assert cache.entry_processing_status(processor_id, entry_id) is None
 
     @pytest.mark.asyncio
+    async def test_skips_missing_entries(self, mocker: MockerFixture) -> None:
+        entry_id = new_entry_id()
+        entries_mock = mocker.patch.object(
+            entries_cache.l_domain,
+            "get_entries_by_ids",
+            return_value={entry_id: None},
+        )
+
+        cache = await entries_cache.create_entries_cache(
+            [EntryToProcess(entry_id=entry_id)],
+            [],
+            entitlement_kind_ids=[],
+        )
+
+        entries_mock.assert_awaited_once_with([entry_id])
+        assert cache._entry_ages == {}  # noqa: SLF001
+
+    @pytest.mark.asyncio
     async def test_bulk_loads_and_connects_cached_values(  # noqa: CFQ001
         self,
         loaded_feed: Feed,
