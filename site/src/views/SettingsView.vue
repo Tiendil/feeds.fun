@@ -42,7 +42,7 @@
         </p>
 
         <ui-empty-state v-else-if="productState.subscriptions.length === 0">
-          No current subscriptions.
+          No current subscriptions. Subscription plans are under development and coming soon.
         </ui-empty-state>
 
         <ul
