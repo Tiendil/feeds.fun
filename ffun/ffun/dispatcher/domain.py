@@ -133,6 +133,7 @@ async def _authorize_entry(item: EntryToProcess, cache: entries_cache.EntriesCac
     specifications = [
         _token_reservation_specification(user_id, cache.user_entitlements(user_id))
         for user_id in sorted(user_ids, key=str)
+        if cache.user_can_process_entry(user_id, item.entry_id)
     ]
     reservations = await r_domain.try_to_reserve_in_order(
         amount=SAAS_TOKENS_PER_USER_ENTRY,

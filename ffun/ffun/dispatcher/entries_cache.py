@@ -1,4 +1,5 @@
 import asyncio
+import datetime
 from collections.abc import Iterable, Mapping, Sequence
 
 from ffun.dispatcher import operations
@@ -25,6 +26,8 @@ _API_KEY_SETTING_KINDS = tuple(
     )
 )
 
+_ENTRY_AGE_LIMIT_SETTING_KIND = SettingKind(int(UserSetting.process_entries_not_older_than))
+
 
 async def _entry_feed_ids(entries_ids: Iterable[EntryId]) -> dict[EntryId, set[FeedId]]:
     feed_links = await l_domain.get_feed_links_for_entries(entries_ids)
@@ -48,6 +51,8 @@ async def entries_in_collections(entries_ids: Iterable[EntryId]) -> set[EntryId]
 
 class EntriesCache:
     __slots__ = (
+        "_entry_age_limits",
+        "_entry_ages",
         "_entries_in_collections",
         "_entitlements",
         "_feed_ids_by_entry",
@@ -67,7 +72,11 @@ class EntriesCache:
             UserId,
             Mapping[EntitlementKindId, EffectiveEntitlementInterval | None],
         ],
+        entry_ages: Mapping[EntryId, datetime.timedelta],
+        entry_age_limits: Mapping[UserId, datetime.timedelta],
     ) -> None:
+        self._entry_ages = entry_ages
+        self._entry_age_limits = entry_age_limits
         self._entries_in_collections = entries_in_collections
         self._feed_ids_by_entry = feed_ids_by_entry
         self._user_ids_by_feed = user_ids_by_feed
@@ -88,6 +97,15 @@ class EntriesCache:
 
     def users_have_api_keys(self, user_ids: Iterable[UserId]) -> bool:
         return any(user_id in self._users_with_api_keys for user_id in user_ids)
+
+    def user_can_process_entry(self, user_id: UserId, entry_id: EntryId) -> bool:
+        entry_age = self._entry_ages.get(entry_id)
+        entry_age_limit = self._entry_age_limits.get(user_id)
+
+        if entry_age is None or entry_age_limit is None:
+            return False
+
+        return entry_age_limit >= entry_age
 
     def user_entitlements(
         self,
@@ -128,23 +146,37 @@ async def create_entries_cache(
 ) -> EntriesCache:
     entry_ids = {item.entry_id for item in items}
     processor_ids = [processor.processor_id for processor in processors]
-    feed_ids_by_entry, processing_statuses = await asyncio.gather(
+    entries_by_id, feed_ids_by_entry, processing_statuses = await asyncio.gather(
+        l_domain.get_entries_by_ids(list(entry_ids)),
         _entry_feed_ids(entry_ids),
         operations.get_entries_processing_statuses(processor_ids, entry_ids),
     )
+    entry_ages = {entry_id: entry.age_for_processing for entry_id, entry in entries_by_id.items() if entry is not None}
     entries_in_collections = _entry_ids_in_collections(feed_ids_by_entry)
     feed_ids = {feed_id for entry_feed_ids in feed_ids_by_entry.values() for feed_id in entry_feed_ids}
     user_ids_by_feed = await fl_domain.get_linked_users(feed_ids)
     user_ids = {user_id for feed_user_ids in user_ids_by_feed.values() for user_id in feed_user_ids}
-    users_with_api_keys, entitlements = await asyncio.gather(
+    users_with_api_keys, entitlements, users_settings = await asyncio.gather(
         _users_with_api_keys(user_ids),
         e_domain.get_entitlements(
             list(user_ids),
             list(entitlement_kind_ids),
         ),
+        us_domain.load_settings_for_users(
+            user_ids,
+            kinds=(_ENTRY_AGE_LIMIT_SETTING_KIND,),
+        ),
     )
+    entry_age_limits = {}
+
+    for user_id, user_settings in users_settings.items():
+        days = user_settings[_ENTRY_AGE_LIMIT_SETTING_KIND]
+        assert isinstance(days, int)
+        entry_age_limits[user_id] = datetime.timedelta(days=days)
 
     return EntriesCache(
+        entry_ages=entry_ages,
+        entry_age_limits=entry_age_limits,
         entries_in_collections=entries_in_collections,
         feed_ids_by_entry=feed_ids_by_entry,
         user_ids_by_feed=user_ids_by_feed,

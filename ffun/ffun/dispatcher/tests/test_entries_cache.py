@@ -1,3 +1,4 @@
+import datetime
 import uuid
 
 import pytest
@@ -218,6 +219,8 @@ class TestEntriesCache:
         user_entry_id = new_entry_id()
         missing_entry_id = new_entry_id()
         cache = entries_cache.EntriesCache(
+            entry_ages={},
+            entry_age_limits={},
             entries_in_collections={collection_entry_id},
             feed_ids_by_entry={},
             user_ids_by_feed={},
@@ -239,6 +242,8 @@ class TestEntriesCache:
         shared_user_id = new_user_id()
         second_user_id = new_user_id()
         cache = entries_cache.EntriesCache(
+            entry_ages={},
+            entry_age_limits={},
             entries_in_collections=set(),
             feed_ids_by_entry={entry_id: {first_feed_id, second_feed_id}},
             user_ids_by_feed={
@@ -261,6 +266,8 @@ class TestEntriesCache:
         api_key_user_id = new_user_id()
         another_user_id = new_user_id()
         cache = entries_cache.EntriesCache(
+            entry_ages={},
+            entry_age_limits={},
             entries_in_collections=set(),
             feed_ids_by_entry={},
             user_ids_by_feed={},
@@ -273,6 +280,31 @@ class TestEntriesCache:
         assert not cache.users_have_api_keys([another_user_id])
         assert not cache.users_have_api_keys([])
 
+    def test_user_can_process_entry__compares_cached_age_and_limit(self) -> None:
+        user_id = new_user_id()
+        another_user_id = new_user_id()
+        entry_id = new_entry_id()
+        older_entry_id = new_entry_id()
+        missing_entry_id = new_entry_id()
+        cache = entries_cache.EntriesCache(
+            entry_ages={
+                entry_id: datetime.timedelta(days=1),
+                older_entry_id: datetime.timedelta(days=1, microseconds=1),
+            },
+            entry_age_limits={user_id: datetime.timedelta(days=1)},
+            entries_in_collections=set(),
+            feed_ids_by_entry={},
+            user_ids_by_feed={},
+            users_with_api_keys=set(),
+            processing_statuses={},
+            entitlements={},
+        )
+
+        assert cache.user_can_process_entry(user_id, entry_id)
+        assert not cache.user_can_process_entry(user_id, older_entry_id)
+        assert not cache.user_can_process_entry(user_id, missing_entry_id)
+        assert not cache.user_can_process_entry(another_user_id, entry_id)
+
     def test_user_entitlements__returns_cached_entitlements(self) -> None:
         user_id = new_user_id()
         entitlement = e_make.make_effective_entitlement_interval(user_id=user_id)
@@ -281,6 +313,8 @@ class TestEntriesCache:
             EntitlementKindId.month_tokens: None,
         }
         cache = entries_cache.EntriesCache(
+            entry_ages={},
+            entry_age_limits={},
             entries_in_collections=set(),
             feed_ids_by_entry={},
             user_ids_by_feed={},
@@ -297,6 +331,8 @@ class TestEntriesCache:
         entry_id = new_entry_id()
         missing_entry_id = new_entry_id()
         cache = entries_cache.EntriesCache(
+            entry_ages={},
+            entry_age_limits={},
             entries_in_collections=set(),
             feed_ids_by_entry={},
             user_ids_by_feed={},
@@ -333,6 +369,7 @@ class TestCreateEntriesCache:
     @pytest.mark.asyncio
     async def test_bulk_loads_and_connects_cached_values(  # noqa: CFQ001
         self,
+        loaded_feed: Feed,
         fake_processor_id: ProcessorId,
         another_fake_processor_id: ProcessorId,
         mocker: MockerFixture,
@@ -367,6 +404,24 @@ class TestCreateEntriesCache:
             user_feed_id: {api_key_user_id, another_user_id},
         }
         users_with_api_keys: set[UserId] = {api_key_user_id}
+        now = datetime.datetime.now(tz=datetime.UTC)
+        entries_by_id = {
+            collection_entry_id: l_make.fake_entry(
+                loaded_feed.source_id,
+                id=collection_entry_id,
+                published_at=now - datetime.timedelta(hours=1),
+            ).fake_entry(created_at=now),
+            user_entry_id: l_make.fake_entry(
+                loaded_feed.source_id,
+                id=user_entry_id,
+                published_at=now - datetime.timedelta(days=2),
+            ).fake_entry(created_at=now),
+        }
+        entry_age_limit_kind = SettingKind(int(UserSetting.process_entries_not_older_than))
+        users_settings = {
+            api_key_user_id: {entry_age_limit_kind: 1},
+            another_user_id: {entry_age_limit_kind: 3},
+        }
         entitlement = e_make.make_effective_entitlement_interval(user_id=another_user_id)
         entitlements = {
             api_key_user_id: {
@@ -385,6 +440,11 @@ class TestCreateEntriesCache:
         entries_in_collections = {collection_entry_id}
         feed_ids = {collection_feed_id, user_feed_id}
         user_ids: set[UserId] = {api_key_user_id, another_user_id}
+        entries_mock = mocker.patch.object(
+            entries_cache.l_domain,
+            "get_entries_by_ids",
+            return_value=entries_by_id,
+        )
         entry_feed_ids_mock = mocker.patch.object(
             entries_cache,
             "_entry_feed_ids",
@@ -410,6 +470,11 @@ class TestCreateEntriesCache:
             "get_entitlements",
             return_value=entitlements,
         )
+        users_settings_mock = mocker.patch.object(
+            entries_cache.us_domain,
+            "load_settings_for_users",
+            return_value=users_settings,
+        )
         entry_ids_in_collections_mock = mocker.patch.object(
             entries_cache,
             "_entry_ids_in_collections",
@@ -422,17 +487,25 @@ class TestCreateEntriesCache:
             entitlement_kind_ids=entitlement_kind_ids,
         )
 
-        entry_ids = {collection_entry_id, user_entry_id}
+        entry_ids: set[EntryId] = {collection_entry_id, user_entry_id}
+        selected_entry_ids = list(entry_ids)
         processor_ids = [fake_processor_id, another_fake_processor_id]
+        entries_mock.assert_awaited_once_with(selected_entry_ids)
         entry_feed_ids_mock.assert_awaited_once_with(entry_ids)
         statuses_mock.assert_awaited_once_with(processor_ids, entry_ids)
         entry_ids_in_collections_mock.assert_called_once_with(feed_ids_by_entry)
         linked_users_mock.assert_awaited_once_with(feed_ids)
         api_key_users_mock.assert_awaited_once_with(user_ids)
         entitlements_mock.assert_awaited_once()
+        users_settings_mock.assert_awaited_once_with(
+            user_ids,
+            kinds=(entry_age_limit_kind,),
+        )
         assert cache.entry_in_collection(collection_entry_id)
         assert not cache.entry_in_collection(user_entry_id)
         assert cache.entry_user_ids(user_entry_id) == {api_key_user_id, another_user_id}
         assert cache.users_have_api_keys(cache.entry_user_ids(user_entry_id))
+        assert not cache.user_can_process_entry(api_key_user_id, user_entry_id)
+        assert cache.user_can_process_entry(another_user_id, user_entry_id)
         assert cache.user_entitlements(another_user_id) == entitlements[another_user_id]
         assert cache.entry_processing_status(fake_processor_id, user_entry_id) == EntryProcessingStatus.failed

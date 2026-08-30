@@ -99,6 +99,8 @@ def make_entries_cache(
     processing_statuses: Mapping[ProcessorId, Mapping[EntryId, EntryProcessingStatus]] | None = None,
 ) -> entries_cache.EntriesCache:
     return entries_cache.EntriesCache(
+        entry_ages={},
+        entry_age_limits={},
         entries_in_collections=entries_in_collections or set(),
         feed_ids_by_entry={},
         user_ids_by_feed={},
@@ -452,6 +454,62 @@ class TestAuthorizeEntry:
             (user_ids[0], Resource.day_token_usage),
             (user_ids[1], Resource.month_token_usage),
         }
+
+    @pytest.mark.asyncio
+    async def test_reserves_only_users_whose_age_limit_allows_entry(self, loaded_feed: Feed) -> None:
+        excluded_user_id = new_user_id()
+        included_user_id = new_user_id()
+        collected_entry = l_make.fake_entry(
+            loaded_feed.source_id,
+            published_at=datetime.datetime.now(tz=datetime.UTC) - datetime.timedelta(days=2),
+        )
+        await l_domain.catalog_entries(loaded_feed.id, [collected_entry])
+
+        for user_id in (excluded_user_id, included_user_id):
+            await fl_domain.add_link(user_id, loaded_feed.id)
+            await grant_tokens(user_id, EntitlementKindId.day_tokens)
+
+        await us_domain.save_setting(
+            user_id=included_user_id,
+            kind=SettingKind(int(UserSetting.process_entries_not_older_than)),
+            value=3,
+        )
+        item = EntryToProcess(entry_id=collected_entry.id)
+        cache = await entries_cache.create_entries_cache(
+            [item],
+            [],
+            entitlement_kind_ids=list(EntitlementKindId),
+        )
+
+        authorization = await domain._authorize_entry(item, cache)
+
+        assert [reservation.user_id for reservation in authorization.reservations] == [included_user_id]
+
+    @pytest.mark.asyncio
+    async def test_entry_older_than_every_user_limit(self, loaded_feed: Feed) -> None:
+        user_id = new_user_id()
+        collected_entry = l_make.fake_entry(
+            loaded_feed.source_id,
+            published_at=datetime.datetime.now(tz=datetime.UTC) - datetime.timedelta(days=2),
+        )
+        await l_domain.catalog_entries(loaded_feed.id, [collected_entry])
+        await fl_domain.add_link(user_id, loaded_feed.id)
+        await grant_tokens(user_id, EntitlementKindId.day_tokens)
+        item = EntryToProcess(entry_id=collected_entry.id)
+        cache = await entries_cache.create_entries_cache(
+            [item],
+            [],
+            entitlement_kind_ids=list(EntitlementKindId),
+        )
+
+        authorization = await domain._authorize_entry(item, cache)
+
+        assert authorization == EntryAuthorization(
+            entry_id=collected_entry.id,
+            globally_visible=False,
+            reservations=(),
+            use_user_api_key=False,
+        )
 
     @pytest.mark.asyncio
     async def test_reserves_each_entry_from_the_first_available_pool(self, loaded_feed: Feed) -> None:
