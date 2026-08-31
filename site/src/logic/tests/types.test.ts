@@ -141,6 +141,17 @@ describe("entriesLoadResultFromJSON", () => {
     expect(result.entries[0].tags).toEqual(["technology"]);
     expect(result.fallbackUsed).toBe(true);
   });
+
+  it("translates an empty entries response", () => {
+    const result = entriesLoadResultFromJSON({
+      entries: [],
+      tagsMapping: {},
+      fallbackUsed: false
+    });
+
+    expect(result.entries).toEqual([]);
+    expect(result.fallbackUsed).toBe(false);
+  });
 });
 
 describe("resourceStatisticsFromJSON", () => {

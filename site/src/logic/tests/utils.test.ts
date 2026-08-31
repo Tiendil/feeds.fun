@@ -10,10 +10,14 @@ afterEach(() => {
 describe("timeSince", () => {
   it.each([
     {secondsPast: 30, short: "<min", long: "just now"},
+    {secondsPast: 60, short: "1min", long: "1 minute ago"},
     {secondsPast: 5 * 60, short: "5min", long: "5 minutes ago"},
+    {secondsPast: 60 * 60, short: "1h", long: "1 hour ago"},
     {secondsPast: 3 * 60 * 60, short: "3h", long: "3 hours ago"},
     {secondsPast: 24 * 60 * 60, short: "1d", long: "1 day ago"},
+    {secondsPast: 30 * 24 * 60 * 60, short: "1m", long: "1 month ago"},
     {secondsPast: 60 * 24 * 60 * 60, short: "2m", long: "2 months ago"},
+    {secondsPast: 360 * 24 * 60 * 60, short: "1y", long: "1 year ago"},
     {secondsPast: 720 * 24 * 60 * 60, short: "2y", long: "2 years ago"}
   ])("formats $long in short and long styles", ({secondsPast, short, long}) => {
     const now = new Date("2026-08-31T12:00:00Z");

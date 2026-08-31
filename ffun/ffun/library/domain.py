@@ -7,7 +7,7 @@ from ffun.domain import urls as d_urls
 from ffun.domain.entities import EntryId, FeedId, UnknownUrl
 from ffun.feeds import domain as f_domain
 from ffun.library import operations
-from ffun.library.entities import Entry, EntryChange, FeedEntryLink
+from ffun.library.entities import EntriesLoadResult, Entry, EntryChange, FeedEntryLink
 
 logger = logging.get_module_logger()
 
@@ -94,17 +94,17 @@ async def normalize_entry(entry: Entry, apply: bool = False) -> list[EntryChange
 
 async def get_entries_by_filter_with_fallback(
     feeds_ids: list[FeedId], period: datetime.timedelta | None, limit: int, fallback_limit: int
-) -> tuple[list[Entry], bool]:
+) -> EntriesLoadResult:
 
     entries = await get_entries_by_filter(feeds_ids=feeds_ids, period=period, limit=limit)
 
     if entries:
-        return entries, False
+        return EntriesLoadResult(entries=entries, fallback_used=False)
 
     # if there is no news in requested interval try to get some older news
     entries = await get_entries_by_filter(feeds_ids=feeds_ids, period=_fallback_period, limit=fallback_limit)
 
-    return entries, True
+    return EntriesLoadResult(entries=entries, fallback_used=True)
 
 
 @run_in_transaction

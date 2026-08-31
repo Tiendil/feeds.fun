@@ -145,12 +145,12 @@ class TestGetEntriesByFilterWithFallback:
 
     @pytest.mark.asyncio
     async def test_no_entries_at_all(self, time_delta: datetime.timedelta) -> None:
-        entries, fallback_used = await get_entries_by_filter_with_fallback(
+        result = await get_entries_by_filter_with_fallback(
             feeds_ids=[], period=time_delta, limit=10, fallback_limit=10
         )
 
-        assert entries == []
-        assert fallback_used
+        assert result.entries == []
+        assert result.fallback_used
 
     @pytest.mark.asyncio
     async def test_has_new_entries(
@@ -160,12 +160,12 @@ class TestGetEntriesByFilterWithFallback:
 
         await helpers.update_entry_created_time([entries[-1].id], time_border - datetime.timedelta(seconds=10))
 
-        loaded_entries, fallback_used = await get_entries_by_filter_with_fallback(
+        result = await get_entries_by_filter_with_fallback(
             feeds_ids=[loaded_feed.id], period=time_delta, limit=10, fallback_limit=10
         )
 
-        assert {entry.id for entry in loaded_entries} == {entry.id for entry in entries if entry.id != entries[-1].id}
-        assert not fallback_used
+        assert {entry.id for entry in result.entries} == {entry.id for entry in entries if entry.id != entries[-1].id}
+        assert not result.fallback_used
 
     @pytest.mark.asyncio
     async def test_has_new_entries__limit(
@@ -175,13 +175,13 @@ class TestGetEntriesByFilterWithFallback:
 
         await helpers.update_entry_created_time([entries[-1].id], time_border - datetime.timedelta(seconds=10))
 
-        loaded_entries, fallback_used = await get_entries_by_filter_with_fallback(
+        result = await get_entries_by_filter_with_fallback(
             feeds_ids=[loaded_feed.id], period=time_delta, limit=1, fallback_limit=10
         )
 
-        assert len(loaded_entries) == 1
-        assert loaded_entries[0].id in {entry.id for entry in entries if entry.id != entries[-1].id}
-        assert not fallback_used
+        assert len(result.entries) == 1
+        assert result.entries[0].id in {entry.id for entry in entries if entry.id != entries[-1].id}
+        assert not result.fallback_used
 
     @pytest.mark.asyncio
     async def test_no_new_entries(
@@ -193,12 +193,12 @@ class TestGetEntriesByFilterWithFallback:
             [entry.id for entry in entries], time_border - datetime.timedelta(seconds=10)
         )
 
-        loaded_entries, fallback_used = await get_entries_by_filter_with_fallback(
+        result = await get_entries_by_filter_with_fallback(
             feeds_ids=[loaded_feed.id], period=time_delta, limit=1, fallback_limit=10
         )
 
-        assert {entry.id for entry in loaded_entries} == {entry.id for entry in entries}
-        assert fallback_used
+        assert {entry.id for entry in result.entries} == {entry.id for entry in entries}
+        assert result.fallback_used
 
     @pytest.mark.asyncio
     async def test_fallback_returns_entries_older_than_max_entry_age(
@@ -211,12 +211,12 @@ class TestGetEntriesByFilterWithFallback:
             utils.now() - settings.max_entry_age - datetime.timedelta(days=1),
         )
 
-        loaded_entries, fallback_used = await get_entries_by_filter_with_fallback(
+        result = await get_entries_by_filter_with_fallback(
             feeds_ids=[loaded_feed.id], period=time_delta, limit=1, fallback_limit=10
         )
 
-        assert {entry.id for entry in loaded_entries} == {entry.id for entry in entries}
-        assert fallback_used
+        assert {entry.id for entry in result.entries} == {entry.id for entry in entries}
+        assert result.fallback_used
 
     @pytest.mark.asyncio
     async def test_no_new_entries__limit(
@@ -228,13 +228,13 @@ class TestGetEntriesByFilterWithFallback:
             [entry.id for entry in entries], time_border - datetime.timedelta(seconds=10)
         )
 
-        loaded_entries, fallback_used = await get_entries_by_filter_with_fallback(
+        result = await get_entries_by_filter_with_fallback(
             feeds_ids=[loaded_feed.id], period=time_delta, limit=1, fallback_limit=1
         )
 
-        assert len(loaded_entries) == 1
-        assert loaded_entries[0].id in {entry.id for entry in entries}
-        assert fallback_used
+        assert len(result.entries) == 1
+        assert result.entries[0].id in {entry.id for entry in entries}
+        assert result.fallback_used
 
 
 class TestShrinkFeed:

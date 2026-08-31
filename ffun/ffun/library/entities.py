@@ -157,6 +157,11 @@ class Entry(BaseEntry):
         )
 
 
+class EntriesLoadResult(BaseEntity):
+    entries: list[Entry]
+    fallback_used: bool
+
+
 class CollectedEntry(BaseEntry):
     def fake_entry(self, created_at: datetime.datetime) -> Entry:
         return Entry(
