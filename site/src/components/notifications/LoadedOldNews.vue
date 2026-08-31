@@ -41,7 +41,7 @@
 
     return properties.entries.every((entryId) => {
       const entry = entriesStore.entries[entryId];
-      return entry.publishedAt.getTime() < Date.now() - properties.period.seconds * 1000;
+      return entry.effectivePublishedAt.getTime() < Date.now() - properties.period.seconds * 1000;
     });
   });
 </script>

@@ -1,7 +1,7 @@
 <template>
   <div
-    class="flex-shrink-0 w-16 cursor-default text-right"
-    :title="title">
+    class="w-16 flex-shrink-0 cursor-help rounded-sm text-right focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
+    tabindex="0">
     <value-date-time
       class=""
       :value="time"
@@ -23,6 +23,5 @@
 
   const properties = defineProps<{
     time: Date | null;
-    title: string;
   }>();
 </script>

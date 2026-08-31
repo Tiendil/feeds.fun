@@ -1,25 +1,22 @@
 <template>
   <div
     ref="entryTop"
-    :class="['flex', 'text-lg', {'ml-8': isRead}]">
-    <div class="ffun-body-list-icon-column">
-      <a
-        v-if="isRead"
-        href="#"
-        @click.prevent="markUnread()"
-        title="Mark as unread"
-        class="text-green-700">
-        <icon icon="chevrons-left" />
-      </a>
-
-      <a
-        v-else
-        href="#"
-        @click.prevent="markRead()"
-        title="Mark as read"
-        class="text-orange-700">
-        <icon icon="chevrons-right" />
-      </a>
+    class="flex text-lg">
+    <div class="ffun-body-list-icon-column w-4">
+      <app-tooltip :text="isRead ? 'Mark as unread' : 'Mark as read'">
+        <button
+          type="button"
+          :aria-label="isRead ? 'Mark as unread' : 'Mark as read'"
+          class="flex h-7 w-4 cursor-pointer items-center justify-center rounded focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-400"
+          @click="toggleReadState">
+          <span
+            aria-hidden="true"
+            :class="[
+              'block h-3 w-3 rounded-full border-2',
+              isRead ? 'border-green-700' : 'border-orange-700 bg-orange-700'
+            ]" />
+        </button>
+      </app-tooltip>
     </div>
 
     <div
@@ -49,9 +46,15 @@
         :contributions="showScore ? entry.scoreContributions : {}" />
     </div>
 
-    <body-list-reverse-time-column
-      :title="timeForTooltip"
-      :time="timeFor" />
+    <app-tooltip placement="top-end">
+      <body-list-reverse-time-column :time="entry.effectivePublishedAt" />
+
+      <template #content>
+        <div><span class="font-medium">Considered published at:</span> {{ formatDate(entry.effectivePublishedAt) }}</div>
+        <div><span class="font-medium">First seen by Feeds Fun:</span> {{ formatDate(entry.firstSeenAt) }}</div>
+        <div><span class="font-medium">Published by the source:</span> {{ formatDate(entry.sourcePublishedAt) }}</div>
+      </template>
+    </app-tooltip>
   </div>
 
   <body-list-entry-body
@@ -66,7 +69,6 @@
 </template>
 
 <script lang="ts" setup>
-  import _ from "lodash";
   import {computed, ref, useTemplateRef, onMounted, inject} from "vue";
   import type * as t from "@/logic/types";
   import * as events from "@/logic/events";
@@ -87,7 +89,6 @@
 
   const properties = defineProps<{
     entryId: t.EntryId;
-    timeField: string;
     tagsCount: {[key: string]: number};
     showScore: boolean;
   }>();
@@ -108,25 +109,9 @@
     return entry.value.id == entriesStore.displayedEntryId;
   });
 
-  const timeFor = computed(() => {
-    if (entry.value === null) {
-      return null;
-    }
-
-    return _.get(entry.value, properties.timeField, null);
-  });
-
-  const timeForTooltip = computed(() => {
-    if (entry.value === null) {
-      return "";
-    }
-
-    if (properties.timeField === "publishedAt") {
-      return "How long ago the news was published";
-    }
-
-    return "";
-  });
+  function formatDate(date: Date): string {
+    return date.toLocaleString();
+  }
 
   const purifiedTitle = computed(() => {
     return utils.purifyTitle({raw: entry.value.title, default_: "No title"});
@@ -197,17 +182,17 @@
     entriesStore.requestFullEntry({entryId: properties.entryId});
   });
 
-  async function markUnread() {
-    await entriesStore.removeMarker({
-      entryId: properties.entryId,
-      marker: e.Marker.Read
-    });
-  }
-
-  async function markRead() {
-    await entriesStore.setMarker({
-      entryId: properties.entryId,
-      marker: e.Marker.Read
-    });
+  async function toggleReadState() {
+    if (isRead.value) {
+      await entriesStore.removeMarker({
+        entryId: properties.entryId,
+        marker: e.Marker.Read
+      });
+    } else {
+      await entriesStore.setMarker({
+        entryId: properties.entryId,
+        marker: e.Marker.Read
+      });
+    }
   }
 </script>

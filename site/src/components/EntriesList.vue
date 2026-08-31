@@ -1,6 +1,22 @@
 <template>
   <div>
     <template v-if="entriesToShow.length > 0">
+      <div class="mb-1 flex border-b pb-1 text-xs text-gray-500">
+        <div class="mr-2 w-4 flex-shrink-0" />
+
+        <div
+          v-if="showScore"
+          class="w-8 flex-shrink-0 pr-1 text-center">
+          Score
+        </div>
+
+        <div class="w-8 flex-shrink-0 pr-1" />
+
+        <div class="flex-grow">News</div>
+
+        <div class="w-16 flex-shrink-0 text-right">Published</div>
+      </div>
+
       <ul>
         <li
           v-for="entryId in entriesToShow"
@@ -9,7 +25,6 @@
           <entry-for-list
             :show-score="showScore"
             :entryId="entryId"
-            :time-field="timeField"
             :tags-count="tagsCount" />
         </li>
       </ul>
@@ -38,7 +53,6 @@
   const properties = defineProps<{
     loading: boolean;
     entriesIds: Array<t.EntryId>;
-    timeField: string;
     showFromStart: number;
     showPerPage: number;
     showScore: boolean;

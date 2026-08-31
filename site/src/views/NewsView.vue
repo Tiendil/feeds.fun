@@ -73,7 +73,6 @@
     <entries-list
       :loading="entriesStore.loading"
       :entriesIds="entriesReport"
-      :time-field="entriesStore.activeOrderProperties.timeField"
       :tags-count="tagsCount"
       :show-score="true"
       :showFromStart="25"

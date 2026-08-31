@@ -155,7 +155,9 @@ class Entry(BaseEntity):
     markers: list[Marker] = []
     score: int
     scoreContributions: dict[TagId, int]
-    publishedAt: datetime.datetime
+    effectivePublishedAt: datetime.datetime
+    firstSeenAt: datetime.datetime
+    sourcePublishedAt: datetime.datetime
     body: str | None = None
     references: list[Reference] | None = None
 
@@ -177,12 +179,9 @@ class Entry(BaseEntity):
             markers=list(markers),
             score=score,
             scoreContributions=score_contributions,
-            # THIS IS AN INTENDED BEHAVIOR
-            # we set publishedAt for the frontend as global entry creation time
-            # because it is the only reliable time with "published" meaning
-            # actual published_at is absolutely unreliable because comes from the third-party sources
-            # and can be broken in numerous ways.
-            publishedAt=entry.created_at,
+            effectivePublishedAt=entry.effective_published_at,
+            firstSeenAt=entry.created_at,
+            sourcePublishedAt=entry.published_at,
             # Some APIs return full entry info, some return shorter info to save traffic and speed up the response.
             body=entry.body if with_body else None,
             references=[Reference.from_internal(reference) for reference in entry.references] if with_body else None,
