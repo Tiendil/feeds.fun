@@ -570,6 +570,7 @@ class GetLastEntriesRequest(api.APIRequest):
 
 class GetLastEntriesResponse(api.APISuccess):
     entries: list[Entry]
+    fallbackUsed: bool
     tagsMapping: dict[TagId, TagUid]
 
 
@@ -587,6 +588,7 @@ class GetLastCollectionEntriesRequest(api.APIRequest):
 
 class GetLastCollectionEntriesResponse(api.APISuccess):
     entries: list[Entry]
+    fallbackUsed: bool
     tagsMapping: dict[TagId, TagUid]
 
 

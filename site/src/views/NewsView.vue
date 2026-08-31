@@ -67,7 +67,8 @@
       :collections-warning_="false" />
 
     <notifications-loaded-old-news
-      :entries="entriesStore.loadedEntriesReport || []"
+      :entries="entriesStore.loadedEntriesReport?.entryIds || []"
+      :fallback-used="entriesStore.loadedEntriesReport?.fallbackUsed || false"
       :period="e.LastEntriesPeriodProperties.get(globalSettings.lastEntriesPeriod as any)" />
 
     <entries-list
@@ -153,7 +154,7 @@
 
     // TODO: it is a heuristic (score could be 0 even with rules)
     //       must be refactored to something more stable
-    for (const entryId of entriesStore.loadedEntriesReport) {
+    for (const entryId of entriesStore.loadedEntriesReport.entryIds) {
       if (entriesStore.entries[entryId].score != 0) {
         return true;
       }

@@ -336,6 +336,17 @@ export type RawEntry = {
   references?: RawReference[] | null;
 };
 
+export type RawEntriesLoadResponse = {
+  entries: RawEntry[];
+  tagsMapping: {[key: number]: string};
+  fallbackUsed: boolean;
+};
+
+export type EntriesLoadResult = {
+  entries: Entry[];
+  fallbackUsed: boolean;
+};
+
 export function entryFromJSON(rawEntry: RawEntry, tagsMapping: {[key: number]: string}): Entry {
   const contributions: {[key: string]: number} = {};
 
@@ -368,6 +379,17 @@ export function entryFromJSON(rawEntry: RawEntry, tagsMapping: {[key: number]: s
         ? rawEntry.references.map(referenceFromJSON)
         : null
   });
+}
+
+export function entriesLoadResultFromJSON({
+  entries,
+  tagsMapping,
+  fallbackUsed
+}: RawEntriesLoadResponse): EntriesLoadResult {
+  return {
+    entries: entries.map((entry) => entryFromJSON(entry, tagsMapping)),
+    fallbackUsed
+  };
 }
 
 export type Rule = {

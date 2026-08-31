@@ -2,6 +2,7 @@ import {describe, expect, it} from "vitest";
 
 import * as e from "@/logic/enums";
 import {
+  entriesLoadResultFromJSON,
   entryFromJSON,
   feedFromJSON,
   productStateFromJSON,
@@ -122,6 +123,23 @@ describe("entryFromJSON", () => {
 
   it("rejects unknown integer markers", () => {
     expect(() => entryFromJSON(rawEntry([100]), {})).toThrow("Unknown marker: 100");
+  });
+});
+
+describe("entriesLoadResultFromJSON", () => {
+  it("translates the complete entries response", () => {
+    const entry = rawEntry([]);
+    entry.tags = [1];
+
+    const result = entriesLoadResultFromJSON({
+      entries: [entry],
+      tagsMapping: {1: "technology"},
+      fallbackUsed: true
+    });
+
+    expect(result.entries).toHaveLength(1);
+    expect(result.entries[0].tags).toEqual(["technology"]);
+    expect(result.fallbackUsed).toBe(true);
   });
 });
 

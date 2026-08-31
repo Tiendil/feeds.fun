@@ -89,7 +89,8 @@
     </ui-advisory>
 
     <notifications-loaded-old-news
-      :entries="entriesStore.loadedEntriesReport || []"
+      :entries="entriesStore.loadedEntriesReport?.entryIds || []"
+      :fallback-used="entriesStore.loadedEntriesReport?.fallbackUsed || false"
       :period="e.LastEntriesPeriodProperties.get(globalSettings.lastEntriesPeriod as any)" />
 
     <entries-list

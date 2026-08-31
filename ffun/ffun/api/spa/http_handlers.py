@@ -222,7 +222,7 @@ async def api_get_last_collection_entries(
 
     feed_ids = [feed_info.feed_id for feed_info in collection.feeds if feed_info.feed_id is not None]
 
-    entries = await l_domain.get_entries_by_filter_with_fallback(
+    entries, fallback_used = await l_domain.get_entries_by_filter_with_fallback(
         feeds_ids=feed_ids,
         period=request.period,
         limit=settings.max_returned_entries,
@@ -233,7 +233,9 @@ async def api_get_last_collection_entries(
         entries, with_body=False, user_id=None, min_tag_count=request.minTagCount
     )
 
-    return entities.GetLastCollectionEntriesResponse(entries=external_entries, tagsMapping=tags_mapping)
+    return entities.GetLastCollectionEntriesResponse(
+        entries=external_entries, fallbackUsed=fallback_used, tagsMapping=tags_mapping
+    )
 
 
 @api_public.post("/get-entries-by-ids")  # type: ignore
@@ -444,7 +446,7 @@ async def api_get_last_entries(request: entities.GetLastEntriesRequest, user: Us
 
     linked_feeds_ids = [link.feed_id for link in linked_feeds]
 
-    entries = await l_domain.get_entries_by_filter_with_fallback(
+    entries, fallback_used = await l_domain.get_entries_by_filter_with_fallback(
         feeds_ids=linked_feeds_ids,
         period=request.period,
         limit=settings.max_returned_entries,
@@ -455,7 +457,7 @@ async def api_get_last_entries(request: entities.GetLastEntriesRequest, user: Us
         entries, with_body=False, user_id=user.id, min_tag_count=request.minTagCount
     )
 
-    return entities.GetLastEntriesResponse(entries=external_entries, tagsMapping=tags_mapping)
+    return entities.GetLastEntriesResponse(entries=external_entries, fallbackUsed=fallback_used, tagsMapping=tags_mapping)
 
 
 @api_private.post("/create-or-update-rule")  # type: ignore

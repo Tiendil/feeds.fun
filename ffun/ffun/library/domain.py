@@ -94,17 +94,17 @@ async def normalize_entry(entry: Entry, apply: bool = False) -> list[EntryChange
 
 async def get_entries_by_filter_with_fallback(
     feeds_ids: list[FeedId], period: datetime.timedelta | None, limit: int, fallback_limit: int
-) -> list[Entry]:
+) -> tuple[list[Entry], bool]:
 
     entries = await get_entries_by_filter(feeds_ids=feeds_ids, period=period, limit=limit)
 
     if entries:
-        return entries
+        return entries, False
 
     # if there is no news in requested interval try to get some older news
     entries = await get_entries_by_filter(feeds_ids=feeds_ids, period=_fallback_period, limit=fallback_limit)
 
-    return entries
+    return entries, True
 
 
 @run_in_transaction
