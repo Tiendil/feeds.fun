@@ -46,6 +46,7 @@ jobs:
       - name: Prepare Node
         uses: actions/setup-node@v3
         with:
+          node-version: '24'
           registry-url: 'https://registry.npmjs.org'
 
       - name: Install poetry
