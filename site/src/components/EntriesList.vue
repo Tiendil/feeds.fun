@@ -48,7 +48,6 @@
 <script lang="ts" setup>
   import {computed, ref} from "vue";
   import type * as t from "@/logic/types";
-  import {computedAsync} from "@vueuse/core";
 
   const properties = defineProps<{
     loading: boolean;
