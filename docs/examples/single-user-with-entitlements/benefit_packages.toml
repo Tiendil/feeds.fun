@@ -1,0 +1,18 @@
+[[package_templates]]
+id = "monthly-reader"
+title = "Monthly reader"
+description = "Recurring daily and monthly entry-processing token allowance."
+
+[package_templates.entitlements.day_tokens]
+value = 100
+
+[package_templates.entitlements.month_tokens]
+value = 1000
+
+[[package_templates]]
+id = "lifetime-token-pack"
+title = "Lifetime token pack"
+description = "A one-time lifetime entry-processing token allowance."
+
+[package_templates.entitlements.lifetime_tokens]
+value = 10000

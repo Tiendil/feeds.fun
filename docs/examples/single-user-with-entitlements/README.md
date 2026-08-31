@@ -4,7 +4,8 @@
 
 **Note:** Use entitlement packages to limit the number of entries processed for a user.
 
-This example enables entitlement enforcement and configures two benefit packages:
+This example enables entitlement enforcement and defines two benefit packages in
+[`benefit_packages.toml`](./benefit_packages.toml):
 
 - `monthly-reader` provides 100 daily and 1000 monthly entry-processing tokens.
 - `lifetime-token-pack` provides 10000 lifetime entry-processing tokens.

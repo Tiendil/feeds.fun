@@ -196,8 +196,8 @@ class TestBenefitPackageTemplate:
                 "description": "Parameterized package",
                 "parameters": [{"id": "quantity", "minimum": 1, "maximum": 100}],
                 "entitlements": {
-                    "3": {"parameter_id": "quantity"},
-                    "1": {"value": 10}
+                    "lifetime_tokens": {"parameter_id": "quantity"},
+                    "day_tokens": {"value": 10}
                 }
             }
             """
