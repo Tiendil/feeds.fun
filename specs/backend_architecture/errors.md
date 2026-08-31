@@ -131,7 +131,9 @@ Examples of warning-producing situations include:
 
 Pydantic validation errors MUST NOT be exposed directly across high-level module boundaries for user-provided data.
 
-Modules that create Pydantic entities from external input MUST convert `pydantic.ValidationError` into Feeds Fun errors, API errors, warning log records, or persisted error states at the nearest exception boundary with useful context.
+Pydantic validation errors raised while loading application configuration MAY propagate directly when their field-level diagnostics are intended for operators and the invalid configuration remains unusable.
+
+Modules that create Pydantic entities from user-provided, provider-provided, or other runtime external input MUST convert `pydantic.ValidationError` into Feeds Fun errors, API errors, warning log records, or persisted error states at the nearest exception boundary with useful context.
 
 Pydantic validation errors MAY be used directly inside tests for low-level entity validation.
 
@@ -166,6 +168,9 @@ External systems include:
 Modules SHOULD NOT catch broad low-level exception classes only to satisfy a module-boundary conversion rule.
 
 Unexpected low-level failures MAY propagate unchanged until the developer explicitly requests handling for that class of failure.
+
+Filesystem, parser, and validation failures encountered while loading application configuration MAY propagate as their original exceptions when configuration loading fails and the original diagnostic is intended for the operator.
+This allowance MUST NOT be used for user-provided, provider-provided, or other runtime domain-operation input.
 
 An external boundary MAY catch an exception to report it and translate it into the boundary's standard failure behavior.
 This translation does not change whether the exception is expected or unexpected.

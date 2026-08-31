@@ -106,6 +106,28 @@ class BenefitPackageTemplate(BaseEntity):
     parameters: tuple[BenefitParameterDefinition, ...] = ()
     entitlements: dict[EntitlementKindId, ParameterConstant | ParameterReference] = pydantic.Field(min_length=1)
 
+    @pydantic.field_validator("entitlements", mode="before")
+    @classmethod
+    def normalize_entitlement_kind_ids(cls, entitlements: object) -> object:
+        if not isinstance(entitlements, Mapping):
+            return entitlements
+
+        normalized_entitlements: dict[object, object] = {}
+
+        for raw_kind_id, value_template in entitlements.items():
+            if not isinstance(raw_kind_id, str):
+                normalized_entitlements[raw_kind_id] = value_template
+                continue
+
+            try:
+                kind_id = EntitlementKindId[raw_kind_id]
+            except KeyError as error:
+                raise ValueError(f"Unknown entitlement kind: {raw_kind_id}") from error
+
+            normalized_entitlements[kind_id] = value_template
+
+        return normalized_entitlements
+
     @pydantic.model_validator(mode="after")
     def parameter_ids_must_be_unique(self) -> "BenefitPackageTemplate":
         parameter_ids = [definition.id for definition in self.parameters]

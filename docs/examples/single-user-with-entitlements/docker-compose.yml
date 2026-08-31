@@ -1,5 +1,5 @@
 # This is a single-user Feeds Fun setup with entitlement enforcement enabled
-# and example benefit packages configured in ffun.env.
+# and example benefit packages configured in benefit_packages.toml.
 #
 # This config should work as is, but you may want to change it to suit your self-hosting needs.
 # The basic instructions are provided in the README.md file in the same directory as this file.
@@ -52,6 +52,7 @@ services:
 
     volumes:
       - ${PWD}/ffun.env:/ffun/.env  # general config
+      - ${PWD}/benefit_packages.toml:/ffun/benefit_packages.toml  # benefit packages config
       - ${PWD}/tag_processors.toml:/ffun/tag_processors.toml  # tag processors config
 
     environment:
@@ -83,6 +84,7 @@ services:
 
     volumes:
       - ${PWD}/ffun.env:/ffun/.env  # general config
+      - ${PWD}/benefit_packages.toml:/ffun/benefit_packages.toml  # benefit packages config
       - ${PWD}/tag_processors.toml:/ffun/tag_processors.toml  # tag processors config
 
     environment:
