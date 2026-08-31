@@ -36,7 +36,7 @@ Backend entities SHOULD use Pydantic v2 for structured data models.
 
 Backend entities SHOULD keep behavior close to their data only when that behavior is pure and local to the entity.
 
-Entities MUST NOT perform:
+Entities other than configuration settings objects acting as configuration-loading boundaries MUST NOT perform:
 
 - filesystem access.
 - process execution.
@@ -161,6 +161,10 @@ Configuration entities SHOULD use Pydantic validation to reject malformed parsed
 
 Configuration entities MUST preserve enough information to report useful configuration errors.
 
+Configuration settings objects MAY read configuration files from explicitly configured or declared paths when they act as the configuration-loading boundary.
+They MUST restrict filesystem access to reading those files and MUST NOT perform open-ended file discovery or filesystem writes.
+They SHOULD pass parsed file data to pure configuration or domain models for validation.
+
 Configuration entities MUST NOT execute provider calls, feed loading, database queries, or other side effects.
 
 Configuration entities MAY reference domain entities when the referenced concept has already been validated as a domain concept.
@@ -198,5 +202,6 @@ Parsing layers SHOULD validate external data before creating entities that are u
 Pydantic model validation MAY validate local invariants that are always true for the entity.
 
 Validation that requires filesystem access, configuration discovery, provider calls, database queries, feed loading, or command execution MUST live outside pure entity definitions.
+Configuration settings objects MAY load raw file data before passing it to pure validation models, but Pydantic validators MUST NOT themselves read the filesystem.
 
 Invalid external input MUST be reported through the error architecture instead of by returning partially valid entities.
