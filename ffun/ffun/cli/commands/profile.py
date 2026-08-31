@@ -43,7 +43,7 @@ async def _profile_get_last_entries() -> GetLastEntriesResponse:
 
     logger.info("almost_finishied", entries_number=len(external_entries), tags_number=len(tags_mapping))
 
-    return GetLastEntriesResponse(entries=external_entries, tagsMapping=tags_mapping)
+    return GetLastEntriesResponse(entries=external_entries, fallbackUsed=False, tagsMapping=tags_mapping)
 
 
 async def run_profile() -> None:

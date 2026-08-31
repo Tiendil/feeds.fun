@@ -17,6 +17,11 @@ enum Mode {
   PublicCollection = "public-collection"
 }
 
+type LoadedEntriesReport = {
+  entryIds: t.EntryId[];
+  fallbackUsed: boolean;
+};
+
 export const useEntriesStore = defineStore("entriesStore", () => {
   const globalSettings = useGlobalSettingsStore();
   const globalState = useGlobalState();
@@ -115,7 +120,7 @@ export const useEntriesStore = defineStore("entriesStore", () => {
     entries.value = {...entries.value, ...delta};
   }
 
-  async function loadEntriesAccordingToMode() {
+  async function loadEntriesAccordingToMode(): Promise<t.EntriesLoadResult> {
     const periodProperties = e.LastEntriesPeriodProperties.get(globalSettings.lastEntriesPeriod as any);
 
     if (periodProperties === undefined) {
@@ -148,7 +153,7 @@ export const useEntriesStore = defineStore("entriesStore", () => {
     throw new Error(`Unknown mode ${mode.value}`);
   }
 
-  const loadedEntriesReport = computedAsync(async () => {
+  const loadedEntriesReport = computedAsync<LoadedEntriesReport | null>(async () => {
     // force refresh
     globalSettings.dataVersion;
 
@@ -158,20 +163,17 @@ export const useEntriesStore = defineStore("entriesStore", () => {
 
     entriesLoadRevision.value += 1;
 
-    const loadedEntries = await loadEntriesAccordingToMode();
-
-    const report = [];
+    const loadResult = await loadEntriesAccordingToMode();
 
     registerEntries({
-      newEntries: loadedEntries,
+      newEntries: loadResult.entries,
       updateTags: true
     });
 
-    for (const entry of loadedEntries) {
-      report.push(entry.id);
-    }
-
-    return report;
+    return {
+      entryIds: loadResult.entries.map((entry) => entry.id),
+      fallbackUsed: loadResult.fallbackUsed
+    };
   }, null);
 
   const _sortedEntries = computed(() => {
@@ -186,7 +188,12 @@ export const useEntriesStore = defineStore("entriesStore", () => {
     const field = activeOrderProperties.value.orderField;
     const direction = activeOrderProperties.value.direction;
 
-    const report = utils.sortIdsList({ids: loadedEntriesReport.value, storage: entries.value, field, direction});
+    const report = utils.sortIdsList({
+      ids: loadedEntriesReport.value.entryIds,
+      storage: entries.value,
+      field,
+      direction
+    });
 
     return report;
   });

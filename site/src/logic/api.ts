@@ -157,20 +157,13 @@ export async function getLastCollectionEntries({
   period: number;
   collectionSlug: t.CollectionSlug | null;
   minTagCount: number;
-}) {
-  const response = await postPublic({
+}): Promise<t.EntriesLoadResult> {
+  const response: t.RawEntriesLoadResponse = await postPublic({
     url: "/get-last-collection-entries",
     data: {period: period, collectionSlug: collectionSlug, minTagCount: minTagCount}
   });
 
-  const entries = [];
-
-  for (let rawEntry of response.entries) {
-    const entry = t.entryFromJSON(rawEntry, response.tagsMapping);
-    entries.push(entry);
-  }
-
-  return entries;
+  return t.entriesLoadResultFromJSON(response);
 }
 
 export async function getEntriesByIds({ids}: {ids: t.EntryId[]}) {
@@ -350,8 +343,14 @@ export async function getFeedsByIds({ids}: {ids: t.FeedId[]}) {
   return feeds;
 }
 
-export async function getLastEntries({period, minTagCount}: {period: number; minTagCount: number}) {
-  const response = await postPrivate({
+export async function getLastEntries({
+  period,
+  minTagCount
+}: {
+  period: number;
+  minTagCount: number;
+}): Promise<t.EntriesLoadResult> {
+  const response: t.RawEntriesLoadResponse = await postPrivate({
     url: "/get-last-entries",
     data: {
       period: period,
@@ -359,14 +358,7 @@ export async function getLastEntries({period, minTagCount}: {period: number; min
     }
   });
 
-  const entries = [];
-
-  for (let rawEntry of response.entries) {
-    const entry = t.entryFromJSON(rawEntry, response.tagsMapping);
-    entries.push(entry);
-  }
-
-  return entries;
+  return t.entriesLoadResultFromJSON(response);
 }
 
 export async function createOrUpdateRule({

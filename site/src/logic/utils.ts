@@ -49,42 +49,68 @@ function hardenLinksSecurityAttributes(html: string) {
   return parsed.body.innerHTML;
 }
 
-export function timeSince(date: Date) {
+type TimeSinceStyle = "short" | "long";
+
+const relativeTimeFormatter = new Intl.RelativeTimeFormat("en", {numeric: "always"});
+
+function formatTimeSince({
+  value,
+  shortUnit,
+  longUnit,
+  style
+}: {
+  value: number;
+  shortUnit: string;
+  longUnit: Intl.RelativeTimeFormatUnit;
+  style: TimeSinceStyle;
+}) {
+  if (style === "short") {
+    return `${value}${shortUnit}`;
+  }
+
+  return relativeTimeFormatter.format(-value, longUnit);
+}
+
+export function timeSince(date: Date, style: TimeSinceStyle = "short") {
   const now = new Date();
 
   const secondsPast = Math.floor((now.getTime() - date.getTime()) / 1000);
 
   if (secondsPast < 60) {
-    return "<min";
+    if (style === "short") {
+      return "<min";
+    }
+
+    return "just now";
   }
 
   const minutesPast = Math.floor(secondsPast / 60);
 
   if (minutesPast < 60) {
-    return `${minutesPast}min`;
+    return formatTimeSince({value: minutesPast, shortUnit: "min", longUnit: "minute", style});
   }
 
   const hoursPast = Math.floor(minutesPast / 60);
 
   if (hoursPast < 24) {
-    return `${hoursPast}h`;
+    return formatTimeSince({value: hoursPast, shortUnit: "h", longUnit: "hour", style});
   }
 
   const daysPast = Math.floor(hoursPast / 24);
 
   if (daysPast < 30) {
-    return `${daysPast}d`;
+    return formatTimeSince({value: daysPast, shortUnit: "d", longUnit: "day", style});
   }
 
   const monthsPast = Math.floor(daysPast / 30);
 
   if (monthsPast < 12) {
-    return `${monthsPast}m`;
+    return formatTimeSince({value: monthsPast, shortUnit: "m", longUnit: "month", style});
   }
 
   const yearsPast = Math.floor(monthsPast / 12);
 
-  return `${yearsPast}y`;
+  return formatTimeSince({value: yearsPast, shortUnit: "y", longUnit: "year", style});
 }
 
 export function compareLexicographically(a: string[], b: string[]) {

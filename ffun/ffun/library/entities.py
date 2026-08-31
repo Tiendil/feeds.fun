@@ -102,8 +102,8 @@ class Entry(BaseEntry):
     created_at: datetime.datetime
 
     @property
-    def published_at_for_processing(self) -> datetime.datetime:
-        """Entry published_at that is used to determine whether the entry is too old for processing.
+    def effective_published_at(self) -> datetime.datetime:
+        """Best available published_at value for product behavior.
 
         We use the smart algorithm to determine the "real" published_at value
         because an actual third-party published_at is absolutely unreliable.
@@ -141,7 +141,7 @@ class Entry(BaseEntry):
 
     @property
     def age_for_processing(self) -> datetime.timedelta:
-        return utils.now() - self.published_at_for_processing
+        return utils.now() - self.effective_published_at
 
     def collected_entry(self) -> "CollectedEntry":
         return CollectedEntry(
@@ -155,6 +155,11 @@ class Entry(BaseEntry):
             published_at=self.published_at,
             references=self.references,
         )
+
+
+class EntriesLoadResult(BaseEntity):
+    entries: list[Entry]
+    fallback_used: bool
 
 
 class CollectedEntry(BaseEntry):

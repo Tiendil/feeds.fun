@@ -247,7 +247,9 @@ export class Entry {
   readonly score: number;
   readonly scoreContributions: {[key: string]: number};
   readonly scoreToZero: number;
-  readonly publishedAt: Date;
+  readonly effectivePublishedAt: Date;
+  readonly firstSeenAt: Date;
+  readonly sourcePublishedAt: Date;
   body: string | null;
   references: Reference[] | null;
 
@@ -260,7 +262,9 @@ export class Entry {
     markers,
     score,
     scoreContributions,
-    publishedAt,
+    effectivePublishedAt,
+    firstSeenAt,
+    sourcePublishedAt,
     body,
     references
   }: {
@@ -272,7 +276,9 @@ export class Entry {
     markers: e.Marker[];
     score: number;
     scoreContributions: {[key: string]: number};
-    publishedAt: Date;
+    effectivePublishedAt: Date;
+    firstSeenAt: Date;
+    sourcePublishedAt: Date;
     body: string | null;
     references: Reference[] | null;
   }) {
@@ -284,7 +290,9 @@ export class Entry {
     this.markers = markers;
     this.score = score;
     this.scoreContributions = scoreContributions;
-    this.publishedAt = publishedAt;
+    this.effectivePublishedAt = effectivePublishedAt;
+    this.firstSeenAt = firstSeenAt;
+    this.sourcePublishedAt = sourcePublishedAt;
     this.body = body;
     this.references = references;
 
@@ -321,9 +329,22 @@ export type RawEntry = {
   markers: number[];
   score: number;
   scoreContributions: {[key: number]: number};
-  publishedAt: string;
+  effectivePublishedAt: string;
+  firstSeenAt: string;
+  sourcePublishedAt: string;
   body?: string | null;
   references?: RawReference[] | null;
+};
+
+export type RawEntriesLoadResponse = {
+  entries: RawEntry[];
+  tagsMapping: {[key: number]: string};
+  fallbackUsed: boolean;
+};
+
+export type EntriesLoadResult = {
+  entries: Entry[];
+  fallbackUsed: boolean;
 };
 
 export function entryFromJSON(rawEntry: RawEntry, tagsMapping: {[key: number]: string}): Entry {
@@ -349,13 +370,26 @@ export function entryFromJSON(rawEntry: RawEntry, tagsMapping: {[key: number]: s
     score: rawEntry.score,
     // map keys from int to string
     scoreContributions: contributions,
-    publishedAt: new Date(rawEntry.publishedAt),
+    effectivePublishedAt: new Date(rawEntry.effectivePublishedAt),
+    firstSeenAt: new Date(rawEntry.firstSeenAt),
+    sourcePublishedAt: new Date(rawEntry.sourcePublishedAt),
     body: rawEntry.body !== undefined ? rawEntry.body : null,
     references:
       rawEntry.references !== undefined && rawEntry.references !== null
         ? rawEntry.references.map(referenceFromJSON)
         : null
   });
+}
+
+export function entriesLoadResultFromJSON({
+  entries,
+  tagsMapping,
+  fallbackUsed
+}: RawEntriesLoadResponse): EntriesLoadResult {
+  return {
+    entries: entries.map((entry) => entryFromJSON(entry, tagsMapping)),
+    fallbackUsed
+  };
 }
 
 export type Rule = {

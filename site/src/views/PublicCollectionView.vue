@@ -89,13 +89,13 @@
     </ui-advisory>
 
     <notifications-loaded-old-news
-      :entries="entriesStore.loadedEntriesReport || []"
+      :entries="entriesStore.loadedEntriesReport?.entryIds || []"
+      :fallback-used="entriesStore.loadedEntriesReport?.fallbackUsed || false"
       :period="e.LastEntriesPeriodProperties.get(globalSettings.lastEntriesPeriod as any)" />
 
     <entries-list
       :loading="entriesStore.loading"
       :entriesIds="entriesReport"
-      :time-field="entriesStore.activeOrderProperties.timeField"
       :tags-count="tagsCount"
       :show-score="false"
       :showFromStart="25"

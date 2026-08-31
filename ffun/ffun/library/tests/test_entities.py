@@ -40,7 +40,7 @@ class TestEntry:
             ),
         ],
     )
-    def test_published_at_for_processing(
+    def test_effective_published_at(
         self,
         new_entry: CollectedEntry,
         published_at: datetime.datetime,
@@ -49,20 +49,20 @@ class TestEntry:
     ) -> None:
         entry = new_entry.replace(published_at=published_at).fake_entry(created_at)
 
-        assert entry.published_at_for_processing == expected_published_at
+        assert entry.effective_published_at == expected_published_at
 
-    def test_published_at_for_processing__asserts_timezone_in_published_at(self, new_entry: CollectedEntry) -> None:
+    def test_effective_published_at__asserts_timezone_in_published_at(self, new_entry: CollectedEntry) -> None:
         created_at = datetime.datetime(2026, 1, 2, 3, 4, 5, tzinfo=datetime.UTC)
         entry = new_entry.replace(published_at=datetime.datetime(2026, 1, 2, 3, 4, 4)).fake_entry(created_at)
 
         with pytest.raises(AssertionError):
-            _ = entry.published_at_for_processing
+            _ = entry.effective_published_at
 
-    def test_published_at_for_processing__asserts_timezone_in_created_at(self, new_entry: CollectedEntry) -> None:
+    def test_effective_published_at__asserts_timezone_in_created_at(self, new_entry: CollectedEntry) -> None:
         entry = new_entry.fake_entry(datetime.datetime(2026, 1, 2, 3, 4, 5))
 
         with pytest.raises(AssertionError):
-            _ = entry.published_at_for_processing
+            _ = entry.effective_published_at
 
     def test_age_for_processing(self, new_entry: CollectedEntry) -> None:
         created_at = datetime.datetime(2026, 1, 2, 3, 4, 5, tzinfo=datetime.UTC)

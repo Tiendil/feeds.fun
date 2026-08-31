@@ -7,6 +7,7 @@ import pytest
 
 from ffun.api.spa.entities import (
     EntitlementKind,
+    Entry,
     Feed,
     FeedInfo,
     Marker,
@@ -31,6 +32,7 @@ from ffun.entitlements.entities import EntitlementKindId
 from ffun.entitlements.tests.make import make_effective_entitlement_interval, make_source_entitlement
 from ffun.feeds.entities import Feed as InternalFeed
 from ffun.feeds.entities import FeedError
+from ffun.library.entities import CollectedEntry
 from ffun.parsers import entities as p_entities
 from ffun.product.entities import Credit, Resource
 from ffun.resources import entities as r_entities
@@ -85,6 +87,25 @@ class TestFeed:
         )
 
         assert external_feed.lastError == error.name
+
+
+class TestEntry:
+    def test_from_internal__maps_entry_dates(self, new_entry: CollectedEntry) -> None:
+        first_seen_at = utils.now()
+        source_published_at = first_seen_at + datetime.timedelta(days=1)
+        internal_entry = new_entry.replace(published_at=source_published_at).fake_entry(first_seen_at)
+
+        external_entry = Entry.from_internal(
+            internal_entry,
+            tags=[],
+            markers=[],
+            score=0,
+            score_contributions={},
+        )
+
+        assert external_entry.effectivePublishedAt == first_seen_at
+        assert external_entry.firstSeenAt == first_seen_at
+        assert external_entry.sourcePublishedAt == source_published_at
 
 
 class TestFeedInfo:

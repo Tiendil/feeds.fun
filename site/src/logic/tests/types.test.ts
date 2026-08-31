@@ -2,6 +2,7 @@ import {describe, expect, it} from "vitest";
 
 import * as e from "@/logic/enums";
 import {
+  entriesLoadResultFromJSON,
   entryFromJSON,
   feedFromJSON,
   productStateFromJSON,
@@ -34,7 +35,9 @@ function rawEntry(markers: number[]): RawEntry {
     markers,
     score: 0,
     scoreContributions: {},
-    publishedAt: "2026-05-11T12:00:00Z"
+    effectivePublishedAt: "2026-05-11T12:00:00Z",
+    firstSeenAt: "2026-05-12T12:00:00Z",
+    sourcePublishedAt: "2026-05-10T12:00:00Z"
   };
 }
 
@@ -110,8 +113,44 @@ describe("entryFromJSON", () => {
     expect(entry.markers).toEqual([e.Marker.Read, e.Marker.CanSeeTags]);
   });
 
+  it("translates entry dates", () => {
+    const entry = entryFromJSON(rawEntry([]), {});
+
+    expect(entry.effectivePublishedAt).toEqual(new Date("2026-05-11T12:00:00Z"));
+    expect(entry.firstSeenAt).toEqual(new Date("2026-05-12T12:00:00Z"));
+    expect(entry.sourcePublishedAt).toEqual(new Date("2026-05-10T12:00:00Z"));
+  });
+
   it("rejects unknown integer markers", () => {
     expect(() => entryFromJSON(rawEntry([100]), {})).toThrow("Unknown marker: 100");
+  });
+});
+
+describe("entriesLoadResultFromJSON", () => {
+  it("translates the complete entries response", () => {
+    const entry = rawEntry([]);
+    entry.tags = [1];
+
+    const result = entriesLoadResultFromJSON({
+      entries: [entry],
+      tagsMapping: {1: "technology"},
+      fallbackUsed: true
+    });
+
+    expect(result.entries).toHaveLength(1);
+    expect(result.entries[0].tags).toEqual(["technology"]);
+    expect(result.fallbackUsed).toBe(true);
+  });
+
+  it("translates an empty entries response", () => {
+    const result = entriesLoadResultFromJSON({
+      entries: [],
+      tagsMapping: {},
+      fallbackUsed: false
+    });
+
+    expect(result.entries).toEqual([]);
+    expect(result.fallbackUsed).toBe(false);
   });
 });
 

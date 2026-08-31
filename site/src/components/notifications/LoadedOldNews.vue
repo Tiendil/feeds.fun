@@ -4,44 +4,31 @@
   <!-- until the backend returns a new response -->
   <!-- It confuses users because the period size is changing in the text at the beginning of the request. -->
   <ui-notice
-    v-if="allEntriesAreOlderThanPeriod"
+    v-if="showNotification"
     tone="info">
     <p> We have not found any news that is newer than {{ period.text }}, so we loaded some older ones. </p>
   </ui-notice>
 </template>
 
 <script lang="ts" setup>
-  import {computed, ref, onUnmounted, watch, provide} from "vue";
-  import {useRoute, useRouter} from "vue-router";
-  import {computedAsync} from "@vueuse/core";
-  import * as api from "@/logic/api";
-  import * as tagsFilterState from "@/logic/tagsFilterState";
+  import {computed} from "vue";
   import * as e from "@/logic/enums";
-  import * as utils from "@/logic/utils";
   import type * as t from "@/logic/types";
-  import {useGlobalSettingsStore} from "@/stores/globalSettings";
   import {useEntriesStore} from "@/stores/entries";
-  import _ from "lodash";
 
   const entriesStore = useEntriesStore();
 
   const properties = defineProps<{
     entries: t.EntryId[];
+    fallbackUsed: boolean;
     period: e.LastEntriesPeriodProperty;
   }>();
 
-  const allEntriesAreOlderThanPeriod = computed(() => {
+  const showNotification = computed(() => {
     if (entriesStore.loading) {
       return false;
     }
 
-    if (properties.entries.length == 0) {
-      return false;
-    }
-
-    return properties.entries.every((entryId) => {
-      const entry = entriesStore.entries[entryId];
-      return entry.publishedAt.getTime() < Date.now() - properties.period.seconds * 1000;
-    });
+    return properties.fallbackUsed && properties.entries.length > 0;
   });
 </script>

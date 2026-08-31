@@ -105,16 +105,15 @@ export enum EntriesOrder {
 export type EntriesOrderProperty = {
   readonly text: string;
   readonly orderField: string;
-  readonly timeField: string;
   readonly direction: number;
   readonly default?: boolean;
 };
 
 export const EntriesOrderProperties = new Map<EntriesOrder, EntriesOrderProperty>([
-  [EntriesOrder.Score, {text: "score", orderField: "score", timeField: "publishedAt", direction: 1, default: true}],
-  [EntriesOrder.ScoreToZero, {text: "score ~ 0", orderField: "scoreToZero", timeField: "publishedAt", direction: 1}],
-  [EntriesOrder.ScoreBackward, {text: "score backward", orderField: "score", timeField: "publishedAt", direction: -1}],
-  [EntriesOrder.Published, {text: "published", orderField: "publishedAt", timeField: "publishedAt", direction: 1}]
+  [EntriesOrder.Score, {text: "score", orderField: "score", direction: 1, default: true}],
+  [EntriesOrder.ScoreToZero, {text: "score ~ 0", orderField: "scoreToZero", direction: 1}],
+  [EntriesOrder.ScoreBackward, {text: "score backward", orderField: "score", direction: -1}],
+  [EntriesOrder.Published, {text: "published", orderField: "effectivePublishedAt", direction: 1}]
 ]);
 
 /////////////////////
