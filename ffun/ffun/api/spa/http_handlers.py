@@ -457,7 +457,9 @@ async def api_get_last_entries(request: entities.GetLastEntriesRequest, user: Us
         entries, with_body=False, user_id=user.id, min_tag_count=request.minTagCount
     )
 
-    return entities.GetLastEntriesResponse(entries=external_entries, fallbackUsed=fallback_used, tagsMapping=tags_mapping)
+    return entities.GetLastEntriesResponse(
+        entries=external_entries, fallbackUsed=fallback_used, tagsMapping=tags_mapping
+    )
 
 
 @api_private.post("/create-or-update-rule")  # type: ignore
