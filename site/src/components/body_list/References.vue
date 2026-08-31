@@ -4,6 +4,8 @@
       v-for="reference in references"
       :key="reference.url"
       :reference="reference" />
+
+    <slot />
   </div>
 </template>
 

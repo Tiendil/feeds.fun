@@ -14,8 +14,10 @@
       </h2>
 
       <body-list-references
-        v-if="references.length > 0"
-        :references="references" />
+        v-if="references.length > 0 || $slots.metadata"
+        :references="references">
+        <slot name="metadata" />
+      </body-list-references>
 
       <slot name="body-prefix" />
 

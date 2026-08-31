@@ -46,15 +46,11 @@
         :contributions="showScore ? entry.scoreContributions : {}" />
     </div>
 
-    <app-tooltip placement="top-end">
-      <body-list-reverse-time-column :time="entry.effectivePublishedAt" />
-
-      <template #content>
-        <div><span class="font-medium">Considered published at:</span> {{ formatDate(entry.effectivePublishedAt) }}</div>
-        <div><span class="font-medium">First seen by Feeds Fun:</span> {{ formatDate(entry.firstSeenAt) }}</div>
-        <div><span class="font-medium">Published by the source:</span> {{ formatDate(entry.sourcePublishedAt) }}</div>
-      </template>
-    </app-tooltip>
+    <entry-date
+      :effective-published-at="entry.effectivePublishedAt"
+      :first-seen-at="entry.firstSeenAt"
+      :source-published-at="entry.sourcePublishedAt"
+      variant="column" />
   </div>
 
   <body-list-entry-body
@@ -65,7 +61,15 @@
     :loading="entry.body === null"
     :text="purifiedBody"
     :references="references"
-    @body-title-clicked="newsLinkOpenedEvent" />
+    @body-title-clicked="newsLinkOpenedEvent">
+    <template #metadata>
+      <entry-date
+        :effective-published-at="entry.effectivePublishedAt"
+        :first-seen-at="entry.firstSeenAt"
+        :source-published-at="entry.sourcePublishedAt"
+        variant="metadata" />
+    </template>
+  </body-list-entry-body>
 </template>
 
 <script lang="ts" setup>
@@ -108,10 +112,6 @@
   const showBody = computed(() => {
     return entry.value.id == entriesStore.displayedEntryId;
   });
-
-  function formatDate(date: Date): string {
-    return date.toLocaleString();
-  }
 
   const purifiedTitle = computed(() => {
     return utils.purifyTitle({raw: entry.value.title, default_: "No title"});
