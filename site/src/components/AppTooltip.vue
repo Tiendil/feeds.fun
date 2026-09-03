@@ -153,7 +153,7 @@
 
   function onFocusIn(): void {
     dismissed.value = false;
-    focused.value = true;
+    focused.value = triggerElement()?.matches(":focus-visible") ?? false;
   }
 
   function onFocusOut(): void {
