@@ -58,7 +58,7 @@
         <ui-button
           variant="tonal"
           size="compact"
-          title='Undo last "mark read" operation'
+          tooltip='Undo last "mark read" operation'
           :disabled="!entriesStore.canUndoMarkRead"
           @click="entriesStore.undoMarkRead()">
           <icon

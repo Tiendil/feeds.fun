@@ -1,13 +1,18 @@
 <template>
-  <button
-    :type="type"
-    class="ui-button"
-    :class="[buttonVariantClasses[properties.variant], buttonSizeClasses[properties.size]]">
-    <slot />
-  </button>
+  <app-tooltip :text="tooltip">
+    <button
+      v-bind="$attrs"
+      :type="type"
+      class="ui-button"
+      :class="[buttonVariantClasses[properties.variant], buttonSizeClasses[properties.size]]">
+      <slot />
+    </button>
+  </app-tooltip>
 </template>
 
 <script lang="ts" setup>
+  defineOptions({inheritAttrs: false});
+
   type ButtonVariant = "primary" | "tonal" | "secondary" | "quiet" | "danger";
   type ButtonSize = "regular" | "compact";
   type ButtonType = "button" | "submit" | "reset";
@@ -30,7 +35,8 @@
       variant: ButtonVariant;
       size?: ButtonSize;
       type?: ButtonType;
+      tooltip?: string;
     }>(),
-    {size: "regular", type: "button"}
+    {size: "regular", type: "button", tooltip: ""}
   );
 </script>
