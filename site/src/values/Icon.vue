@@ -10,6 +10,7 @@
   import {
     IconArrowNarrowRight,
     IconArrowRight,
+    IconArrowBackUp,
     IconPlus,
     IconDots,
     IconBrandReddit,
@@ -38,6 +39,7 @@
     github: IconBrandGithub,
     "arrow-narrow-right": IconArrowNarrowRight,
     "arrow-right": IconArrowRight,
+    undo: IconArrowBackUp,
     plus: IconPlus,
     dots: IconDots,
     "external-link": IconExternalLink,

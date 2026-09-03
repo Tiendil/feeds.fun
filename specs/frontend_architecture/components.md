@@ -66,3 +66,5 @@ Templates MAY use the kebab-case equivalent of a registered PascalCase name.
 Route views MAY be imported directly by the router when they are used only as route targets.
 Tests MAY import components directly when mounting or inspecting the component under test.
 A route view used inside another component's template becomes an application component and MUST follow the global registration requirements.
+A Vue component MAY locally import component definitions that it treats as values and renders through a dynamic `<component :is>` binding.
+Such implementation components do not require global registration when the wrapper component is globally registered and its template does not reference them by component name.

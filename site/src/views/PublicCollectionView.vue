@@ -37,16 +37,6 @@
         v-model:flag="globalSettings.showRead"
         on-text="yes"
         off-text="no" />
-
-      <ui-button
-        variant="secondary"
-        size="compact"
-        class="ml-1"
-        title='Undo last "mark read" operation'
-        :disabled="!entriesStore.canUndoMarkRead"
-        @click="entriesStore.undoMarkRead()">
-        ↶
-      </ui-button>
     </template>
 
     <template #side-footer>
@@ -63,7 +53,24 @@
 
     <template #main-footer> </template>
 
-    <news-toolbar class="mb-2" />
+    <ui-toolbar class="mb-2">
+      <template #left>
+        <ui-button
+          variant="tonal"
+          size="compact"
+          tooltip='Undo last "mark read" operation'
+          :disabled="!entriesStore.canUndoMarkRead"
+          @click="entriesStore.undoMarkRead()">
+          <icon
+            icon="undo"
+            size="small" />
+        </ui-button>
+      </template>
+
+      <template #right>
+        <product-tokens />
+      </template>
+    </ui-toolbar>
 
     <!-- currently we have a "nuance" with tags user experience in this block -->
     <!-- The tags work as expected till the user selects their own tags from other places -->
