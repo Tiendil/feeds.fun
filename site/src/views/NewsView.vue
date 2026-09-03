@@ -57,7 +57,9 @@
 
     <template #main-footer> </template>
 
-    <news-toolbar class="mb-2" />
+    <ui-toolbar class="mb-2">
+      <product-tokens />
+    </ui-toolbar>
 
     <notifications
       v-if="entriesStore.loadedEntriesReport !== null"

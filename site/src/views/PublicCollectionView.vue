@@ -63,7 +63,9 @@
 
     <template #main-footer> </template>
 
-    <news-toolbar class="mb-2" />
+    <ui-toolbar class="mb-2">
+      <product-tokens />
+    </ui-toolbar>
 
     <!-- currently we have a "nuance" with tags user experience in this block -->
     <!-- The tags work as expected till the user selects their own tags from other places -->

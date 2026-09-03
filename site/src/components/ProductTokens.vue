@@ -1,5 +1,7 @@
 <template>
-  <div class="flex flex-wrap items-center justify-end gap-x-3 gap-y-1 text-xs text-slate-700">
+  <div
+    v-if="productState !== null"
+    class="flex flex-wrap items-center justify-end gap-x-3 gap-y-1 text-xs text-slate-700">
     <span class="font-medium text-slate-500">Tokens available</span>
 
     <app-tooltip
@@ -33,15 +35,31 @@
 
 <script lang="ts" setup>
   import {computed} from "vue";
+  import {computedAsync} from "@vueuse/core";
 
+  import * as api from "@/logic/api";
   import * as e from "@/logic/enums";
   import {getPlotColors} from "@/logic/plots";
   import {tokenUsageResourceKinds, type TokenUsageResourceKind} from "@/logic/resourceStatistics";
   import type * as t from "@/logic/types";
+  import {useEntriesStore} from "@/stores/entries";
+  import {useGlobalSettingsStore} from "@/stores/globalSettings";
+  import {useGlobalState} from "@/stores/globalState";
 
-  const properties = defineProps<{
-    tokens: t.ProductState["tokens"];
-  }>();
+  const entriesStore = useEntriesStore();
+  const globalSettings = useGlobalSettingsStore();
+  const globalState = useGlobalState();
+
+  const productState = computedAsync(async () => {
+    globalSettings.dataVersion;
+    entriesStore.entriesLoadRevision;
+
+    if (!globalState.loginConfirmed) {
+      return null;
+    }
+
+    return await api.getProductState();
+  }, null);
 
   type TokenItem = {
     readonly kind: TokenUsageResourceKind;
@@ -64,8 +82,14 @@
     timeZone: "UTC"
   });
 
-  const tokenItems = computed<TokenItem[]>(() =>
-    tokenUsageResourceKinds.map((kind) => {
+  const tokenItems = computed<TokenItem[]>(() => {
+    const state = productState.value;
+
+    if (state === null) {
+      return [];
+    }
+
+    return tokenUsageResourceKinds.map((kind) => {
       const resource = e.ResourceKindProperties.get(kind)!;
 
       if (resource.plotColor === undefined || !(resource.plotColor in plotColors.tokenUsage)) {
@@ -77,10 +101,10 @@
         text: resource.shortText ?? resource.text,
         description: resource.text,
         color: plotColors.tokenUsage[resource.plotColor as keyof typeof plotColors.tokenUsage],
-        token: properties.tokens[kind]
+        token: state.tokens[kind]
       };
-    })
-  );
+    });
+  });
 
   function formatAmount(amount: number): string {
     return numberFormatter.format(amount);
