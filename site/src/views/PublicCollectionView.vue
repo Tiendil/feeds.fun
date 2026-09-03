@@ -37,16 +37,6 @@
         v-model:flag="globalSettings.showRead"
         on-text="yes"
         off-text="no" />
-
-      <ui-button
-        variant="secondary"
-        size="compact"
-        class="ml-1"
-        title='Undo last "mark read" operation'
-        :disabled="!entriesStore.canUndoMarkRead"
-        @click="entriesStore.undoMarkRead()">
-        ↶
-      </ui-button>
     </template>
 
     <template #side-footer>
@@ -64,7 +54,22 @@
     <template #main-footer> </template>
 
     <ui-toolbar class="mb-2">
-      <product-tokens />
+      <template #left>
+        <ui-button
+          variant="tonal"
+          size="compact"
+          title='Undo last "mark read" operation'
+          :disabled="!entriesStore.canUndoMarkRead"
+          @click="entriesStore.undoMarkRead()">
+          <icon
+            icon="undo"
+            size="small" />
+        </ui-button>
+      </template>
+
+      <template #right>
+        <product-tokens />
+      </template>
     </ui-toolbar>
 
     <!-- currently we have a "nuance" with tags user experience in this block -->
