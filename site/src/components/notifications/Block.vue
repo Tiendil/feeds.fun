@@ -2,14 +2,12 @@
   <notifications-api-key v-if="showAPIKeyNotification" />
   <collections-notification v-if="showCollectionsNotification" />
   <notifications-create-rule-help v-if="showCreateRuleHelpNotification" />
-  <collections-warning v-if="showCollectionsWarning" />
 </template>
 
 <script lang="ts" setup>
-  import {computed, ref, onUnmounted, watch, inject} from "vue";
+  import {computed, inject} from "vue";
   import type {Ref} from "vue";
   import {useGlobalSettingsStore} from "@/stores/globalSettings";
-  import {useCollectionsStore} from "@/stores/collections";
   import * as tagsFilterState from "@/logic/tagsFilterState";
   import * as settings from "@/logic/settings";
 
@@ -17,10 +15,8 @@
     apiKey: boolean;
     createRuleHelp: boolean;
     collectionsNotification_: boolean;
-    collectionsWarning_: boolean;
   }>();
 
-  const collections = useCollectionsStore();
   const globalSettings = useGlobalSettingsStore();
 
   const tagsStates = inject<Ref<tagsFilterState.Storage> | null>("tagsStates", null);
@@ -54,15 +50,6 @@
       !showCreateRuleHelpNotification.value &&
       properties.apiKey &&
       showApiKeyMessage.value
-    );
-  });
-
-  const showCollectionsWarning = computed(() => {
-    return (
-      properties.collectionsWarning_ &&
-      !showCollectionsNotification.value &&
-      globalSettings.userSettingsPresent &&
-      !globalSettings.hide_message_check_your_feed_urls?.value
     );
   });
 </script>

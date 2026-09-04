@@ -6,6 +6,8 @@
       Welcome to <strong>Feeds Fun</strong> and our curated <strong>{{ collection.name }}</strong> news collection!
     </p>
 
+    <p>{{ collection.description }}</p>
+
     <p>
       <strong>Feeds Fun</strong> ranks news based on tags, so you always see what matters most. We offer public
       collections to showcase our tagging system in action. Hope you'll enjoy it!

@@ -22,7 +22,8 @@ class UserSetting(enum.IntEnum):
     test_api_key = 8
 
     hide_message_about_adding_collections = 9
-    hide_message_check_your_feed_urls = 10
+
+    # hide_message_check_your_feed_urls = 10  # noqa
 
     view_news_filter_interval = 11
     view_news_filter_sort_by = 12

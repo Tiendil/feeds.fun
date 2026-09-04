@@ -44,6 +44,7 @@ Frontend tests SHOULD live near the logic they verify when the existing Vitest l
 - `site/src/components/page_header` owns header components.
 - `site/src/components/side_pannel` owns side-panel controls. The existing directory spelling is part of the current project layout.
 - `site/src/components/tags` owns tag display and tag-filter components.
+- `site/src/components/toolbar` owns reusable actions displayed in top content toolbars.
 - `site/src/css` owns Tailwind-backed shared CSS.
 - `site/src/inputs` owns small user-input components.
 - `site/src/integrations` owns integration-specific frontend views or widgets.
@@ -79,3 +80,9 @@ Views SHOULD compose layouts, components, inputs, values, stores, and logic.
 Reusable components SHOULD avoid depending on page-level views.
 
 Shared logic SHOULD avoid depending on Vue components unless the dependency is explicitly UI-specific.
+
+## Navigation fragment ownership
+
+Section identifiers used to build URL fragments MUST have a single source of truth in `site/src/logic/navigation.ts`.
+Destination views and navigation callers MUST derive element `id`, link `href`, and router `hash` values from those shared definitions instead of repeating fragment identifier string literals.
+Shared section identifiers MUST omit the leading `#`; navigation code MUST derive URL hash values from the identifier.

@@ -3,27 +3,12 @@
     <template #main-header> Settings </template>
 
     <template #side-menu-item-1>
-      <nav>
-        <p class="ui-section-nav-title">On this page</p>
-
-        <ul class="ui-section-nav-list">
-          <li
-            v-for="section in settingsSections"
-            :key="section.id"
-            class="ui-section-nav-item">
-            <a
-              :href="`#${section.id}`"
-              class="ui-section-nav-link">
-              {{ section.title }}
-            </a>
-          </li>
-        </ul>
-      </nav>
+      <ui-section-navigation :sections="settingsSections" />
     </template>
 
     <div class="ui-content-rail">
       <ui-page-section
-        id="settings-general"
+        :id="navigation.settingsSectionIds.general"
         title="General">
         <label class="mr-1">User id</label>
         <input
@@ -33,7 +18,7 @@
       </ui-page-section>
 
       <ui-page-section
-        id="settings-subscriptions"
+        :id="navigation.settingsSectionIds.subscriptions"
         title="Subscriptions">
         <p
           v-if="productState === null"
@@ -90,7 +75,7 @@
       </ui-page-section>
 
       <ui-page-section
-        id="settings-messages"
+        :id="navigation.settingsSectionIds.messages"
         title="Messages">
         <user-setting
           v-for="kind of messagesSettings"
@@ -99,7 +84,7 @@
       </ui-page-section>
 
       <ui-page-section
-        id="settings-personal-feed-tagging"
+        :id="navigation.settingsSectionIds.personalFeedTagging"
         title="Personal feed tagging">
         <template #description>
           <p>
@@ -118,7 +103,7 @@
       </ui-page-section>
 
       <ui-page-section
-        id="settings-api-keys"
+        :id="navigation.settingsSectionIds.apiKeys"
         title="Your API keys">
         <template #description>
           <p>
@@ -171,7 +156,7 @@
       </ui-page-section>
 
       <ui-page-section
-        id="settings-api-key-usage"
+        :id="navigation.settingsSectionIds.apiKeyUsage"
         title="API key usage">
         <template #description>
           <p>Estimated monthly token cost for requests made with your API keys.</p>
@@ -230,7 +215,7 @@
       </ui-page-section>
 
       <ui-page-section
-        id="settings-token-usage"
+        :id="navigation.settingsSectionIds.tokenUsage"
         title="Token usage">
         <template #description>
           <p>
@@ -265,7 +250,7 @@
       </ui-page-section>
 
       <ui-page-section
-        id="settings-danger-zone"
+        :id="navigation.settingsSectionIds.dangerZone"
         title="Danger Zone">
         <ui-notice tone="danger">
           <p><strong>ATTENTION!</strong></p>
@@ -297,6 +282,7 @@
   import * as api from "@/logic/api";
   import * as t from "@/logic/types";
   import * as e from "@/logic/enums";
+  import * as navigation from "@/logic/navigation";
   import * as settings from "@/logic/settings";
   import {useRouter} from "vue-router";
   import {useGlobalSettingsStore} from "@/stores/globalSettings";
@@ -349,21 +335,17 @@
     return globalState.userId == null ? "—" : globalState.userId;
   });
 
-  const messagesSettings = [
-    "hide_message_about_setting_up_key",
-    "hide_message_about_adding_collections",
-    "hide_message_check_your_feed_urls"
-  ];
+  const messagesSettings = ["hide_message_about_setting_up_key", "hide_message_about_adding_collections"];
 
   const settingsSections = [
-    {id: "settings-general", title: "General"},
-    {id: "settings-subscriptions", title: "Subscriptions"},
-    {id: "settings-messages", title: "Messages"},
-    {id: "settings-personal-feed-tagging", title: "Personal feed tagging"},
-    {id: "settings-api-keys", title: "Your API keys"},
-    {id: "settings-api-key-usage", title: "API key usage"},
-    {id: "settings-token-usage", title: "Token usage"},
-    {id: "settings-danger-zone", title: "Danger zone"}
+    {id: navigation.settingsSectionIds.general, title: "General"},
+    {id: navigation.settingsSectionIds.subscriptions, title: "Subscriptions"},
+    {id: navigation.settingsSectionIds.messages, title: "Messages"},
+    {id: navigation.settingsSectionIds.personalFeedTagging, title: "Personal feed tagging"},
+    {id: navigation.settingsSectionIds.apiKeys, title: "Your API keys"},
+    {id: navigation.settingsSectionIds.apiKeyUsage, title: "API key usage"},
+    {id: navigation.settingsSectionIds.tokenUsage, title: "Token usage"},
+    {id: navigation.settingsSectionIds.dangerZone, title: "Danger zone"}
   ] as const;
 
   const router = useRouter();

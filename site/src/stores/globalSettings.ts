@@ -199,7 +199,6 @@ export const useGlobalSettingsStore = defineStore("globalSettings", () => {
 
   const hide_message_about_setting_up_key = userSettingInfo("hide_message_about_setting_up_key");
   const hide_message_about_adding_collections = userSettingInfo("hide_message_about_adding_collections");
-  const hide_message_check_your_feed_urls = userSettingInfo("hide_message_check_your_feed_urls");
 
   const openai_api_key = userSettingInfo("openai_api_key");
   const gemini_api_key = userSettingInfo("gemini_api_key");
@@ -226,7 +225,6 @@ export const useGlobalSettingsStore = defineStore("globalSettings", () => {
 
     hide_message_about_setting_up_key,
     hide_message_about_adding_collections,
-    hide_message_check_your_feed_urls,
 
     openai_api_key,
     gemini_api_key,
