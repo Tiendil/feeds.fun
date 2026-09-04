@@ -58,11 +58,18 @@
       await uploadAction.run(async () => {
         const reader = new FileReader();
 
-        reader.readAsText(file);
-        const content = await new Promise<string>((resolve) => {
+        const content = await new Promise<string>((resolve, reject) => {
           reader.onload = () => {
             resolve(reader.result as string);
           };
+          reader.onerror = () => {
+            reject(reader.error);
+          };
+          reader.onabort = () => {
+            reject(new Error("File reading was aborted"));
+          };
+
+          reader.readAsText(file);
         });
 
         const result = await api.addOPML({content});
