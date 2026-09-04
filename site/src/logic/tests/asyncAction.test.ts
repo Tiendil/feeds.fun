@@ -41,6 +41,24 @@ describe("useAsyncAction", () => {
     expect(action.error).toBe(failure);
   });
 
+  it("ignores a stale failure after a newer action succeeds", async () => {
+    const action = useAsyncAction();
+    const staleFailure = new Error("stale failure");
+    let rejectStaleAction!: (reason: unknown) => void;
+    const staleAction = new Promise<string>((_resolve, reject) => {
+      rejectStaleAction = reject;
+    });
+    const staleResultPromise = action.run(() => staleAction);
+
+    await expect(action.run(async () => "current result")).resolves.toBe("current result");
+
+    rejectStaleAction(staleFailure);
+    await expect(staleResultPromise).rejects.toBe(staleFailure);
+    expect(action.status).toBe("succeeded");
+    expect(action.failed).toBe(false);
+    expect(action.error).toBeNull();
+  });
+
   it("ignores completion after reset", async () => {
     const action = useAsyncAction();
     let completeAction!: (result: string) => void;
