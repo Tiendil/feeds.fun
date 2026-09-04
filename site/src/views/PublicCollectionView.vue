@@ -8,12 +8,6 @@
         class="min-w-full"
         v-if="collection"
         :collection-id="collection.id" />
-
-      <p
-        v-if="collection"
-        class="mt-2 text-sm leading-relaxed text-slate-600">
-        {{ collection.description }}
-      </p>
     </template>
     <template #side-menu-item-2>
       For
@@ -23,13 +17,28 @@
     </template>
 
     <template #side-menu-item-3>
+      Sort by
+      <span class="inline-flex items-center align-middle">
+        <config-selector
+          :values="e.EntriesOrderProperties"
+          :property="e.EntriesOrder.Published"
+          disabled />
+
+        <ui-info-icon
+          class="ml-1"
+          text="Collections are always ordered by publication date."
+          size="large" />
+      </span>
+    </template>
+
+    <template #side-menu-item-4>
       Show tags
       <config-selector
         :values="e.MinNewsTagCountProperties"
         v-model:property="globalSettings.minTagCount" />
     </template>
 
-    <template #side-menu-item-4>
+    <template #side-menu-item-5>
       Show read
 
       <config-flag
@@ -56,21 +65,23 @@
     <ui-toolbar class="mb-2">
       <template #left>
         <ui-button
-          variant="tonal"
+          v-if="collection && globalState.loginConfirmed"
+          variant="primary"
           size="compact"
-          tooltip='Undo last "mark read" operation'
-          :disabled="!entriesStore.canUndoMarkRead"
-          @click="entriesStore.undoMarkRead()">
-          <icon
-            icon="undo"
-            size="small" />
+          :disabled="subscriptionAction.loading || subscriptionAction.succeeded"
+          @click="subscribe()">
+          {{ subscriptionAction.succeeded ? "Subscribed" : "Subscribe" }}
         </ui-button>
+
+        <toolbar-undo-mark-read />
       </template>
 
       <template #right>
         <product-tokens />
       </template>
     </ui-toolbar>
+
+    <collections-subscribing-progress :status="subscriptionAction.status" />
 
     <!-- currently we have a "nuance" with tags user experience in this block -->
     <!-- The tags work as expected till the user selects their own tags from other places -->
@@ -92,7 +103,7 @@
         Welcome to curated <strong>{{ collection.name }}</strong> news collection!
       </h4>
 
-      <p>Collection news is always shown in the order of publication.</p>
+      <p>{{ collection.description }}</p>
     </ui-advisory>
 
     <notifications-loaded-old-news
@@ -111,21 +122,18 @@
 </template>
 
 <script lang="ts" setup>
-  import {computed, ref, onUnmounted, watch, provide} from "vue";
+  import {computed, ref, watch, provide} from "vue";
   import type {ComputedRef} from "vue";
   import {useRoute, useRouter} from "vue-router";
-  import {computedAsync} from "@vueuse/core";
-  import * as api from "@/logic/api";
   import * as tagsFilterState from "@/logic/tagsFilterState";
   import * as e from "@/logic/enums";
   import * as utils from "@/logic/utils";
   import type * as t from "@/logic/types";
+  import {useAsyncAction} from "@/logic/asyncAction";
   import {useGlobalSettingsStore} from "@/stores/globalSettings";
   import {useEntriesStore} from "@/stores/entries";
   import {useCollectionsStore} from "@/stores/collections";
   import {useGlobalState} from "@/stores/globalState";
-  import _ from "lodash";
-  import * as asserts from "@/logic/asserts";
 
   const route = useRoute();
   const router = useRouter();
@@ -158,6 +166,8 @@
 
   const tagsStates = ref<tagsFilterState.Storage>(new tagsFilterState.Storage());
 
+  const subscriptionAction = useAsyncAction();
+
   globalSettings.mainPanelMode = e.MainPanelMode.PublicCollection;
 
   // Required to separate real collection change (and reset tags filter) from the collection initialization
@@ -174,6 +184,7 @@
 
       if (lastDefinedCollectionId.value !== null && lastDefinedCollectionId.value !== collection.value.id) {
         tagsStates.value.clear();
+        subscriptionAction.reset();
       }
 
       if (lastDefinedCollectionId.value !== collection.value.id) {
@@ -193,6 +204,20 @@
   });
 
   globalSettings.updateDataVersion();
+
+  async function subscribe() {
+    if (!collection.value) {
+      return;
+    }
+
+    const collectionId = collection.value.id;
+
+    try {
+      await subscriptionAction.run(() => collections.subscribe({collectionsIds: [collectionId]}));
+    } catch (error) {
+      console.error(error);
+    }
+  }
 
   const entriesReport = computed(() => {
     let report = entriesStore.visibleEntries.slice();

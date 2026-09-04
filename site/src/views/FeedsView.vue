@@ -16,29 +16,39 @@
         off-text="last" />
     </template>
 
-    <template #side-menu-item-3>
-      <ui-button-link
-        variant="secondary"
-        size="compact"
-        class="my-1 flex w-full"
-        :href="api.downloadOPMLUrl"
-        target="_blank"
-        title="Download OPML file with all your feeds"
-        >Download OPML</ui-button-link
-      >
-    </template>
-
     <template #main-header>
       Feeds
       <span v-if="feedsState !== FeedsViewState.Loading"> [{{ sortedFeeds?.length }}] </span>
     </template>
 
+    <ui-toolbar class="mb-2">
+      <template #left>
+        <toolbar-add-feed />
+
+        <ui-button
+          variant="secondary"
+          size="compact"
+          @click="goToImportOPML()">
+          Import OPML
+        </ui-button>
+      </template>
+
+      <template #right>
+        <ui-button-link
+          variant="secondary"
+          size="compact"
+          :href="api.downloadOPMLUrl"
+          target="_blank">
+          Export OPML
+        </ui-button-link>
+      </template>
+    </ui-toolbar>
+
     <notifications
       v-if="feedsState === FeedsViewState.Empty"
       :create-rule-help="false"
       :api-key="false"
-      :collections-notification_="true"
-      :collections-warning_="false" />
+      :collections-notification_="true" />
 
     <feeds-list
       v-if="feedsState === FeedsViewState.Populated && sortedFeeds"
@@ -50,17 +60,19 @@
 
 <script lang="ts" setup>
   import _ from "lodash";
-  import {computed, ref, onUnmounted, watch, provide} from "vue";
-  import {computedAsync} from "@vueuse/core";
+  import {computed, provide} from "vue";
+  import {useRouter} from "vue-router";
   import {useGlobalSettingsStore} from "@/stores/globalSettings";
   import {useGlobalState} from "@/stores/globalState";
   import {useFeedsStore} from "@/stores/feeds";
   import * as api from "@/logic/api";
   import type * as t from "@/logic/types";
   import * as e from "@/logic/enums";
+  import * as navigation from "@/logic/navigation";
 
   const globalSettings = useGlobalSettingsStore();
   const globalState = useGlobalState();
+  const router = useRouter();
 
   const feedsStore = useFeedsStore();
 
@@ -73,6 +85,13 @@
   provide("eventsViewName", "feeds");
 
   globalSettings.mainPanelMode = e.MainPanelMode.Feeds;
+
+  function goToImportOPML() {
+    router.push({
+      name: e.MainPanelMode.Discovery,
+      hash: `#${navigation.discoverySectionIds.importOPML}`
+    });
+  }
 
   const readyToUseSettings = computed(() => {
     return globalSettings.userSettingsPresent || !globalState.loginConfirmed;

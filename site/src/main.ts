@@ -33,6 +33,7 @@ import RuleForList from "./components/RuleForList.vue";
 import UserSettingForNotification from "./components/UserSettingForNotification.vue";
 
 import UiPageSection from "./components/ui/PageSection.vue";
+import UiSectionNavigation from "./components/ui/SectionNavigation.vue";
 import UiFieldHint from "./components/ui/FieldHint.vue";
 import UiEmptyState from "./components/ui/EmptyState.vue";
 import UiActionPanel from "./components/ui/ActionPanel.vue";
@@ -42,6 +43,11 @@ import UiButton from "./components/ui/Button.vue";
 import UiButtonLink from "./components/ui/ButtonLink.vue";
 import UiNotice from "./components/ui/Notice.vue";
 import UiFileInput from "./components/ui/FileInput.vue";
+import UiInfoIcon from "./components/ui/InfoIcon.vue";
+import UiAsyncActionStatus from "./components/ui/AsyncActionStatus.vue";
+
+import ToolbarAddFeed from "./components/toolbar/AddFeed.vue";
+import ToolbarUndoMarkRead from "./components/toolbar/UndoMarkRead.vue";
 
 import FeedListColumns from "./components/feed_list/Columns.vue";
 import FeedEntriesPerDayChart from "./components/feed_list/FeedEntriesPerDayChart.vue";
@@ -64,7 +70,6 @@ import Notifications from "./components/notifications/Block.vue";
 import NotificationsLoadedOldNews from "./components/notifications/LoadedOldNews.vue";
 
 import CollectionsNotification from "./components/collections/Notification.vue";
-import CollectionsWarning from "./components/collections/Warning.vue";
 import CollectionsBlock from "./components/collections/Block.vue";
 import CollectionsBlockItem from "./components/collections/BlockItem.vue";
 import CollectionsDetailedItem from "./components/collections/DetailedItem.vue";
@@ -131,6 +136,7 @@ app.component("RuleForList", RuleForList);
 app.component("UserSettingForNotification", UserSettingForNotification);
 
 app.component("UiPageSection", UiPageSection);
+app.component("UiSectionNavigation", UiSectionNavigation);
 app.component("UiFieldHint", UiFieldHint);
 app.component("UiEmptyState", UiEmptyState);
 app.component("UiActionPanel", UiActionPanel);
@@ -140,6 +146,11 @@ app.component("UiButton", UiButton);
 app.component("UiButtonLink", UiButtonLink);
 app.component("UiNotice", UiNotice);
 app.component("UiFileInput", UiFileInput);
+app.component("UiInfoIcon", UiInfoIcon);
+app.component("UiAsyncActionStatus", UiAsyncActionStatus);
+
+app.component("ToolbarAddFeed", ToolbarAddFeed);
+app.component("ToolbarUndoMarkRead", ToolbarUndoMarkRead);
 
 app.component("FeedListColumns", FeedListColumns);
 app.component("FeedEntriesPerDayChart", FeedEntriesPerDayChart);
@@ -162,7 +173,6 @@ app.component("Notifications", Notifications);
 app.component("NotificationsLoadedOldNews", NotificationsLoadedOldNews);
 
 app.component("CollectionsNotification", CollectionsNotification);
-app.component("CollectionsWarning", CollectionsWarning);
 app.component("CollectionsBlock", CollectionsBlock);
 app.component("CollectionsBlockItem", CollectionsBlockItem);
 app.component("CollectionsDetailedItem", CollectionsDetailedItem);

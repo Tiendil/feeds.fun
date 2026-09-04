@@ -77,16 +77,6 @@ user_settings.add(
 
 user_settings.add(
     Value(
-        key=SettingKind(int(UserSetting.hide_message_check_your_feed_urls)),
-        name="Hide message about checking your feed URLs",
-        type=types.Boolean(),
-        default=False,
-    )
-)
-
-
-user_settings.add(
-    Value(
         key=SettingKind(int(UserSetting.view_news_filter_interval)),
         name="Time interval for news filter",
         type=types.String(),

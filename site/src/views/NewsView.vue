@@ -49,16 +49,8 @@
 
     <ui-toolbar class="mb-2">
       <template #left>
-        <ui-button
-          variant="tonal"
-          size="compact"
-          tooltip='Undo last "mark read" operation'
-          :disabled="!entriesStore.canUndoMarkRead"
-          @click="entriesStore.undoMarkRead()">
-          <icon
-            icon="undo"
-            size="small" />
-        </ui-button>
+        <toolbar-undo-mark-read />
+        <toolbar-add-feed />
       </template>
 
       <template #right>
@@ -70,8 +62,7 @@
       v-if="entriesStore.loadedEntriesReport !== null"
       :create-rule-help="hasEntries && !hasRules"
       :api-key="true"
-      :collections-notification_="!hasEntries"
-      :collections-warning_="false" />
+      :collections-notification_="!hasEntries" />
 
     <notifications-loaded-old-news
       :entries="entriesStore.loadedEntriesReport?.entryIds || []"

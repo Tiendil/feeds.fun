@@ -7,8 +7,11 @@ import * as e from "@/logic/enums";
 import * as api from "@/logic/api";
 import {Timer} from "@/logic/timer";
 import {computedAsync} from "@vueuse/core";
+import {useGlobalSettingsStore} from "@/stores/globalSettings";
 
 export const useCollectionsStore = defineStore("collectionsStore", () => {
+  const globalSettings = useGlobalSettingsStore();
+
   const feeds = ref<{[id: t.CollectionId]: t.CollectionFeedInfo[]}>({});
 
   const collections = computedAsync(async () => {
@@ -59,11 +62,17 @@ export const useCollectionsStore = defineStore("collectionsStore", () => {
     return null;
   }
 
+  async function subscribe({collectionsIds}: {collectionsIds: t.CollectionId[]}) {
+    await api.subscribeToCollections({collectionsIds});
+    globalSettings.updateDataVersion();
+  }
+
   return {
     collections,
     collectionsOrder,
     collectionsOrdered,
     getFeeds,
-    getCollectionBySlug
+    getCollectionBySlug,
+    subscribe
   };
 });

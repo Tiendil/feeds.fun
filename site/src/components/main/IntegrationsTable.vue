@@ -18,31 +18,25 @@
               <th class="head-cell text-center">
                 <span class="head-label">
                   Feed discovery
-                  <icon
-                    class="head-info-icon"
-                    icon="info-square-filled"
-                    size="large"
-                    title="We discover feeds that are not explicitly specified by their sites and therefore are not visible to other feed readers." />
+                  <ui-info-icon
+                    size="medium"
+                    text="We discover feeds that are not explicitly specified by their sites and therefore are not visible to other feed readers." />
                 </span>
               </th>
               <th class="head-cell text-center">
                 <span class="head-label">
                   Post cleanup
-                  <icon
-                    class="head-info-icon"
-                    icon="info-square-filled"
-                    size="large"
-                    title="We postprocess the content of posts to remove unnecessary markup and make them look better and easier to read." />
+                  <ui-info-icon
+                    size="medium"
+                    text="We postprocess the content of posts to remove unnecessary markup and make them look better and easier to read." />
                 </span>
               </th>
               <th class="head-cell text-center">
                 <span class="head-label">
                   Extra tags
-                  <icon
-                    class="head-info-icon"
-                    icon="info-square-filled"
-                    size="large"
-                    title="We add extra tags to news according to their unique properties in the source." />
+                  <ui-info-icon
+                    size="medium"
+                    text="We add extra tags to news according to their unique properties in the source." />
                 </span>
               </th>
             </tr>
@@ -126,10 +120,6 @@
 
   .head-label {
     @apply flex flex-col items-center justify-center gap-0.5 text-center md:flex-row md:gap-1;
-  }
-
-  .head-info-icon {
-    @apply text-slate-500 transition-colors cursor-pointer hover:text-black;
   }
 
   .cell {

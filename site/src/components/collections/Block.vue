@@ -28,10 +28,7 @@
         button-text="Hide this message" />
     </form>
 
-    <collections-subscribing-progress
-      :loading="loading"
-      :loaded="loaded"
-      :error="error" />
+    <collections-subscribing-progress :status="subscriptionAction.status" />
   </div>
 </template>
 
@@ -40,20 +37,15 @@
   import {computed, ref, watch} from "vue";
   import type * as t from "@/logic/types";
   import * as e from "@/logic/enums";
-  import * as api from "@/logic/api";
   import {computedAsync} from "@vueuse/core";
   import DOMPurify from "dompurify";
   import {useEntriesStore} from "@/stores/entries";
-  import {useGlobalSettingsStore} from "@/stores/globalSettings";
   import {useCollectionsStore} from "@/stores/collections";
+  import {useAsyncAction} from "@/logic/asyncAction";
 
   const router = useRouter();
 
-  const loading = ref(false);
-  const loaded = ref(false);
-  const error = ref(false);
-
-  const globalSettings = useGlobalSettingsStore();
+  const subscriptionAction = useAsyncAction();
 
   const collections = useCollectionsStore();
 
@@ -72,27 +64,15 @@
   );
 
   async function subscribe() {
-    loading.value = true;
-    loaded.value = false;
-    error.value = false;
-
     try {
-      await api.subscribeToCollections({
-        collectionsIds: selectedCollections.value
-      });
-
-      loading.value = false;
-      loaded.value = true;
-      error.value = false;
+      await subscriptionAction.run(() =>
+        collections.subscribe({
+          collectionsIds: selectedCollections.value
+        })
+      );
     } catch (e) {
       console.error(e);
-
-      loading.value = false;
-      loaded.value = false;
-      error.value = true;
     }
-
-    globalSettings.updateDataVersion();
   }
 </script>
 
