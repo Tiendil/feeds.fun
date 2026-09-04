@@ -1,5 +1,5 @@
 import {createPinia, setActivePinia} from "pinia";
-import {beforeEach, describe, expect, it, vi} from "vitest";
+import {afterEach, beforeEach, describe, expect, it, vi} from "vitest";
 
 import * as api from "@/logic/api";
 import * as t from "@/logic/types";
@@ -21,7 +21,6 @@ vi.mock("@/logic/api", () => ({
 
 describe("useCollectionsStore", () => {
   beforeEach(() => {
-    vi.clearAllMocks();
     setActivePinia(createPinia());
 
     vi.mocked(api.getCollections).mockResolvedValue([]);
@@ -29,8 +28,24 @@ describe("useCollectionsStore", () => {
     vi.mocked(api.subscribeToCollections).mockResolvedValue(undefined);
   });
 
-  it("refreshes application data after subscribing to collections", async () => {
-    const collectionsIds = [t.toCollectionId("collection-1"), t.toCollectionId("collection-2")];
+  afterEach(() => {
+    vi.mocked(api.getCollections).mockReset();
+    vi.mocked(api.getCollectionFeeds).mockReset();
+    vi.mocked(api.subscribeToCollections).mockReset();
+    updateDataVersion.mockReset();
+  });
+
+  it.each([
+    {
+      caseName: "distinct collection IDs",
+      collectionsIds: [t.toCollectionId("collection-1"), t.toCollectionId("collection-2")]
+    },
+    {caseName: "an empty collection list", collectionsIds: []},
+    {
+      caseName: "duplicate collection IDs",
+      collectionsIds: [t.toCollectionId("collection-1"), t.toCollectionId("collection-1")]
+    }
+  ])("forwards $caseName and refreshes application data", async ({collectionsIds}) => {
     const store = useCollectionsStore();
 
     await store.subscribe({collectionsIds});
