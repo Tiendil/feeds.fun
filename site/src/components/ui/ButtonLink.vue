@@ -9,11 +9,12 @@
 </template>
 
 <script lang="ts" setup>
-  type ButtonVariant = "primary" | "tonal" | "secondary" | "quiet" | "danger";
+  type ButtonVariant = "primary" | "positive" | "tonal" | "secondary" | "quiet" | "danger";
   type ButtonSize = "regular" | "compact";
 
   const buttonVariantClasses: Record<ButtonVariant, string> = {
     primary: "ui-button-primary",
+    positive: "ui-button-positive",
     tonal: "ui-button-tonal",
     secondary: "ui-button-secondary",
     quiet: "ui-button-quiet",

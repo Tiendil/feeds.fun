@@ -1,6 +1,6 @@
 <template>
-  <ui-action-panel>
-    <h4>Hi there!</h4>
+  <ui-action-panel tone="positive">
+    <h4 class="ui-positive-guidance-title">Hi there!</h4>
 
     <p>
       Welcome to <strong>Feeds Fun</strong> and our curated <strong>{{ collection.name }}</strong> news collection!
@@ -29,8 +29,8 @@
     </p>
 
     <p>
-      If you like the results, <a :href="router.resolve({name: 'main'}).href">register</a> to create your own scoring
-      rules and automatically prioritize the news you’re most interested in.
+      With an account, you can create your own scoring rules and automatically prioritize the news you’re most
+      interested in.
     </p>
 
     <p> You can find more about scoring rules on the <a :href="router.resolve({name: 'main'}).href">main page</a>. </p>

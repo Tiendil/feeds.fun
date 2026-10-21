@@ -17,13 +17,16 @@
 
     <rule-constructor v-if="showCreateRule" />
 
-    <ui-action-panel v-if="showRegistrationInvitation">
+    <ui-action-panel
+      v-if="showRegistrationInvitation"
+      tone="positive"
+      class="px-2 py-1 whitespace-nowrap">
       <a
-        href="#"
+        :href="router.resolve({name: 'main'}).href"
         @click.prevent="router.push({name: 'main'})"
         >Register</a
       >
-      to score news by tags!
+      to create ranking rules.
     </ui-action-panel>
 
     <input

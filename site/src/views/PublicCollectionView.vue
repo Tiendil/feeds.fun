@@ -64,6 +64,14 @@
 
     <ui-toolbar class="mb-2">
       <template #left>
+        <ui-button-link
+          v-if="showRegistrationInvitation"
+          variant="positive"
+          size="compact"
+          :href="router.resolve({name: 'main'}).href">
+          Register
+        </ui-button-link>
+
         <ui-button
           v-if="collection && globalState.loginConfirmed"
           variant="primary"
