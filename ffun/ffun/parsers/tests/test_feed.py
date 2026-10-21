@@ -311,10 +311,17 @@ class TestParseEntry:
             error_while_parsing_feed_entry=0,
         )
 
-    def test_returns_none_when_external_url_can_not_be_extracted(self, feed_url: FeedUrl) -> None:
+    @pytest.mark.parametrize(
+        "url",
+        [
+            "mailto:test@example.com",
+            "https://www.iamexpat.dedie-linke-wins-historic-berlin-election-as-cdu-support-collapses",
+        ],
+    )
+    def test_returns_none_when_external_url_can_not_be_extracted(self, feed_url: FeedUrl, url: UnknownUrl) -> None:
         with capture_logs() as logs:
             result = parse_entry(
-                {"title": "Entry", "link": "mailto:test@example.com"},
+                {"title": "Entry", "link": url},
                 feed_url,
                 url_to_source_uid(feed_url),
             )

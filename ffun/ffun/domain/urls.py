@@ -74,13 +74,13 @@ RE_SCHEMA = re.compile(r"^(\w+):")
 
 
 @contextlib.contextmanager
-def check_furl_error() -> Iterator[None]:
+def check_furl_error() -> Iterator[None]:  # noqa: CCR001
     try:
         yield
     except UnicodeEncodeError as e:
         message = str(e)
 
-        if "label too long encoding with 'idna' codec failed" in message:
+        if e.encoding == "idna" and e.reason == "label too long":
             # catch broken URLs as `www.iamexpat.dedie-linke-wins-historic-berlin-election-as-cdu-support-collapses`
             # note missed slash after TLD  => too long domain label
             raise errors.ExpectedFUrlError(message=message) from e

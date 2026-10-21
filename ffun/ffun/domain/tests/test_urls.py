@@ -258,10 +258,39 @@ class TestCheckFurlError:
             with urls.check_furl_error():
                 furl("https://visit%20borkensite.com%20for%20test%20or%not%21/")
 
+    def test_domain_label_too_long(self) -> None:
+        with pytest.raises(errors.ExpectedFUrlError, match="label too long") as exc_info:
+            with urls.check_furl_error():
+                furl(f"https://www.{'x' * 64}.com")
+
+        assert isinstance(exc_info.value.__cause__, UnicodeEncodeError)
+
+    @pytest.mark.parametrize("encoding, reason", [("ascii", "label too long"), ("idna", "label empty")])
+    def test_unrelated_unicode_encode_error(self, encoding: str, reason: str) -> None:
+        with pytest.raises(UnicodeEncodeError, match=reason):
+            with urls.check_furl_error():
+                raise UnicodeEncodeError(encoding, "x", 0, 1, reason)
+
     def test_another_error(self) -> None:
         with pytest.raises(ZeroDivisionError):
             with urls.check_furl_error():
                 1 / 0
+
+
+class TestConstructFUrl:
+
+    @pytest.mark.parametrize("prefix", ["https://", "//"])
+    def test_domain_label_too_long(self, prefix: str) -> None:
+        assert urls.construct_f_url(f"{prefix}{'x' * 64}.com") is None
+
+    @pytest.mark.parametrize("prefix", ["https://", "//"])
+    def test_maximum_domain_label_length(self, prefix: str) -> None:
+        url = f"{prefix}{'x' * 63}.com"
+
+        f_url = urls.construct_f_url(url)
+
+        assert f_url is not None
+        assert str(f_url) == url
 
 
 class TestSchemaSupported:
