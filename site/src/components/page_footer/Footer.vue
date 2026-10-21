@@ -80,6 +80,14 @@
           </a>
 
           <a
+            v-if="settings.crmHowWeUseAI"
+            :href="router.resolve({name: 'how-we-use-ai'}).href"
+            class="ffun-normal-link"
+            @click.prevent="router.push({name: 'how-we-use-ai'})">
+            How we use AI
+          </a>
+
+          <a
             v-if="!globalState.isSingleUserMode"
             href="#"
             class="ffun-normal-link"
