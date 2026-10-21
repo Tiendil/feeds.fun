@@ -23,6 +23,15 @@
     }
   }
 
+  .ui-button-positive-tonal {
+    @apply border-emerald-200 bg-emerald-50 text-emerald-800 focus-visible:ring-emerald-400;
+
+    &:not(:disabled) {
+      @apply hover:border-emerald-300 hover:bg-emerald-100;
+      @apply active:border-emerald-400 active:bg-emerald-200;
+    }
+  }
+
   .ui-button-tonal {
     @apply border-blue-200 bg-blue-50 text-blue-800 focus-visible:ring-blue-400;
 

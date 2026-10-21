@@ -17,17 +17,14 @@
 
     <rule-constructor v-if="showCreateRule" />
 
-    <ui-action-panel
+    <ui-button-link
       v-if="showRegistrationInvitation"
-      tone="positive"
-      class="px-2 py-1 whitespace-nowrap">
-      <a
-        href="#"
-        @click.prevent="api.redirectToJoin()"
-        >Register</a
-      >
-      to create ranking rules.
-    </ui-action-panel>
+      variant="positive-tonal"
+      class="my-2 w-full px-2 text-base font-normal whitespace-nowrap"
+      href="#"
+      @click.prevent="api.redirectToJoin()">
+      Register to create ranking rules
+    </ui-button-link>
 
     <input
       class="ffun-input w-full"
