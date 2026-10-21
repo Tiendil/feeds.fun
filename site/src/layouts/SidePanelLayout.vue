@@ -86,6 +86,14 @@
 
         <div class="ffun-page-header-right-block">
           <a
+            v-if="globalState.logoutConfirmed && !globalState.isSingleUserMode"
+            href="#"
+            class="ffun-page-header-link"
+            @click.prevent="api.redirectToLogin()"
+            >login</a
+          >
+
+          <a
             v-if="globalState.loginConfirmed && !globalState.isSingleUserMode"
             href="#"
             class="ffun-page-header-link"
