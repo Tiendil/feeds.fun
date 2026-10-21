@@ -29,7 +29,8 @@ Command you are allowed to use:
 - `./bin/frontend-utils.sh` — run utils in the frontend environment.
 - `./bin/taskwarior.sh` — run Taskwarrior commands related to project journaling.
 
-If you need to search or manipulate code, do that on the host machine, no need to use scripts from `./bin` or docker containers for that.
+Code and file searches MUST run on the host using host-installed tools, including `ast-grep` and `rg`, without Docker or development-helper wrappers.
+Read and manipulate code on the host machine as well.
 
 ## Resticted changes / operations
 
@@ -160,6 +161,8 @@ remain as recoverable artifacts; the script does not read, write, or delete them
 
 `ast-grep` — a tool for searching and manipulating Abstract Syntax Trees in code. Use it when you work with particular code patterns, structures, or constructs in the codebase.
 
+Run the host-installed executable directly, for example `ast-grep --help`.
+
 You MUST use it to:
 
 - Search for specific code patterns or structures in the codebase.
@@ -174,7 +177,7 @@ You MUST NOT use it for:
 
 ### `rg`
 
-Use `rg` for text and file searches unless a structural code query is needed.
+Use host-installed `rg` directly for text and file searches.
 
 `ast-grep` has a higher priority than `rg` whenever a structural code query is needed.
 

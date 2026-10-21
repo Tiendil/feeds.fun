@@ -945,8 +945,8 @@ def load_depmesh_relations() -> list[DepmeshRelation]:
         if record.get("type") != "relation":
             raise CheckerFailureError(f"unexpected depmesh relations record: {record}")
 
-        relation_id = record.get("id")
-        description = record.get("description")
+        relation_id = record.get("relation")
+        description = record.get("content")
 
         if not isinstance(relation_id, str) or not isinstance(description, str):
             raise CheckerFailureError(f"invalid depmesh relation record: {record}")
