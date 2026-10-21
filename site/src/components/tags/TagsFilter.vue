@@ -17,14 +17,14 @@
 
     <rule-constructor v-if="showCreateRule" />
 
-    <ui-action-panel v-if="showRegistrationInvitation">
-      <a
-        href="#"
-        @click.prevent="router.push({name: 'main'})"
-        >Register</a
-      >
-      to score news by tags!
-    </ui-action-panel>
+    <ui-button-link
+      v-if="showRegistrationInvitation"
+      variant="positive-tonal"
+      class="my-2 w-full px-2 text-base font-normal whitespace-nowrap"
+      href="#"
+      @click.prevent="api.redirectToJoin()">
+      Register to create scoring rules
+    </ui-button-link>
 
     <input
       class="ffun-input w-full"
@@ -60,15 +60,12 @@
 
 <script lang="ts" setup>
   import {computed, ref, inject} from "vue";
-  import {useRoute, useRouter} from "vue-router";
   import type {Ref} from "vue";
   import {useTagsStore} from "@/stores/tags";
   import type * as tagsFilterState from "@/logic/tagsFilterState";
   import * as asserts from "@/logic/asserts";
   import * as api from "@/logic/api";
   import {useGlobalSettingsStore} from "@/stores/globalSettings";
-
-  const router = useRouter();
 
   const tagsStore = useTagsStore();
 

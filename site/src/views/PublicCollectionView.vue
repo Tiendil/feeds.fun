@@ -64,6 +64,15 @@
 
     <ui-toolbar class="mb-2">
       <template #left>
+        <ui-button-link
+          v-if="showRegistrationInvitation"
+          variant="positive"
+          size="compact"
+          href="#"
+          @click.prevent="api.redirectToJoin()">
+          Register
+        </ui-button-link>
+
         <ui-button
           v-if="collection && globalState.loginConfirmed"
           variant="primary"
@@ -127,6 +136,7 @@
   import {useRoute, useRouter} from "vue-router";
   import * as tagsFilterState from "@/logic/tagsFilterState";
   import * as e from "@/logic/enums";
+  import * as api from "@/logic/api";
   import * as utils from "@/logic/utils";
   import type * as t from "@/logic/types";
   import {useAsyncAction} from "@/logic/asyncAction";

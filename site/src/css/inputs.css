@@ -6,28 +6,66 @@
   }
 
   .ui-button-primary {
-    @apply border-blue-600 bg-blue-600 text-white;
-    @apply hover:border-blue-700 hover:bg-blue-700 focus-visible:ring-blue-500;
+    @apply border-blue-600 bg-blue-600 text-white focus-visible:ring-blue-500;
+
+    &:not(:disabled) {
+      @apply hover:border-blue-700 hover:bg-blue-700;
+      @apply active:border-blue-800 active:bg-blue-800;
+    }
+  }
+
+  .ui-button-positive {
+    @apply border-emerald-600 bg-emerald-600 text-white focus-visible:ring-emerald-500;
+
+    &:not(:disabled) {
+      @apply hover:border-emerald-700 hover:bg-emerald-700;
+      @apply active:border-emerald-800 active:bg-emerald-800;
+    }
+  }
+
+  .ui-button-positive-tonal {
+    @apply border-emerald-200 bg-emerald-50 text-emerald-800 focus-visible:ring-emerald-400;
+
+    &:not(:disabled) {
+      @apply hover:border-emerald-300 hover:bg-emerald-100;
+      @apply active:border-emerald-400 active:bg-emerald-200;
+    }
   }
 
   .ui-button-tonal {
-    @apply border-blue-200 bg-blue-50 text-blue-800;
-    @apply hover:border-blue-300 hover:bg-blue-100 focus-visible:ring-blue-400;
+    @apply border-blue-200 bg-blue-50 text-blue-800 focus-visible:ring-blue-400;
+
+    &:not(:disabled) {
+      @apply hover:border-blue-300 hover:bg-blue-100;
+      @apply active:border-blue-400 active:bg-blue-200;
+    }
   }
 
   .ui-button-secondary {
-    @apply border-slate-300 bg-white text-slate-800;
-    @apply hover:border-slate-400 hover:bg-slate-50 focus-visible:ring-slate-400;
+    @apply border-slate-300 bg-white text-slate-800 focus-visible:ring-slate-400;
+
+    &:not(:disabled) {
+      @apply hover:border-slate-400 hover:bg-slate-50;
+      @apply active:border-slate-500 active:bg-slate-100;
+    }
   }
 
   .ui-button-quiet {
-    @apply border-transparent bg-transparent text-blue-700;
-    @apply hover:bg-slate-100 hover:text-blue-800 focus-visible:ring-blue-500;
+    @apply border-transparent bg-transparent text-blue-700 focus-visible:ring-blue-500;
+
+    &:not(:disabled) {
+      @apply hover:bg-slate-100 hover:text-blue-800;
+      @apply active:bg-slate-200 active:text-blue-900;
+    }
   }
 
   .ui-button-danger {
-    @apply border-red-600 bg-red-600 text-white;
-    @apply hover:border-red-700 hover:bg-red-700 focus-visible:ring-red-500;
+    @apply border-red-600 bg-red-600 text-white focus-visible:ring-red-500;
+
+    &:not(:disabled) {
+      @apply hover:border-red-700 hover:bg-red-700;
+      @apply active:border-red-800 active:bg-red-800;
+    }
   }
 
   .ui-button-regular {
