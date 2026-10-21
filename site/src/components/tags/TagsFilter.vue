@@ -22,8 +22,8 @@
       tone="positive"
       class="px-2 py-1 whitespace-nowrap">
       <a
-        :href="router.resolve({name: 'main'}).href"
-        @click.prevent="router.push({name: 'main'})"
+        href="#"
+        @click.prevent="api.redirectToJoin()"
         >Register</a
       >
       to create ranking rules.
@@ -63,15 +63,12 @@
 
 <script lang="ts" setup>
   import {computed, ref, inject} from "vue";
-  import {useRoute, useRouter} from "vue-router";
   import type {Ref} from "vue";
   import {useTagsStore} from "@/stores/tags";
   import type * as tagsFilterState from "@/logic/tagsFilterState";
   import * as asserts from "@/logic/asserts";
   import * as api from "@/logic/api";
   import {useGlobalSettingsStore} from "@/stores/globalSettings";
-
-  const router = useRouter();
 
   const tagsStore = useTagsStore();
 

@@ -68,7 +68,8 @@
           v-if="showRegistrationInvitation"
           variant="positive"
           size="compact"
-          :href="router.resolve({name: 'main'}).href">
+          href="#"
+          @click.prevent="api.redirectToJoin()">
           Register
         </ui-button-link>
 
@@ -135,6 +136,7 @@
   import {useRoute, useRouter} from "vue-router";
   import * as tagsFilterState from "@/logic/tagsFilterState";
   import * as e from "@/logic/enums";
+  import * as api from "@/logic/api";
   import * as utils from "@/logic/utils";
   import type * as t from "@/logic/types";
   import {useAsyncAction} from "@/logic/asyncAction";
