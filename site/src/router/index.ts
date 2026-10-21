@@ -76,6 +76,12 @@ const router = createRouter({
       props: {content: settings.crmImpressum, kind: "impressum"}
     },
     {
+      path: "/how-we-use-ai",
+      name: "how-we-use-ai",
+      component: CRMView,
+      props: {content: settings.crmHowWeUseAI, kind: "how-we-use-ai"}
+    },
+    {
       path: "/:pathMatch(.*)*",
       redirect: "/"
     }
