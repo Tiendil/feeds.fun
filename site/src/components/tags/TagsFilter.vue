@@ -23,7 +23,7 @@
       class="my-2 w-full px-2 text-base font-normal whitespace-nowrap"
       href="#"
       @click.prevent="api.redirectToJoin()">
-      Register to create ranking rules
+      Register to create scoring rules
     </ui-button-link>
 
     <input
