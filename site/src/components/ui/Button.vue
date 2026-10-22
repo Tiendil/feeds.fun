@@ -4,13 +4,16 @@
       v-bind="$attrs"
       :type="type"
       class="ui-button"
-      :class="[buttonVariantClasses[properties.variant], buttonSizeClasses[properties.size]]">
+      :class="[buttonVariantClasses[properties.variant], buttonSizeClasses[properties.size]]"
+      @click="onClick">
       <slot />
     </button>
   </app-tooltip>
 </template>
 
 <script lang="ts" setup>
+  import {useButtonClickTracking, type ClickEventProps} from "@/logic/events";
+
   defineOptions({inheritAttrs: false});
 
   type ButtonVariant = "primary" | "tonal" | "secondary" | "quiet" | "danger";
@@ -31,12 +34,17 @@
   };
 
   const properties = withDefaults(
-    defineProps<{
-      variant: ButtonVariant;
-      size?: ButtonSize;
-      type?: ButtonType;
-      tooltip?: string;
-    }>(),
+    defineProps<
+      ClickEventProps & {
+        variant: ButtonVariant;
+        size?: ButtonSize;
+        type?: ButtonType;
+        tooltip?: string;
+      }
+    >(),
     {size: "regular", type: "button", tooltip: ""}
   );
+
+  const emit = defineEmits<{click: [event: MouseEvent]}>();
+  const onClick = useButtonClickTracking(properties, (event) => emit("click", event));
 </script>

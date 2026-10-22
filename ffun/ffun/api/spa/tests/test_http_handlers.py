@@ -1,4 +1,5 @@
 import datetime
+import json
 from decimal import Decimal
 
 import pytest
@@ -11,12 +12,14 @@ from ffun.api.spa.http_handlers import (
     api_get_feeds_by_ids,
     api_get_product_state,
     api_get_resource_statistics,
+    process_api_track,
 )
 from ffun.audit.entities import AuditEntityKind
 from ffun.benefits import domain as b_domain
 from ffun.benefits.tests.make import make_benefit_package_template
 from ffun.core import utils
 from ffun.core.postgresql import transaction
+from ffun.core.tests.helpers import assert_logs_has_business_event, capture_logs
 from ffun.domain.entities import SerializedId, UserId
 from ffun.entitlements.entities import EntitlementKindId
 from ffun.entitlements.tests.helpers import _grant
@@ -31,6 +34,48 @@ from ffun.subscriptions import domain as sub_domain
 from ffun.subscriptions.entities import SubscriptionStatusId
 from ffun.subscriptions.tests.make import make_subscription
 from ffun.users.entities import User
+
+
+class TestProcessApiTrack:
+    @pytest.mark.parametrize("authenticated", [False, True])
+    @pytest.mark.parametrize(
+        ("name", "button_type"),
+        [
+            ("button_clicked", "add_feed.toolbar"),
+            ("button_clicked", "import_opml.toolbar"),
+            ("button_clicked", "export_opml.toolbar"),
+            ("button_clicked", "subscribe.toolbar"),
+            ("button_clicked", "subscribe.collection_details"),
+            ("button_clicked", "subscribe.collection_suggestions"),
+            ("button_clicked", "refresh.sidebar"),
+            ("button_clicked", "search_feeds.discovery_form"),
+            ("button_clicked", "add_feed.discovery_results"),
+            ("button_clicked", "import_opml.form"),
+            ("button_clicked", "show_more.entries_pagination"),
+            ("button_clicked", "collapse.entries_pagination"),
+            ("button_clicked", "show_more.tags_pagination"),
+            ("button_clicked", "collapse.tags_pagination"),
+            ("auth_button_clicked", "register.toolbar"),
+            ("auth_button_clicked", "register.tags_filter"),
+            ("auth_button_clicked", "login"),
+            ("auth_button_clicked", "join"),
+            ("auth_button_clicked", "go_to_feeds"),
+        ],
+    )
+    @pytest.mark.asyncio
+    async def test_logs_button_once(
+        self, name: str, button_type: str, authenticated: bool, internal_user_id: UserId
+    ) -> None:
+        user_id = internal_user_id if authenticated else None
+        payload: dict[str, dict[str, str]] = {"event": {"name": name, "view": "feeds", "button_type": button_type}}
+        body = json.dumps(payload)
+
+        with capture_logs() as logs:
+            response = await process_api_track(body, user_id=user_id)
+
+        assert response == entities.TrackEventResponse()
+        assert len(logs) == 1
+        assert_logs_has_business_event(logs, name, user_id=user_id, view="feeds", button_type=button_type)
 
 
 class TestApiGetFeeds:

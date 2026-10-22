@@ -17,6 +17,7 @@
     <div class="mt-2 flex flex-wrap items-center gap-2">
       <ui-button
         variant="tonal"
+        click-event-button-type="subscribe.collection_details"
         @click.prevent="subscribe">
         <template v-if="collection.feedsNumber === 1"> Subscribe to 1 feed </template>
 

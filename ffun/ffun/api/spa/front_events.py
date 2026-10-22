@@ -1,3 +1,4 @@
+import enum
 from typing import Annotated, Literal
 
 import pydantic
@@ -28,10 +29,43 @@ class SocialLinkClicked(BaseEntity):
     link_type: Literal["api", "blog", "reddit", "discord", "github", "roadmap"]
 
 
+# TODO: When refactoring events, consider merging AuthButtonClicked with ButtonClicked
+# and AuthButtonType with ButtonType.
+class AuthButtonType(enum.StrEnum):
+    login = "login"
+    join_ = "join"
+    go_to_feeds = "go_to_feeds"
+    register_toolbar = "register.toolbar"
+    register_tags_filter = "register.tags_filter"
+
+
 class AuthButtonClicked(BaseEntity):
     name: Literal["auth_button_clicked"]
     view: EventsViewName
-    button_type: Literal["login", "join", "go_to_feeds"]
+    button_type: AuthButtonType
+
+
+class ButtonType(enum.StrEnum):
+    add_feed_toolbar = "add_feed.toolbar"
+    import_opml_toolbar = "import_opml.toolbar"
+    export_opml_toolbar = "export_opml.toolbar"
+    subscribe_toolbar = "subscribe.toolbar"
+    subscribe_collection_details = "subscribe.collection_details"
+    subscribe_collection_suggestions = "subscribe.collection_suggestions"
+    refresh_sidebar = "refresh.sidebar"
+    search_feeds_discovery_form = "search_feeds.discovery_form"
+    add_feed_discovery_results = "add_feed.discovery_results"
+    import_opml_form = "import_opml.form"
+    show_more_entries_pagination = "show_more.entries_pagination"
+    collapse_entries_pagination = "collapse.entries_pagination"
+    show_more_tags_pagination = "show_more.tags_pagination"
+    collapse_tags_pagination = "collapse.tags_pagination"
+
+
+class ButtonClicked(BaseEntity):
+    name: Literal["button_clicked"]
+    view: EventsViewName
+    button_type: ButtonType
 
 
 class TagFilterStateChanged(BaseEntity):
@@ -62,6 +96,7 @@ Event = Annotated[
     | NewsBodyOpened
     | SocialLinkClicked
     | AuthButtonClicked
+    | ButtonClicked
     | TagFilterStateChanged
     | SidebarStateChanged
     | UserUtm,

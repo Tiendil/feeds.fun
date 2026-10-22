@@ -32,6 +32,7 @@
       <hr />
 
       <simple-pagination
+        tracking-place="entries_pagination"
         :showFromStart="showFromStart"
         :showPerPage="showPerPage"
         :total="entriesIds.length"

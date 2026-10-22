@@ -42,8 +42,10 @@
   import {useEntriesStore} from "@/stores/entries";
   import {useCollectionsStore} from "@/stores/collections";
   import {useAsyncAction} from "@/logic/asyncAction";
+  import * as events from "@/logic/events";
 
   const router = useRouter();
+  const eventsView = events.useEventsView();
 
   const subscriptionAction = useAsyncAction();
 
@@ -64,6 +66,7 @@
   );
 
   async function subscribe() {
+    events.buttonClicked({buttonType: "subscribe.collection_suggestions", view: eventsView});
     try {
       await subscriptionAction.run(() =>
         collections.subscribe({

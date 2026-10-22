@@ -275,6 +275,36 @@ output = { type = "union", items = [
   { type = "files", pattern = "@/site/src/**/*.ico" },
 ] }
 
+# UI click tracking governs frontend interaction code and backend tracking contracts and tests.
+[[rules]]
+relation = "governed_by"
+input = { type = "any", items = [
+  { type = "glob", pattern = "@/site/src/**/*.ts" },
+  { type = "glob", pattern = "@/site/src/**/*.vue" },
+  { type = "one_of", artifacts = [
+    "@/ffun/ffun/api/spa/front_events.py",
+    "@/ffun/ffun/api/spa/entities.py",
+    "@/ffun/ffun/api/spa/http_handlers.py",
+  ] },
+  { type = "glob", pattern = "@/ffun/ffun/api/spa/tests/**/*.py" },
+] }
+output = { type = "list", artifacts = ["@/specs/behavior/ui_click_tracking.md"] }
+
+# The UI click tracking spec governs all corresponding frontend and backend artifacts.
+[[rules]]
+relation = "governs"
+input = { type = "one_of", artifacts = ["@/specs/behavior/ui_click_tracking.md"] }
+output = { type = "union", items = [
+  { type = "files", pattern = "@/site/src/**/*.ts" },
+  { type = "files", pattern = "@/site/src/**/*.vue" },
+  { type = "list", artifacts = [
+    "@/ffun/ffun/api/spa/front_events.py",
+    "@/ffun/ffun/api/spa/entities.py",
+    "@/ffun/ffun/api/spa/http_handlers.py",
+  ] },
+  { type = "files", pattern = "@/ffun/ffun/api/spa/tests/**/*.py" },
+] }
+
 # Dependency mesh tooling is governed by the backend module layout spec.
 [[rules]]
 relation = "governed_by"

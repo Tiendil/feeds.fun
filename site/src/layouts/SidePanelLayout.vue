@@ -43,6 +43,7 @@
         v-if="reloadButton"
         variant="tonal"
         class="my-1 flex w-full"
+        click-event-button-type="refresh.sidebar"
         @click="globalSettings.updateDataVersion()"
         >Refresh</ui-button
       >
@@ -130,7 +131,6 @@
   import {useRouter} from "vue-router";
   import {useGlobalSettingsStore} from "@/stores/globalSettings";
   import {useGlobalState} from "@/stores/globalState";
-  import * as events from "@/logic/events";
   import * as e from "@/logic/enums";
   import * as api from "@/logic/api";
   import * as settings from "@/logic/settings";
