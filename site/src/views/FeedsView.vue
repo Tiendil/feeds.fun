@@ -28,6 +28,7 @@
         <ui-button
           variant="secondary"
           size="compact"
+          click-event-button-type="import_opml.toolbar"
           @click="goToImportOPML()">
           Import OPML
         </ui-button>
@@ -38,7 +39,8 @@
           variant="secondary"
           size="compact"
           :href="api.downloadOPMLUrl"
-          target="_blank">
+          target="_blank"
+          click-event-button-type="export_opml.toolbar">
           Export OPML
         </ui-button-link>
       </template>
@@ -69,6 +71,7 @@
   import type * as t from "@/logic/types";
   import * as e from "@/logic/enums";
   import * as navigation from "@/logic/navigation";
+  import type * as events from "@/logic/events";
 
   const globalSettings = useGlobalSettingsStore();
   const globalState = useGlobalState();
@@ -82,7 +85,8 @@
     Populated = "populated"
   }
 
-  provide("eventsViewName", "feeds");
+  const eventsView: events.EventsViewName = "feeds";
+  provide("eventsViewName", eventsView);
 
   globalSettings.mainPanelMode = e.MainPanelMode.Feeds;
 

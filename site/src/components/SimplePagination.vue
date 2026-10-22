@@ -7,6 +7,7 @@
       size="compact"
       class="ml-2"
       v-if="canHide"
+      :click-event-button-type="`collapse.${trackingPlace}`"
       @click.prevent="hideAll()"
       >Hide</ui-button
     >
@@ -16,6 +17,7 @@
       size="compact"
       class="ml-2"
       v-if="canShowMore"
+      :click-event-button-type="`show_more.${trackingPlace}`"
       @click.prevent="showMore()">
       Next {{ realShowPerPage }}
     </ui-button>
@@ -34,6 +36,7 @@
   import {computedAsync} from "@vueuse/core";
 
   const properties = defineProps<{
+    trackingPlace: string;
     showFromStart: number;
     showPerPage: number;
     total: number;

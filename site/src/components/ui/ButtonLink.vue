@@ -3,12 +3,15 @@
     :href="href"
     :target="target"
     class="ui-button"
-    :class="[buttonVariantClasses[properties.variant], buttonSizeClasses[properties.size]]">
+    :class="[buttonVariantClasses[properties.variant], buttonSizeClasses[properties.size]]"
+    @click="onClick">
     <slot />
   </a>
 </template>
 
 <script lang="ts" setup>
+  import {useButtonClickTracking, type ClickEventProps} from "@/logic/events";
+
   type ButtonVariant = "primary" | "positive" | "positive-tonal" | "tonal" | "secondary" | "quiet" | "danger";
   type ButtonSize = "regular" | "compact";
 
@@ -28,12 +31,17 @@
   };
 
   const properties = withDefaults(
-    defineProps<{
-      href: string;
-      variant: ButtonVariant;
-      size?: ButtonSize;
-      target?: string;
-    }>(),
+    defineProps<
+      ClickEventProps & {
+        href: string;
+        variant: ButtonVariant;
+        size?: ButtonSize;
+        target?: string;
+      }
+    >(),
     {size: "regular"}
   );
+
+  const emit = defineEmits<{click: [event: MouseEvent]}>();
+  const onClick = useButtonClickTracking(properties, (event) => emit("click", event));
 </script>

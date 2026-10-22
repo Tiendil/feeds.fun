@@ -69,6 +69,8 @@
           variant="positive"
           size="compact"
           href="#"
+          click-event-name="auth_button_clicked"
+          click-event-button-type="register.toolbar"
           @click.prevent="api.redirectToJoin()">
           Register
         </ui-button-link>
@@ -78,6 +80,7 @@
           variant="primary"
           size="compact"
           :disabled="subscriptionAction.loading || subscriptionAction.succeeded"
+          click-event-button-type="subscribe.toolbar"
           @click="subscribe()">
           {{ subscriptionAction.succeeded ? "Subscribed" : "Subscribe" }}
         </ui-button>
@@ -137,6 +140,7 @@
   import * as tagsFilterState from "@/logic/tagsFilterState";
   import * as e from "@/logic/enums";
   import * as api from "@/logic/api";
+  import type * as events from "@/logic/events";
   import * as utils from "@/logic/utils";
   import type * as t from "@/logic/types";
   import {useAsyncAction} from "@/logic/asyncAction";
@@ -205,7 +209,8 @@
   );
 
   provide("tagsStates", tagsStates);
-  provide("eventsViewName", "public_collections");
+  const eventsView: events.EventsViewName = "public_collections";
+  provide("eventsViewName", eventsView);
 
   tagsFilterState.setSyncingTagsWithRoute({
     tagsStates: tagsStates.value as unknown as tagsFilterState.Storage,

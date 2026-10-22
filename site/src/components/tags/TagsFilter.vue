@@ -22,6 +22,8 @@
       variant="positive-tonal"
       class="my-2 w-full px-2 text-base font-normal whitespace-nowrap"
       href="#"
+      click-event-name="auth_button_clicked"
+      click-event-button-type="register.tags_filter"
       @click.prevent="api.redirectToJoin()">
       Register to create scoring rules
     </ui-button-link>
@@ -50,6 +52,7 @@
     <hr />
 
     <simple-pagination
+      tracking-place="tags_pagination"
       :showFromStart="showFromStart"
       :showPerPage="10"
       :total="totalTags"

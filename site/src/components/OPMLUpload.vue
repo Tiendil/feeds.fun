@@ -12,7 +12,6 @@
         variant="primary"
         type="submit"
         :disabled="uploadAction.loading"
-        @click.prevent="submit"
         >Submit</ui-button
       >
     </form>
@@ -30,12 +29,14 @@
   import * as t from "@/logic/types";
   import * as e from "@/logic/enums";
   import * as api from "@/logic/api";
+  import * as events from "@/logic/events";
   import {computedAsync} from "@vueuse/core";
   import {useAsyncAction} from "@/logic/asyncAction";
   import {useEntriesStore} from "@/stores/entries";
   import {useGlobalSettingsStore} from "@/stores/globalSettings";
 
   const globalSettings = useGlobalSettingsStore();
+  const eventsView = events.useEventsView();
 
   const opmlFile = ref<File | null>(null);
 
@@ -48,6 +49,7 @@
   }
 
   async function submit() {
+    events.buttonClicked({buttonType: "import_opml.form", view: eventsView});
     const file = opmlFile.value;
 
     if (file === null) {

@@ -23,6 +23,7 @@ from ffun.api.spa.entities import (
     SetMarkerRequest,
     SubscriptionStatus,
     TokenKind,
+    TrackEventRequest,
 )
 from ffun.benefits.tests.make import make_benefit_package_template
 from ffun.core import utils
@@ -38,6 +39,23 @@ from ffun.product.entities import Credit, Resource
 from ffun.resources import entities as r_entities
 from ffun.subscriptions.entities import SubscriptionStatusId
 from ffun.subscriptions.tests.make import make_subscription
+
+
+class TestTrackEventRequest:
+    @pytest.mark.parametrize(
+        ("name", "button_type"),
+        [
+            ("button_clicked", "add_feed_toolbar"),
+            ("button_clicked", "untracked.toolbar"),
+            ("button_clicked", "register.toolbar"),
+            ("auth_button_clicked", "add_feed.toolbar"),
+            ("auth_button_clicked", "register.sidebar"),
+        ],
+    )
+    def test_model_validate__rejects_unsupported_button(self, name: str, button_type: str) -> None:
+        payload: dict[str, dict[str, str]] = {"event": {"name": name, "view": "feeds", "button_type": button_type}}
+        with pytest.raises(pydantic.ValidationError):
+            TrackEventRequest.model_validate(payload)
 
 
 class TestFeed:

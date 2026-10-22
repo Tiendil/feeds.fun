@@ -2,7 +2,7 @@
   <div>
     <form
       class="ui-form-row"
-      @submit.prevent="searhedUrl = search">
+      @submit.prevent="submitSearch()">
       <input
         type="text"
         class="ffun-input ui-form-row-control"
@@ -54,6 +54,7 @@
           variant="primary"
           v-if="!addedFeeds[feed.url]"
           :disabled="disableInputs"
+          click-event-button-type="add_feed.discovery_results"
           @click.prevent="addFeed(feed.url)">
           Add
         </ui-button>
@@ -73,11 +74,13 @@
   import type * as t from "@/logic/types";
   import * as e from "@/logic/enums";
   import * as api from "@/logic/api";
+  import * as events from "@/logic/events";
   import {computedAsync} from "@vueuse/core";
   import {useEntriesStore} from "@/stores/entries";
   import {useFeedsStore} from "@/stores/feeds";
 
   const feedsStore = useFeedsStore();
+  const eventsView = events.useEventsView();
 
   const search = ref("");
 
@@ -114,6 +117,11 @@
 
     return feeds;
   }, null);
+
+  function submitSearch() {
+    events.buttonClicked({buttonType: "search_feeds.discovery_form", view: eventsView});
+    searhedUrl.value = search.value;
+  }
 
   async function addFeed(url: t.URL) {
     adding.value = true;

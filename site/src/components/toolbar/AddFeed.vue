@@ -2,6 +2,7 @@
   <ui-button
     variant="secondary"
     size="compact"
+    click-event-button-type="add_feed.toolbar"
     @click="goToAddFeed()">
     Add feed
   </ui-button>
