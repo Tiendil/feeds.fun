@@ -45,6 +45,7 @@ Detailed requirements for individual specifications are out of scope except for 
 - `specs/behavior/cli/benefits.md` describes administrator application of benefit transactions to subscriptions and one-time purchases.
 - `specs/behavior/cli/entitlements.md` describes the CLI command family for managing and inspecting entitlements.
 - `specs/behavior/cli/subscriptions.md` describes the CLI command family for managing and inspecting purchased-subscription snapshots.
+- `specs/behavior/ui_click_tracking.md` defines required click tracking for listed UI controls, tracking identifier naming, and developer decisions for new clickable elements.
 - `specs/frontend_architecture/modules_layout.md` describes frontend source layout and ownership boundaries.
 - `specs/frontend_architecture/components.md` describes frontend component contracts, global registration, naming, and composition conventions.
 - `specs/frontend_architecture/tests.md` describes frontend Vitest test placement.
