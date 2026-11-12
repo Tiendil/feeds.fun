@@ -3,12 +3,33 @@
 url = "git@github.com:Tiendil/harness.git"
 ref = "feature/agents-md-construction"
 
-[tasks."harness:shared-harness:update"]
+[dotfiles."AGENTS.md"]
+source = ".harness/AGENTS.md.tera"
+mode = "template"
+permissions = "0644"
+variants = [
+  { default = true, target = "{{ config_root }}/TMP_AGENTS.md" },
+]
+
+[tasks."harness:load"]
 description = "Update shared harness"
 dir = "{{ config_root }}"
 run = 'mise bootstrap repos update --yes .vendor/shared-harness'
 
+[tasks."harness:agents.md:generate"]
+description = "Regenerate AGENTS.md"
+dir = "{{ config_root }}"
+run = 'mise dot apply --yes "{{ config_root }}/TMP_AGENTS.md"'
+
 [tasks."harness:generate"]
 description = "Regenerate harness"
 dir = "{{ config_root }}"
-depends = ["harness:shared-harness:update"]
+depends = ["harness:agents.md:generate"]
+
+[tasks."harness:initialize"]
+description = "Initialize harness"
+dir = "{{ config_root }}"
+run = [
+  "mise run harness:load",
+  "mise run harness:generate"
+]

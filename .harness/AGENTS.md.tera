@@ -1,0 +1,2 @@
+
+{{- read_file(path=".vendor/shared-harness/agents.md.d/intro.md") | trim -}}
