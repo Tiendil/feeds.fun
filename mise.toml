@@ -1,0 +1,14 @@
+
+[bootstrap.repos.".vendor/shared-harness"]
+url = "git@github.com:Tiendil/harness.git"
+ref = "feature/agents-md-construction"
+
+[tasks."harness:shared-harness:update"]
+description = "Update shared harness"
+dir = "{{ config_root }}"
+run = 'mise bootstrap repos update --yes .vendor/shared-harness'
+
+[tasks."harness:generate"]
+description = "Regenerate harness"
+dir = "{{ config_root }}"
+depends = ["harness:shared-harness:update"]

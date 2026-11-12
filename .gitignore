@@ -139,3 +139,5 @@ profile.svg
 # ignore directory with tmp files shared with docker containers
 .shared
 .donna/tmp
+
+.vendor
