@@ -3,7 +3,7 @@
 
 {{ read_file(path=".harness/agents.md.d/environment.md") | trim }}
 
-{# Principles #}
+{#- Principles -#}
 
 {{ read_file(path=".harness/agents.md.d/principles/intro.md") | trim }}
 
@@ -30,3 +30,21 @@
 {{ read_file(path=".harness/agents.md.d/behavior/restrictions/docker.md") | trim }}
 
 {{ read_file(path=".harness/agents.md.d/behavior/restrictions/git.md") | trim }}
+
+{#- CLI tools -#}
+
+{{ read_file(path=".harness/agents.md.d/cli_tools/intro.md") | trim }}
+
+{{ read_file(path=".harness/agents.md.d/cli_tools/donna.md") | trim }}
+
+{{ read_file(path=".harness/agents.md.d/cli_tools/depmesh.md") | trim }}
+
+{{ read_file(path=".harness/agents.md.d/cli_tools/ast-grep.md") | trim }}
+
+{{ read_file(path=".harness/agents.md.d/cli_tools/rg.md") | trim }}
+
+{{ read_file(path=".harness/agents.md.d/cli_tools/difftastic.md") | trim }}
+
+{{ read_file(path=".harness/agents.md.d/cli_tools/taskwarrior.md") | trim }}
+
+{{ read_file(path=".harness/agents.md.d/cli_tools/inconsistency-check.md") | trim }}
