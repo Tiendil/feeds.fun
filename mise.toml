@@ -1,4 +1,9 @@
 
+[vars]
+harness_skills = """
+session
+"""
+
 [bootstrap.repos.".vendor/shared-harness"]
 url = "git@github.com:Tiendil/harness.git"
 ref = "feature/agents-md-construction"
@@ -27,10 +32,30 @@ printf '%s\n' "$generated_agents" > "{{ config_root }}/AGENTS.md"
 ''',
 ]
 
+[tasks."harness:skills:install"]
+description = "Install shared harness skills"
+dir = "{{ config_root }}"
+env = { HARNESS_SKILLS = "{{ vars.harness_skills }}" }
+run = '''
+set -eu
+
+mkdir -p .agents/skills
+
+printf '%s\n' "$HARNESS_SKILLS" |
+  rsync --archive --recursive --itemize-changes \
+    --files-from=- \
+    -- \
+    .vendor/shared-harness/.agents/skills/ \
+    .agents/skills/
+'''
+
 [tasks."harness:generate"]
 description = "Regenerate harness"
 dir = "{{ config_root }}"
-depends = ["harness:agents.md:generate"]
+depends = [
+  "harness:agents.md:generate",
+  "harness:skills:install",
+]
 
 [tasks."harness:initialize"]
 description = "Initialize harness"
