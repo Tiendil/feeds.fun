@@ -8,7 +8,7 @@ source = ".harness/AGENTS.md.tera"
 mode = "template"
 permissions = "0644"
 variants = [
-  { default = true, target = "{{ config_root }}/TMP_AGENTS.md" },
+  { default = true, target = "{{ config_root }}/AGENTS.md" },
 ]
 
 [tasks."harness:load"]
@@ -19,7 +19,7 @@ run = 'mise bootstrap repos update --yes .vendor/shared-harness'
 [tasks."harness:agents.md:generate"]
 description = "Regenerate AGENTS.md"
 dir = "{{ config_root }}"
-run = 'mise dot apply --yes "{{ config_root }}/TMP_AGENTS.md"'
+run = 'mise dot apply --yes "{{ config_root }}/AGENTS.md"'
 
 [tasks."harness:generate"]
 description = "Regenerate harness"

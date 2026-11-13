@@ -4,6 +4,7 @@
 For the needs of this section, text artifacts are any text-based files, including but not limited to source code, configuration files, specification files, and documentation.
 
 You may use grep-like/search/specialized tools to discover relevant text artifacts files.
+Search results MUST be treated only as discovery hints.
 
 You MUST read text artifacts in full from beginning to end before relying on, interpreting, reviewing, or changing them.
 

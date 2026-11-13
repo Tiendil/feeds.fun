@@ -3,7 +3,7 @@
 
 {{ read_file(path=".harness/agents.md.d/environment.md") | trim }}
 
-{#- Principles -#}
+{#- Principles #}
 
 {{ read_file(path=".harness/agents.md.d/principles/intro.md") | trim }}
 
@@ -13,7 +13,7 @@
 
 {{ read_file(path=".harness/agents.md.d/principles/implementation.md") | trim }}
 
-{#- Behavior -#}
+{#- Behavior #}
 
 {{ read_file(path=".harness/agents.md.d/behavior/intro.md") | trim }}
 
@@ -33,7 +33,7 @@
 
 {{ read_file(path=".harness/agents.md.d/behavior/restrictions/git.md") | trim }}
 
-{#- CLI tools -#}
+{#- CLI tools #}
 
 {{ read_file(path=".harness/agents.md.d/cli_tools/intro.md") | trim }}
 

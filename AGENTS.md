@@ -1,18 +1,9 @@
+
 # Instructions for the AI Agents
 
 This document provides instructions and guidelines for the AI agents working on this project.
 
 Every agent MUST follow the rules and guidelines outlined in this document when performing their work.
-
-## Simplicity-first design
-
-- Start with the smallest design that satisfies the current explicit requirements and preserves existing behavior. Do not design for hypothetical future requirements.
-- Every proposed abstraction, entity, table, column, persisted value, variant, or workflow must serve a current requirement and have a current consumer. If removing it does not break required behavior or an existing invariant, omit it.
-- Prefer one source of truth. Derive information when it is unambiguous, and do not duplicate facts for convenience, symmetry, debugging, auditability, or possible future use unless explicitly required.
-- Before presenting or implementing a design, perform a subtraction pass: try removing each newly introduced concept and keep it only when its absence causes a concrete problem.
-- Consider corner cases only when they follow from current requirements, existing behavior, or observed data and materially affect the design. Defer speculative cases instead of building for them.
-- When several approaches satisfy the requirements, recommend the one with fewer concepts, states, branches, storage paths, and migrations. Present additional flexibility only as an optional extension.
-- Simplicity does not mean merging unrelated interfaces at any cost. Do not combine APIs when doing so introduces mutually exclusive optional arguments, invalid states, or pervasive runtime branching.
 
 ## Environment
 
@@ -32,24 +23,117 @@ Command you are allowed to use:
 Code and file searches MUST run on the host using host-installed tools, including `ast-grep` and `rg`, without Docker or development-helper wrappers.
 Read and manipulate code on the host machine as well.
 
-## Resticted changes / operations
+## Principles
 
-You ABSOLUTELY MUST NOT perform the following operations without explicit instructions to do so:
+You MUST follow principles defined in these sections for every related task you perform.
 
-- Changing `docker-compose.yml` or any Docker-related configuration.
-- Changing Docker runtime parameters (like allocated resources, volumes, etc.).
-- Changing running Docker services related to other projects or unrelated to development environment.
-- Installing any new dependencies, both for frontend and backend.
-- Updating lock files.
-- Installing any new tools, utilities, or software on the host machine or in the development containers.
+### Fundamentals
+
+These principles are your primary guide doing ALL tasks.
+
+- KISS (Keep It Simple, Stupid) principles.
+- DRY (Don't Repeat Yourself) principles.
+- YAGNI (You Aren't Gonna Need It) principles.
+- SOLID (Single Responsibility, Open-Closed, Liskov Substitution, Interface Segregation, Dependency Inversion) principles.
+- HCD (Human-Centered Design) principles — place the human user at the center of the design process, ensuring that the system is usable, accessible, and meets the needs of its intended audience.
+- DCD (Developer-Centered Design) principles — place the developer at the center of the design process, ensuring that the system is maintainable, extensible, and meets the needs of its intended developers.
+
+### Design
+
+These principles are your primary guide for making design decisions.
+
+- Start with the smallest design that satisfies the current explicit requirements and preserves existing behavior. Do not design for hypothetical future requirements.
+- Every proposed abstraction, entity, persisted value, workflow, etc. must serve a current requirement and have a current consumer. If removing it does not break required behavior or an existing invariant, omit it.
+- Prefer one source of truth. Derive information when it is unambiguous, and do not duplicate facts for convenience, symmetry, debugging, auditability, or possible future use unless explicitly required.
+- Before presenting or implementing a design, perform a subtraction pass: try removing each newly introduced concept and keep it only when its absence causes a concrete problem.
+- Consider corner cases only when they follow from current requirements, existing behavior, or observed data and materially affect the design. Defer speculative cases instead of building for them.
+- When several approaches satisfy the requirements, recommend the less complicated one (with fewer concepts, states, exectution paths, etc.). Present additional flexibility only as an optional extension.
+
+### Implementation
+
+These principles are your primary guide for making implementation decisions.
+
+- Simplicity does not mean merging unrelated interfaces at any cost. Do not combine APIs when doing so introduces mutually exclusive optional arguments, invalid states, pervasive runtime branching, etc.
+
+## Behavior
+
+You MUST adjust your behavior according to rules in these sections.
+
+### Reaction on the developer commands
+
+When processing developer commands, you MUST follow these rules:
+
+- When the developer asks you a question — answer it as a question. Do not implement the answer as a code change or a plan, just answer the question.
+
+### Ask the developer when
+
+You MUST ask an explicit question to the developer when:
+
+- You want or need to perform one of restricted operations.
+- You are choosing between multiple options with significant consequences and have no instructions on fully autonomous decision-making.
+- You encounter / discover a fact that critically changes the context/requirements/outcome of your current task.
+
+When you are asking the developer, you MUST provide:
+
+- A clear description of the operation you want to perform.
+- A clear explanation of why you want to perform the operation.
+- A clear explanation of the potential consequences of performing the operation.
+
+### Working with text artifacts
+
+For the needs of this section, text artifacts are any text-based files, including but not limited to source code, configuration files, specification files, and documentation.
+
+You may use grep-like/search/specialized tools to discover relevant text artifacts files.
+Search results MUST be treated only as discovery hints.
+
+You MUST read text artifacts in full from beginning to end before relying on, interpreting, reviewing, or changing them.
+
+You MUST NOT use partial-file reading methods (such as `sed`, `head`, `tail`, line-range readers, grep context output, etc.) to read text artifacts.
+
+If a whole-file read is truncated, you MUST repeat it with sufficient output capacity and MUST NOT proceed until the complete file has been read.
+
+Special exceptions to the above rules are:
+
+- You may skip reading each file when bulk editing of particular parts of text artifacts (replacing a particular string in all source files, renaming a particular function, etc.).
+
+### Resticted operations
+
+You ABSOLUTELY MUST NOT perform the following operations without explicit instructions to do so.
+
+#### Project restrictions
+
+You MUST NOT perform the following operations without explicit instructions to do so:
+
 - Changing project structure, such as moving files around, creating new directories, etc.
+
+#### Dependencies restrictions
+
+You MUST NOT perform the following operations without explicit instructions to do so:
+
+- Installing any new dependencies for any part of the project.
+- Updating any kind of lock files.
+- Installing any new tools, utilities, or software on the host machine or in the development containers.
+
+#### Docker restrictions
+
+You MUST NOT perform the following operations without explicit instructions to do so:
+
+- Changing `docker-compose.yml`, Dockerfiles or any image-/container-related configuration files.
+- Changing Docker service runtime parameters (such as allocated resources, volumes, etc.).
+- Changing running Docker services related to other projects or unrelated to the current environment.
+
+#### Git restrictions
+
+You MUST NOT perform the following operations without explicit instructions to do so:
+
 - Staging or unstaging files in git, including commands such as `git add`, `git restore --staged`, and `git reset`.
+- Changing git configuration.
 
-If you want to change something in the above list, you MUST ask for explicit instructions and permission to do so.
+## CLI Tools
 
-## Top priority tools
+These CLI tools MUST have the highest priority when an agent is deciding which tool to use for a given task.
 
-These tools MUST have the highest priority when an agent is deciding which tool to use for a given task:
+You MUST run all listed tools on the host machine unless explicitly instructed to run them in other ways (in a Docker container, in a virtual environment, etc.).
 
 ### `donna`
 
@@ -86,6 +170,28 @@ At the start of each work session, read the `depmesh` usage instructions for det
 depmesh skill usage
 ```
 
+### `ast-grep`
+
+`ast-grep` — a tool for searching and manipulating Abstract Syntax Trees in code. Use it when you work with particular code patterns, structures, or constructs in the codebase.
+
+You MUST use it to:
+
+- Search for specific code patterns or structures in the codebase.
+- Extract information from code, such as function definitions, variable declarations, or specific code constructs.
+- Analyze code for specific patterns or anti-patterns, such as code smells, security vulnerabilities, performance issues, specific usage of libraries or APIs, etc.
+- Refactor particular code patterns or structures across the codebase.
+- Introduce new small behaviors or features into existing code.
+
+You MUST NOT use it for:
+
+- Implementing huge features or behaviors that require adding massive blocks of code (like adding a new class, module, writing a huge function, etc.).
+
+### `rg`
+
+Use `rg` for text and file searches.
+
+`ast-grep` has a higher priority than `rg` whenever a structural code query is needed.
+
 ### `difftastic`
 
 Use `difft` as the default tool for inspecting code changes and whenever a semantic, syntax-aware diff is useful. Prefer stable, agent-readable output:
@@ -98,6 +204,62 @@ GIT_EXTERNAL_DIFF="difft --display=inline --color=never --context=6" git --no-pa
 ```
 
 Use a classic line-oriented diff, such as `git --no-pager diff --no-ext-diff` or `diff -u`, only when the task explicitly requires raw line-by-line output—for example, producing a patch, inspecting exact whitespace or line endings, or supplying unified-diff input to another tool. Do not choose a classic diff merely because a change is small or limited to text.
+
+### `taskwarrior`
+
+`task` — Taskwarrior — is the project journal for significant agent-side work.
+
+You MUST use it to write journal records with these exact command templates from the project root:
+
+```bash
+./bin/taskwarior.sh log +journal +agent kind:goal "<goal description>"
+./bin/taskwarior.sh log +journal +agent kind:step "<phase progress or completion handoff>"
+./bin/taskwarior.sh log +journal +agent kind:thought "<important thought>"
+./bin/taskwarior.sh log +journal +agent kind:assumption "<important assumption>"
+./bin/taskwarior.sh log +journal +agent kind:change "<what changed and where>"
+```
+
+Journal messages MUST be single-line strings.
+
+You MUST log:
+
+- Goals of long-running agent-side operations with `kind:goal`.
+- Significant steps of long-running operations with `kind:step`.
+- Significant thoughts during long-running operations with `kind:thought`.
+- Significant assumptions during long-running operations with `kind:assumption`.
+- Changes in project source code or project structure with `kind:change`.
+
+You MAY add extra tags after `+agent` and before the message:
+
+```bash
+./bin/taskwarior.sh log +journal +agent kind:<message-kind> +<extra-tag>... "<single-line journal message>"
+```
+
+For each non-trivial Donna action request or long-running agent task:
+
+1. Write exactly one `goal` record at action-request or task start.
+2. Write `step` records at significant phase boundaries.
+3. Write `change` records after each meaningful source update batch.
+4. Write one final `step` record immediately before reporting completion or handing work back to the developer.
+
+You MUST consider these cases significant phase boundaries:
+
+- A work phase expected to take more than 10 seconds.
+- Transition from analysis or research to implementation.
+- Transition to a new step in a multi-step process.
+- Start or completion of a multi-file or multi-artifact change batch.
+- A decision that changes implementation direction.
+
+You MUST NOT log:
+
+- CLI commands you execute.
+- Elementary or trivial steps.
+
+You can read the logged journal with:
+
+```bash
+./bin/journal-tail.py --lines 20
+```
 
 ### `inconsistency-check.py`
 
@@ -156,93 +318,3 @@ The script stores its relation-pair queue and runtime files only under `@/.sessi
 Relation-pair state and structured pair-operation history are stored in
 `@/.session/inconsistency-check/state.sqlite3`. The previously migrated `taskwarrior/` database and `operations.jsonl`
 remain as recoverable artifacts; the script does not read, write, or delete them.
-
-### `ast-grep`
-
-`ast-grep` — a tool for searching and manipulating Abstract Syntax Trees in code. Use it when you work with particular code patterns, structures, or constructs in the codebase.
-
-Run the host-installed executable directly, for example `ast-grep --help`.
-
-You MUST use it to:
-
-- Search for specific code patterns or structures in the codebase.
-- Extract information from code, such as function definitions, variable declarations, or specific code constructs.
-- Analyze code for specific patterns or anti-patterns, such as code smells, security vulnerabilities, performance issues, specific usage of libraries or APIs, etc.
-- Refactor particular code patterns or structures across the codebase.
-- Introduce new small behaviors or features into existing code.
-
-You MUST NOT use it for:
-
-- Implementing huge features or behaviors that require adding massive blocks of code (like adding a new class, module, writing a huge function, etc.).
-
-### `rg`
-
-Use host-installed `rg` directly for text and file searches.
-
-`ast-grep` has a higher priority than `rg` whenever a structural code query is needed.
-
-### Specification reading
-
-Grep-like tools, including `rg`, MAY be used to discover relevant specification files. Search results MUST be treated only as discovery hints.
-
-Before relying on, interpreting, reviewing, or changing a specification file, an agent MUST read that file in full from beginning to end. Agents MUST NOT use `sed`, `head`, `tail`, line-range readers, grep context output, or any other partial-file reading method to read specification content. If a whole-file read is truncated, the agent MUST repeat it with sufficient output capacity and MUST NOT proceed until the complete file has been read.
-
-### `taskwarrior`
-
-`task` — Taskwarrior — is the project journal for significant agent-side work.
-
-You MUST use it to write journal records with these exact command templates from the project root:
-
-```bash
-./bin/taskwarior.sh log +journal +agent kind:goal "<goal description>"
-./bin/taskwarior.sh log +journal +agent kind:step "<phase progress or completion handoff>"
-./bin/taskwarior.sh log +journal +agent kind:thought "<important thought>"
-./bin/taskwarior.sh log +journal +agent kind:assumption "<important assumption>"
-./bin/taskwarior.sh log +journal +agent kind:change "<what changed and where>"
-```
-
-Journal messages MUST be single-line strings.
-
-You MUST log:
-
-- Goals of long-running agent-side operations with `kind:goal`.
-- Significant steps of long-running operations with `kind:step`.
-- Significant thoughts during long-running operations with `kind:thought`.
-- Significant assumptions during long-running operations with `kind:assumption`.
-- Changes in project source code or project structure with `kind:change`.
-
-You MAY add extra tags after `+agent` and before the message:
-
-```bash
-./bin/taskwarior.sh log +journal +agent kind:<message-kind> +<extra-tag>... "<single-line journal message>"
-```
-
-For each non-trivial Donna action request or long-running agent task:
-
-1. Write exactly one `goal` record at action-request or task start.
-2. Write `step` records at significant phase boundaries.
-3. Write `change` records after each meaningful source update batch.
-4. Write one final `step` record immediately before reporting completion or handing work back to the developer.
-
-You MUST consider these cases significant phase boundaries:
-
-- A work phase expected to take more than 10 seconds.
-- Transition from analysis or research to implementation.
-- Transition to a new step in a multi-step process.
-- Start or completion of a multi-file or multi-artifact change batch.
-- A decision that changes implementation direction.
-
-You MUST NOT log:
-
-- CLI commands you execute.
-- Elementary or trivial steps.
-
-You can read the logged journal with:
-
-```bash
-./bin/journal-tail.py --lines 20
-```
-
-## Special instructions
-
-**When the developer asks you a question — answer it as a question, do not implement the answer as a code change or a plan, just answer the question.**
