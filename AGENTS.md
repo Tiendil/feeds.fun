@@ -96,6 +96,21 @@ Special exceptions to the above rules are:
 
 - You may skip reading each file when bulk editing of particular parts of text artifacts (replacing a particular string in all source files, renaming a particular function, etc.).
 
+### Introducing changes
+
+You MUST separate the stage of introducing changes ("I've introduced some changes and will introduce more later") from the stage of finalizing changes ("I've finished introducing all changes and and count them as final").
+
+On the introducing changes stage:
+
+- You MUST NOT run linters, formatters, or full test suites unless explicitly instructed to do so by the developer or by the project instructions.
+- You MUST NOT run any polishing-related workflows unless explicitly instructed to do so by the developer or by the project instructions.
+- You MAY run subsets of tests to verify that your changes are working as expected.
+
+On the finalizing changes stage:
+
+- You MUST not run separate linters, formatters, or full test suites unless explicitly instructed to do so by the developer or by the project instructions.
+- Instead, you MUST run dedicated polishing workflow that are designed to groom the code after you've introduced changes.
+
 ### Resticted operations
 
 You ABSOLUTELY MUST NOT perform the following operations without explicit instructions to do so.
@@ -137,29 +152,24 @@ You MUST run all listed tools on the host machine unless explicitly instructed t
 
 ### `donna`
 
-Use Donna to run project-local deterministic workflows when the developer, these instructions, or an active Donna workflow explicitly asks for one.
+Use Donna to run project-local deterministic workflows.
 
-Donna controls workflow state only. Agents remain responsible for reading project instructions, using `depmesh` where applicable, editing files, running checks, and reporting results.
+Run Donna workflows only when explicitly instructed to do so by the developer or by the project instructions.
+Do not run workflows on your own initiative.
 
-You may need to read the usage intructions for `donna -p llm skill usage` in these cases:
+When you run Donna workflows: Donna controls workflow state and execution flow, you follow the instructions provided by Donna.
 
-- You need to run a workflow first time in the session.
-- You need to list available workflows first time in the session.
+Run `donna -p llm skill usage` when:
 
-Use Donna's `llm` protocol for agent-facing commands unless a human explicitly asks for another protocol:
+- You run a workflow first time in the session.
+- You need to create a new workflow or modify an existing workflow.
+- You need to perform an operation that is not covered by instructions.
 
-Depmesh is configured to log significant operation steps via `task` tool.
-
-At the start of working session run `donna -p llm list` to list all available workflows.
-
-Do not run `donna -p llm new-session` unless the developer explicitly asks to reset or start a fresh Donna session.
+Run `donna -p llm new-session` when the developer explicitly instructs you to start a new **Donna** session.
 
 Special instructions:
 
 - Use donna polish workflow to groom the code after you've introduced changes (instead of running linters, formatters and while tests manually).
-
-Run Donna workflows only when explicitly instructed to do so by the developer or by the project instructions.
-Do not run workflows on your own initiative.
 
 Here is a list of available workflows.
 
