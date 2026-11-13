@@ -21,3 +21,35 @@ Do not run `donna -p llm new-session` unless the developer explicitly asks to re
 Special instructions:
 
 - Use donna polish workflow to groom the code after you've introduced changes (instead of running linters, formatters and while tests manually).
+
+Run Donna workflows only when explicitly instructed to do so by the developer or by the project instructions.
+Do not run workflows on your own initiative.
+
+Here is a list of available workflows.
+
+<!-- [[[cog
+import json
+import shlex
+import subprocess
+
+import cog
+
+result = subprocess.run(
+    ["donna", "-p", "automation", "list"],
+    check=True,
+    capture_output=True,
+    text=True,
+)
+for line in result.stdout.splitlines():
+    workflow = json.loads(line)
+    if workflow.get("artifact_kind") != "donna.lib.workflow":
+        continue
+    command = shlex.join(["donna", "-p", "llm", "run", workflow["artifact_id"]])
+    cog.outl(f"#### {workflow['artifact_title']}")
+    cog.outl()
+    cog.outl(f"Run `{command}` to execute the workflow.")
+    cog.outl()
+    cog.outl(workflow["content"])
+    cog.outl()
+]]] -->
+<!-- [[[end]]] -->

@@ -19,7 +19,13 @@ run = 'mise bootstrap repos update --yes .vendor/shared-harness'
 [tasks."harness:agents.md:generate"]
 description = "Regenerate AGENTS.md"
 dir = "{{ config_root }}"
-run = 'mise dot apply --yes "{{ config_root }}/AGENTS.md"'
+run = [
+  'mise dot apply --yes "{{ config_root }}/AGENTS.md"',
+  '''
+generated_agents="$(cog -d "{{ config_root }}/AGENTS.md")" &&
+printf '%s\n' "$generated_agents" > "{{ config_root }}/AGENTS.md"
+''',
+]
 
 [tasks."harness:generate"]
 description = "Regenerate harness"

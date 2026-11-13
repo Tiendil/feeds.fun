@@ -158,6 +158,27 @@ Special instructions:
 
 - Use donna polish workflow to groom the code after you've introduced changes (instead of running linters, formatters and while tests manually).
 
+Run Donna workflows only when explicitly instructed to do so by the developer or by the project instructions.
+Do not run workflows on your own initiative.
+
+Here is a list of available workflows.
+
+#### Inconsistency Check Workflow
+
+Run `donna -p llm run @/workflows/inconsistency-check.donna.md` to execute the workflow.
+
+Validate project consistency for artifacts affected by the current work, fixing discovered inconsistencies until every
+checked artifact is consistent. Continue automatically while no action is required, and pause when an unresolved
+consistency issue or checker failure needs agent judgment.
+
+#### Polish Workflow
+
+Run `donna -p llm run @/workflows/polish.donna.md` to execute the workflow.
+
+Polish the repository by formatting code, running semantic validations, and running runtime checks in the required order.
+Successful completion guarantees that formatting, semantic validations, spelling checks, runtime checks, and backend and frontend tests all pass against the final repository state.
+
+
 ### `depmesh`
 
 `depmesh` — a tool for discovering dependencies between project artifacts.
