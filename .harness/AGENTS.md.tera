@@ -5,49 +5,49 @@
 
 {#- Principles #}
 
-{{ read_file(path=".harness/agents.md.d/principles/intro.md") | trim }}
+{{ read_file(path=".vendor/shared-harness/agents.md.d/principles/intro.md") | trim }}
 
-{{ read_file(path=".harness/agents.md.d/principles/fundamentals.md") | trim }}
+{{ read_file(path=".vendor/shared-harness/agents.md.d/principles/fundamentals.md") | trim }}
 
-{{ read_file(path=".harness/agents.md.d/principles/design.md") | trim }}
+{{ read_file(path=".vendor/shared-harness/agents.md.d/principles/design.md") | trim }}
 
-{{ read_file(path=".harness/agents.md.d/principles/implementation.md") | trim }}
+{{ read_file(path=".vendor/shared-harness/agents.md.d/principles/implementation.md") | trim }}
 
 {#- Behavior #}
 
-{{ read_file(path=".harness/agents.md.d/behavior/intro.md") | trim }}
+{{ read_file(path=".vendor/shared-harness/agents.md.d/behavior/intro.md") | trim }}
 
-{{ read_file(path=".harness/agents.md.d/behavior/reaction_on_developer_commands.md") | trim }}
+{{ read_file(path=".vendor/shared-harness/agents.md.d/behavior/reaction_on_developer_commands.md") | trim }}
 
-{{ read_file(path=".harness/agents.md.d/behavior/ask_developer_when.md") | trim }}
+{{ read_file(path=".vendor/shared-harness/agents.md.d/behavior/ask_developer_when.md") | trim }}
 
-{{ read_file(path=".harness/agents.md.d/behavior/working_with_text_artifacts.md") | trim }}
+{{ read_file(path=".vendor/shared-harness/agents.md.d/behavior/working_with_text_artifacts.md") | trim }}
 
 {{ read_file(path=".harness/agents.md.d/behavior/introducing_changes.md") | trim }}
 
-{{ read_file(path=".harness/agents.md.d/behavior/restrictions/intro.md") | trim }}
+{{ read_file(path=".vendor/shared-harness/agents.md.d/behavior/restrictions/intro.md") | trim }}
 
-{{ read_file(path=".harness/agents.md.d/behavior/restrictions/project.md") | trim }}
+{{ read_file(path=".vendor/shared-harness/agents.md.d/behavior/restrictions/project.md") | trim }}
 
-{{ read_file(path=".harness/agents.md.d/behavior/restrictions/dependencies.md") | trim }}
+{{ read_file(path=".vendor/shared-harness/agents.md.d/behavior/restrictions/dependencies.md") | trim }}
 
-{{ read_file(path=".harness/agents.md.d/behavior/restrictions/docker.md") | trim }}
+{{ read_file(path=".vendor/shared-harness/agents.md.d/behavior/restrictions/docker.md") | trim }}
 
-{{ read_file(path=".harness/agents.md.d/behavior/restrictions/git.md") | trim }}
+{{ read_file(path=".vendor/shared-harness/agents.md.d/behavior/restrictions/git.md") | trim }}
 
 {#- CLI tools #}
 
-{{ read_file(path=".harness/agents.md.d/cli_tools/intro.md") | trim }}
+{{ read_file(path=".vendor/shared-harness/agents.md.d/cli_tools/intro.md") | trim }}
 
-{{ read_file(path=".harness/agents.md.d/cli_tools/donna.md") | trim }}
+{{ read_file(path=".vendor/shared-harness/agents.md.d/cli_tools/donna.md") | trim }}
 
-{{ read_file(path=".harness/agents.md.d/cli_tools/depmesh.md") | trim }}
+{{ read_file(path=".vendor/shared-harness/agents.md.d/cli_tools/depmesh.md") | trim }}
 
-{{ read_file(path=".harness/agents.md.d/cli_tools/ast-grep.md") | trim }}
+{{ read_file(path=".vendor/shared-harness/agents.md.d/cli_tools/ast-grep.md") | trim }}
 
-{{ read_file(path=".harness/agents.md.d/cli_tools/rg.md") | trim }}
+{{ read_file(path=".vendor/shared-harness/agents.md.d/cli_tools/rg.md") | trim }}
 
-{{ read_file(path=".harness/agents.md.d/cli_tools/difftastic.md") | trim }}
+{{ read_file(path=".vendor/shared-harness/agents.md.d/cli_tools/difftastic.md") | trim }}
 
 {{ read_file(path=".harness/agents.md.d/cli_tools/taskwarrior.md") | trim }}
 
