@@ -21,6 +21,8 @@
 
 {{ read_file(path=".harness/agents.md.d/behavior/ask_developer_when.md") | trim }}
 
+{{ read_file(path=".harness/agents.md.d/behavior/working_with_text_artifacts.md") | trim }}
+
 {{ read_file(path=".harness/agents.md.d/behavior/restrictions/intro.md") | trim }}
 
 {{ read_file(path=".harness/agents.md.d/behavior/restrictions/project.md") | trim }}
