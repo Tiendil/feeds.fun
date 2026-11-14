@@ -1,20 +1,6 @@
-
-[vars]
-harness_skills = """
-session
-"""
-harness_specs = """
-./meta/format.md
-./meta/content.md
-./meta/directories.md
-./programming/code.md
-./programming/content.md
-"""
-
-
 [bootstrap.repos.".vendor/shared-harness"]
-url = "git@github.com:Tiendil/harness.git"
-ref = "feature/agents-md-construction"
+url = '{{ read_toml(path=".harness/config.toml")["repository"]["url"] }}'
+ref = '{{ read_toml(path=".harness/config.toml")["repository"]["ref"] }}'
 
 [dotfiles."AGENTS.md"]
 source = ".harness/AGENTS.md.tera"
@@ -43,7 +29,7 @@ printf '%s\n' "$generated_agents" > "{{ config_root }}/AGENTS.md"
 [tasks."harness:skills:install"]
 description = "Install shared harness skills"
 dir = "{{ config_root }}"
-env = { HARNESS_SKILLS = "{{ vars.harness_skills }}" }
+env = { HARNESS_SKILLS = '{{ read_toml(path=".harness/config.toml")["skills"] | join(sep="\n") }}' }
 run = '''
 set -eu
 
@@ -60,7 +46,7 @@ printf '%s\n' "$HARNESS_SKILLS" |
 [tasks."harness:specs:install"]
 description = "Install selected shared harness specifications"
 dir = "{{ config_root }}"
-env = { HARNESS_SPECS = "{{ vars.harness_specs }}" }
+env = { HARNESS_SPECS = '{{ read_toml(path=".harness/config.toml")["specs"] | join(sep="\n") }}' }
 run = '''
 set -eu
 

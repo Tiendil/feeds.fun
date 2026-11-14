@@ -1,0 +1,13 @@
+skills = ["session"]
+
+specs = [
+  "meta/format.md",
+  "meta/content.md",
+  "meta/directories.md",
+  "programming/code.md",
+  "programming/content.md",
+]
+
+[repository]
+url = "git@github.com:Tiendil/harness.git"
+ref = "feature/agents-md-construction"
