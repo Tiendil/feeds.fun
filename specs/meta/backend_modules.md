@@ -41,7 +41,7 @@ Its content MUST describe the intended domain contract rather than treating the 
 
 ## Required structure
 
-After the opening sections required by `specs/meta/general.md`, every module specification MUST contain the following top-level sections, in this order:
+After the opening sections required by `specs/meta/format.md`, every module specification MUST contain the following top-level sections, in this order:
 
 1. `Module responsibility`
 2. `Special module rules`

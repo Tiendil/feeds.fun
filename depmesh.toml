@@ -123,24 +123,76 @@ description = "Specifications that apply to the artifact."
 id = "governs"
 description = "Artifacts governed by the specification."
 
-# Every specification document is governed by the general specification rules.
-# Note: general.md governs itself too.
+# Every specification, including copied specifications, is governed by the general meta specifications.
+[[rules]]
+relation = "governed_by"
+input = { type = "glob", pattern = "@/specs/**/*.md" }
+output = { type = "list", artifacts = [
+  "@/specs/meta/format.md",
+  "@/specs/meta/content.md",
+  "@/specs/meta/directories.md",
+] }
+
+# General meta specifications govern every specification document.
+[[rules]]
+relation = "governs"
+input = { type = "one_of", artifacts = [
+  "@/specs/meta/format.md",
+  "@/specs/meta/content.md",
+  "@/specs/meta/directories.md",
+] }
+output = { type = "files", pattern = "@/specs/**/*.md" }
+
+# Software specifications are additionally governed by programming content requirements.
 [[rules]]
 relation = "governed_by"
 input = { type = "any", items = [
-  { type = "glob", pattern = "@/specs/*.md" },
-  { type = "glob", pattern = "@/specs/**/*.md" },
+  { type = "glob", pattern = "@/specs/backend_architecture/**/*.md" },
+  { type = "glob", pattern = "@/specs/frontend_architecture/**/*.md" },
+  { type = "glob", pattern = "@/specs/behavior/**/*.md" },
+  { type = "glob", pattern = "@/specs/programming/**/*.md" },
+  { type = "one_of", artifacts = ["@/specs/meta/backend_modules.md"] },
 ] }
-output = { type = "list", artifacts = ["@/specs/meta/general.md"] }
+output = { type = "list", artifacts = ["@/specs/programming/content.md"] }
 
-# The general specification rules govern every specification document.
-# Note: general.md governs itself too.
+# Programming content requirements govern software specifications, including copied specifications.
 [[rules]]
 relation = "governs"
-input = { type = "one_of", artifacts = ["@/specs/meta/general.md"] }
+input = { type = "one_of", artifacts = ["@/specs/programming/content.md"] }
 output = { type = "union", items = [
-  { type = "files", pattern = "@/specs/*.md" },
-  { type = "files", pattern = "@/specs/**/*.md" },
+  { type = "files", pattern = "@/specs/backend_architecture/**/*.md" },
+  { type = "files", pattern = "@/specs/frontend_architecture/**/*.md" },
+  { type = "files", pattern = "@/specs/behavior/**/*.md" },
+  { type = "files", pattern = "@/specs/programming/**/*.md" },
+  { type = "list", artifacts = ["@/specs/meta/backend_modules.md"] },
+] }
+
+# Copied code conventions apply to backend, frontend, and repository utility source code.
+[[rules]]
+relation = "governed_by"
+input = { type = "any", items = [
+  { type = "glob", pattern = "@/ffun/**/*.py" },
+  { type = "glob", pattern = "@/site/src/**/*.ts" },
+  { type = "glob", pattern = "@/site/src/**/*.vue" },
+  { type = "glob", pattern = "@/site/*.ts" },
+  { type = "glob", pattern = "@/site/*.js" },
+  { type = "glob", pattern = "@/bin/**/*.py" },
+  { type = "glob", pattern = "@/bin/**/*.sh" },
+] }
+output = { type = "list", artifacts = ["@/specs/programming/code.md"] }
+
+# Copied code conventions govern project source code in both runtime and tooling directories.
+[[rules]]
+relation = "governs"
+input = { type = "one_of", artifacts = ["@/specs/programming/code.md"] }
+output = { type = "union", items = [
+  { type = "files", pattern = "@/ffun/**/*.py" },
+  { type = "files", pattern = "@/site/src/**/*.ts" },
+  { type = "files", pattern = "@/site/src/**/*.vue" },
+  { type = "files", pattern = "@/site/*.ts" },
+  { type = "files", pattern = "@/site/*.js" },
+  { type = "files", pattern = "@/bin/**/*.py" },
+  { type = "files", pattern = "@/bin/**/*.sh" },
 ] }
 
 # CLI command-family specifications are governed by shared CLI behavior.

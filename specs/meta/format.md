@@ -1,18 +1,13 @@
-# General specification requirements
+# Specification structure and style
 
 ## Goal of the document
 
-This document describes the general requirements for specifications in this project.
+This document describes the structure and style conventions for specifications in this project.
 
 ## Scope
 
-The scope of this specification is limited to requirements for specification documents in this project.
-
-The following topics are out of scope except when they affect how specification documents should be written:
-
-- project behavior.
-- implementation requirements.
-- product requirements.
+The scope of this specification is limited to conventions for writing and editing specification documents in this project.
+Decisions about which subject-matter details a specification makes normative are out of scope.
 
 ## Dictionary
 
@@ -57,6 +52,15 @@ The first sections of a specification SHOULD be placed in this order:
 2. `Scope`
 3. `Dictionary`, when the section exists
 
+The `Goal of the document` and `Scope` sections MUST NOT serve as tables of contents or enumerate any of the following merely to summarize the document:
+
+- current features.
+- operations.
+- entities.
+- workflows.
+- requirements.
+- sections.
+
 The `Goal of the document` section MUST describe the document's subject matter and purpose in terms of the content it contains.
 Statements in the section MUST be verifiable from the document's content alone.
 They MUST NOT depend on readers following the specification or on governed artifacts achieving a desired quality.
@@ -73,16 +77,7 @@ The `Goal of the document` section MUST NOT define requirements for the document
 The `Scope` section MUST identify the class of artifacts, behavior, or concerns to which the specification applies.
 It MUST describe that boundary at a stable conceptual level.
 It SHOULD be descriptive rather than normative when it explains what the document covers.
-It MUST NOT serve as a table of contents or enumerate any of the following merely to summarize the document:
 
-- current features.
-- operations.
-- entities.
-- workflows.
-- requirements.
-- sections.
-
-It SHOULD remain accurate when requirements are added, changed, or removed without changing the specification's conceptual boundary.
 An in-scope enumeration MAY be used only when the enumerated set is intentionally closed and membership in that set defines the specification boundary.
 The section SHOULD explicitly mention important adjacent concerns that readers or future authors could reasonably mistake as covered.
 It SHOULD NOT attempt to enumerate every unrelated or excluded concern.
@@ -98,6 +93,13 @@ Terms that are used by multiple specifications SHOULD be defined in `./specs/dic
 - Specifications MUST follow [RFC 2119](https://datatracker.ietf.org/doc/html/rfc2119).
 - Specifications MUST NOT break long lines to fit within 80 characters or any other number; they MUST use as many characters as needed to express the idea clearly.
 - When a prose statement names four or more distinct items, those items SHOULD be formatted as a Markdown list rather than inline prose.
+- Specifications SHOULD use Markdown lists for simple enumerations, including terms with definitions and named items with descriptions or a few associated properties.
+- Tables SHOULD be used only when alignment across rows and columns materially helps readers compare items or understand relationships.
+- Having multiple properties per item MUST NOT by itself justify a table; those properties MAY be expressed within list items or nested lists.
+- Formatting choices SHOULD favor readability of Markdown source and clarity of diffs over compactness of the rendered document.
+
+**Example:** Terms with definitions, or configuration fields with defaults and descriptions, ordinarily belong in lists.
+A comparison of supported capabilities across output formats may justify a table.
 
 Each sentence in a prose paragraph MUST be written on a separate Markdown source line.
 Consecutive sentence lines MUST NOT be separated by a blank line when they belong to the same paragraph.
@@ -126,6 +128,8 @@ Authors SHOULD specifically consider a callout when a requirement involves:
 A callout SHOULD demonstrate the observable consequence of the surrounding requirement.
 It SHOULD NOT merely replace abstract names with invented names while repeating the same statement.
 A specification MAY omit a callout when the requirement is already concrete and adding one would not resolve a plausible ambiguity.
+
+Examples SHOULD NOT serve as inventories of current artifacts, instances, or working arrangements.
 
 Examples and counterexamples MAY use invented names, quantities, and times, but those illustrative values MUST NOT define:
 
@@ -175,63 +179,7 @@ Bold inline labels MUST NOT identify:
 The presence or absence of a label MUST NOT change whether any text is normative.
 Specifications MUST NOT introduce additional bold inline labels without first extending this convention.
 
-## Abstraction level
-
-Specifications MUST describe the following at the highest level that is still precise enough to distinguish conforming from non-conforming implementations:
-
-- project behavior.
-- architecture.
-- constraints.
-- terminology.
-- compatibility contracts.
-
-Specifications SHOULD define:
-
-- externally visible behavior and data contracts.
-- stable architectural boundaries and ownership responsibilities.
-- constraints that must hold across implementations.
-- technology choices when they are part of the intended architecture.
-
-Specifications MUST NOT define incidental implementation details.
-
-Incidental implementation details include:
-
-- private helper function names.
-- exact class names that are not part of a stable project convention or public boundary.
-- exact file paths for code that is not owned by a module-layout or ownership requirement.
-- local constructor signatures.
-- temporary implementation strategies.
-- repeated examples that restate ownership already defined elsewhere without adding a new constraint.
-
-Specifications MAY name the following concrete details when the name itself is a stable contract:
-
-- files.
-- modules.
-- symbols.
-- commands.
-- formats.
-
-Stable contracts include:
-
-- public CLI contracts covering:
-  - commands.
-  - options.
-  - arguments.
-  - output records.
-- configuration file names, fields, and values.
-- module ownership boundaries defined by architecture specifications.
-- naming conventions that all implementations are expected to follow.
-- concrete dependencies or language features that are intentional architectural choices.
-
-When a requirement can be expressed either as an implementation detail or as a general architectural rule, the specification MUST prefer the general rule.
-
-For example, a specification SHOULD require closed sets of named values to use enums instead of raw strings.
-It SHOULD NOT require a specific enum class name or file location unless that class name or location is itself a stable architectural boundary.
-
-Examples in specifications SHOULD illustrate behavior or ownership.
-Examples SHOULD NOT be treated as a place to enumerate every current implementation file or symbol.
-
-### Terminology stability
+## Terminology stability
 
 Names in specifications MUST describe durable domain concepts rather than current implementation, storage, or workflow structure.
 New names SHOULD remain accurate across reasonable architectural changes.
@@ -242,26 +190,17 @@ A rename MUST NOT be made only to mirror an internal architecture, persistence, 
 
 When only one variant needs distinction, specifications SHOULD qualify that variant locally instead of renaming the broader concept throughout the specification.
 
-### Extensible definitions
+## Conceptual descriptions
+
+Specifications SHOULD describe concerns through their meaning, purpose, or defining criteria rather than through inventories of current contents or instances.
+Conceptual wording SHOULD be chosen to remain accurate across reasonable changes in scope, detail, or representation when the underlying concern remains the same.
 
 An extensible concept's definition MUST state its semantic meaning, distinguishing invariants, or membership criteria rather than rely only on an enumeration of current instances.
 An enumeration MAY supplement an extensible definition, but it MUST NOT substitute for it.
 
 Specifications MUST use an exhaustive enumeration only when the set is intentionally closed and its completeness is part of a stable contract.
+An exhaustive enumeration MAY define such a set.
 Examples of members in an extensible set MUST be identified as non-exhaustive.
 
 Adding, changing, or removing an instance of an extensible concept SHOULD NOT require changing the concept's definition unless its invariants or membership criteria change.
 
-## Implementation neutrality
-
-Specifications MUST distinguish required behavior and architectural constraints from recommended implementation practices.
-
-A specification MUST NOT require an implementation mechanism when multiple implementations can satisfy the same required behavior and stable observable contracts, unless that mechanism is itself an intentional architectural requirement or an observable caller contract.
-When a specification requires a concrete implementation mechanism, it MUST state why the mechanism matters or which required property an alternative implementation would violate.
-
-A specification MAY recommend a durable project-wide implementation practice when it promotes a stated project-wide quality, even when alternative implementations can satisfy the same observable contract.
-A recommended implementation practice MUST use `SHOULD` or `SHOULD NOT`, MUST state its intended benefit, and MUST permit justified exceptions.
-Specifications MUST NOT present a local, temporary, or purely stylistic implementation preference as a project-wide practice.
-
-Specifications MUST NOT resolve an implementation choice merely to make a requirement or example more concrete.
-When an implementation choice does not affect the required behavior or stable contract and is not a qualified recommended practice, the specification MUST omit that choice.

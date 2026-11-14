@@ -20,14 +20,19 @@ Detailed requirements for individual specifications are out of scope except for 
 - `specs/frontend_architecture/` contains specifications related to frontend architecture and tests.
 - `specs/documentation/` contains specifications related to repository documentation artifacts.
 - `specs/meta/` contains specifications related to requirements for specification documents.
+- `specs/programming/` contains shared programming conventions and requirements for programming specifications.
 - `specs/tools/` contains specifications related to development and agent tools.
 
 ## Specification documents
 
 - `specs/intro.md` is this file and indexes all specification documents.
 - `specs/dictionary.md` defines Feeds Fun and dependency metadata terms shared by multiple specifications.
-- `specs/meta/general.md` defines general rules for project specification documents.
+- `specs/meta/format.md` defines shared structure and style conventions for specification documents.
+- `specs/meta/content.md` defines shared requirements for the level of detail in specification contracts.
+- `specs/meta/directories.md` defines shared conventions for specification directories and subject areas.
 - `specs/meta/backend_modules.md` defines the common structure and dependency metadata requirements for backend module specifications.
+- `specs/programming/code.md` defines shared conventions for program implementations.
+- `specs/programming/content.md` defines shared content requirements for programming specifications.
 - `specs/backend_architecture/modules_layout.md` describes backend package layout and ownership boundaries.
 - `specs/backend_architecture/python.md` describes language-level implementation conventions for backend Python code.
 - `specs/backend_architecture/db.md` describes backend database access, transactions, migrations, and database-focused testing practices.

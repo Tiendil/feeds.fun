@@ -3,6 +3,14 @@
 harness_skills = """
 session
 """
+harness_specs = """
+./meta/format.md
+./meta/content.md
+./meta/directories.md
+./programming/code.md
+./programming/content.md
+"""
+
 
 [bootstrap.repos.".vendor/shared-harness"]
 url = "git@github.com:Tiendil/harness.git"
@@ -49,12 +57,30 @@ printf '%s\n' "$HARNESS_SKILLS" |
     .agents/skills/
 '''
 
+[tasks."harness:specs:install"]
+description = "Install selected shared harness specifications"
+dir = "{{ config_root }}"
+env = { HARNESS_SPECS = "{{ vars.harness_specs }}" }
+run = '''
+set -eu
+
+mkdir -p specs
+
+printf '%s\n' "$HARNESS_SPECS" |
+  rsync --archive --relative --itemize-changes \
+    --files-from=- \
+    -- \
+    .vendor/shared-harness/specs/ \
+    specs/
+'''
+
 [tasks."harness:generate"]
 description = "Regenerate harness"
 dir = "{{ config_root }}"
 depends = [
   "harness:agents.md:generate",
   "harness:skills:install",
+  "harness:specs:install"
 ]
 
 [tasks."harness:initialize"]
