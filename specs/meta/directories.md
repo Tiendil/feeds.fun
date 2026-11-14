@@ -30,6 +30,7 @@ New areas MUST be recorded in the catalog with descriptions of their subject mat
 
 - `meta` — General requirements governing specification documents across subject areas.
 - `programming` — Program implementations and specifications about them.
+- `documentation` — Project documentation artifacts and conventions for maintaining them.
 
 ## Specification placement
 

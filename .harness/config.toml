@@ -6,6 +6,7 @@ specs = [
   "meta/directories.md",
   "programming/code.md",
   "programming/content.md",
+  "documentation/changelog.md",
 ]
 
 [repository]
