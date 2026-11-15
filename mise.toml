@@ -3,7 +3,7 @@ url = '{{ read_toml(path=".harness/config.toml")["repository"]["url"] }}'
 ref = '{{ read_toml(path=".harness/config.toml")["repository"]["ref"] }}'
 
 [dotfiles."AGENTS.md"]
-source = ".harness/AGENTS.md.tera"
+source = ".vendor/shared-harness/.harness/AGENTS.md.tera"
 mode = "template"
 permissions = "0644"
 variants = [
@@ -20,6 +20,7 @@ description = "Regenerate AGENTS.md"
 dir = "{{ config_root }}"
 depends = ["harness:specs:install"]
 run = [
+  'python3 .vendor/shared-harness/bin/validate-agents-md-fragments.py',
   'mise dot apply --yes "{{ config_root }}/AGENTS.md"',
   '''
 generated_agents="$(cog -d "{{ config_root }}/AGENTS.md")" &&

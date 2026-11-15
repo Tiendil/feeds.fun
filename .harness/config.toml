@@ -17,3 +17,33 @@ ref = "feature/agents-md-construction"
 index_goal_prefixes_to_remove = [
   "This document describes ",
 ]
+
+fragments = [
+  ".vendor/shared-harness/agents.md.d/intro.md",
+  ".harness/agents.md.d/environment.md",
+  ".vendor/shared-harness/agents.md.d/principles/intro.md",
+  ".vendor/shared-harness/agents.md.d/principles/fundamentals.md",
+  ".vendor/shared-harness/agents.md.d/principles/design.md",
+  ".vendor/shared-harness/agents.md.d/principles/implementation.md",
+  ".vendor/shared-harness/agents.md.d/behavior/intro.md",
+  ".vendor/shared-harness/agents.md.d/behavior/reaction_on_developer_commands.md",
+  ".vendor/shared-harness/agents.md.d/behavior/ask_developer_when.md",
+  ".vendor/shared-harness/agents.md.d/behavior/working_with_text_artifacts.md",
+  ".harness/agents.md.d/behavior/introducing_changes.md",
+  ".vendor/shared-harness/agents.md.d/behavior/restrictions/intro.md",
+  ".vendor/shared-harness/agents.md.d/behavior/restrictions/project.md",
+  ".vendor/shared-harness/agents.md.d/behavior/restrictions/dependencies.md",
+  ".vendor/shared-harness/agents.md.d/behavior/restrictions/docker.md",
+  ".vendor/shared-harness/agents.md.d/behavior/restrictions/git.md",
+  ".vendor/shared-harness/agents.md.d/specifications.md",
+  ".vendor/shared-harness/agents.md.d/cli_tools/intro.md",
+  ".vendor/shared-harness/agents.md.d/cli_tools/donna.md",
+  ".vendor/shared-harness/agents.md.d/cli_tools/depmesh.md",
+  ".vendor/shared-harness/agents.md.d/cli_tools/ast-grep.md",
+  ".vendor/shared-harness/agents.md.d/cli_tools/rg.md",
+  ".vendor/shared-harness/agents.md.d/cli_tools/difftastic.md",
+  ".harness/agents.md.d/cli_tools/taskwarrior.md",
+  ".harness/agents.md.d/cli_tools/inconsistency-check.md",
+]
+
+skipped_fragments = []
