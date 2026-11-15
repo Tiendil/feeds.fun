@@ -219,18 +219,6 @@ criteria = [
   "Caller code must use available APIs, names, types, side effects, and call signatures correctly.",
 ]
 
-[relations.terms_defined_by]
-description = "Dictionaries that define terms used by the artifact."
-criteria = [
-  "Dictionary terms used by the artifact must match the dictionary's spelling and meaning.",
-]
-
-[relations.defines_terms_for]
-description = "Artifacts that use terms from the dictionary."
-criteria = [
-  "Artifacts using dictionary terms must match the dictionary's spelling and meaning.",
-]
-
 [modes.strict]
 allowed_file_relations = ["governed_by"]
 requires_branch_change = false
