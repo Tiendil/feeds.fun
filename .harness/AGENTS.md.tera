@@ -35,6 +35,8 @@
 
 {{ read_file(path=".vendor/shared-harness/agents.md.d/behavior/restrictions/git.md") | trim }}
 
+{{ read_file(path=".vendor/shared-harness/agents.md.d/specifications.md") | trim }}
+
 {#- CLI tools #}
 
 {{ read_file(path=".vendor/shared-harness/agents.md.d/cli_tools/intro.md") | trim }}

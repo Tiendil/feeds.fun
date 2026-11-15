@@ -145,6 +145,41 @@ You MUST NOT perform the following operations without explicit instructions to d
 - Staging or unstaging files in git, including commands such as `git add`, `git restore --staged`, and `git reset`.
 - Changing git configuration.
 
+## Specifications
+
+This index lists the available specifications and their goals.
+
+- `specs/backend_architecture/db.md` — how Feeds Fun backend code works with PostgreSQL, including persistence boundaries, transaction handling, query conventions, migration ownership, and database-focused testing practices.
+- `specs/backend_architecture/entities.md` — the architecture of Feeds Fun backend entities and data structures used to pass domain, configuration, integration, and command information between backend modules.
+- `specs/backend_architecture/errors.md` — how Feeds Fun backend modules represent fatal errors and warnings, and how those values move from lower layers to API, CLI, and worker boundaries.
+- `specs/backend_architecture/modules/audit.md` — the responsibility and observable audit behavior of the `ffun.audit` backend module.
+- `specs/backend_architecture/modules/benefits.md` — the responsibility and observable benefit-application behavior of the `ffun.benefits` backend module.
+- `specs/backend_architecture/modules/entitlements.md` — the responsibility and observable entitlement behavior of the `ffun.entitlements` backend module.
+- `specs/backend_architecture/modules/locks.md` — the responsibility and observable coordination behavior of the `ffun.locks` backend module.
+- `specs/backend_architecture/modules/one_time_purchases.md` — the responsibility and observable one-time-purchase behavior of the `ffun.one_time_purchases` backend module.
+- `specs/backend_architecture/modules/resources.md` — the responsibility and observable accounting behavior of the `ffun.resources` backend module.
+- `specs/backend_architecture/modules/subscriptions.md` — the responsibility and observable subscription behavior of the `ffun.subscriptions` backend module.
+- `specs/backend_architecture/modules_layout.md` — the stable backend package layout and ownership boundaries for Feeds Fun.
+- `specs/backend_architecture/python.md` — language-level implementation conventions for Python code in the Feeds Fun backend.
+- `specs/backend_architecture/tests.md` — the architecture of Feeds Fun backend tests, including where tests live, how they relate to backend modules, and how they cover entities and errors.
+- `specs/behavior/cli.md` — the stable shared behavior of the Feeds Fun backend command-line interface.
+- `specs/behavior/cli/benefits.md` — the Feeds Fun CLI command family for applying administrator-authorized benefit transactions and refreshing subscription entitlements from current benefit configuration.
+- `specs/behavior/cli/entitlements.md` — the Feeds Fun CLI command family for inspecting user entitlements.
+- `specs/behavior/cli/subscriptions.md` — the Feeds Fun CLI command family for inspecting locally persisted purchased-subscription snapshots.
+- `specs/behavior/ui_click_tracking.md` — This document defines the UI controls that require click tracking and the naming convention for their tracking identifiers.
+- `specs/dictionary.md` — This document defines Feeds Fun terminology that is shared by multiple specifications and dependency metadata rules.
+- `specs/documentation/changelog.md` — requirements for changelog documentation.
+- `specs/documentation/readme.md` — the expected content, structure, and tone of the Feeds Fun `README.md`.
+- `specs/frontend_architecture/components.md` — the architecture, registration, naming, and composition conventions for Feeds Fun frontend components.
+- `specs/frontend_architecture/modules_layout.md` — the frontend module structure of Feeds Fun.
+- `specs/frontend_architecture/tests.md` — the architecture of Feeds Fun frontend tests, including where tests live, how they relate to frontend modules, and how they cover user-facing logic.
+- `specs/meta/backend_modules.md` — requirements for the structure, abstraction level, and content of specifications for individual Feeds Fun backend modules.
+- `specs/meta/content.md` — requirements for the level of detail in specification contracts.
+- `specs/meta/directories.md` — conventions for organizing specification files into subject areas.
+- `specs/meta/format.md` — the structure and style conventions for specifications in this project.
+- `specs/programming/code.md` — conventions for program implementations.
+- `specs/programming/content.md` — content requirements for programming specifications.
+
 ## CLI Tools
 
 These CLI tools MUST have the highest priority when an agent is deciding which tool to use for a given task.

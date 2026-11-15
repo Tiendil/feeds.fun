@@ -231,18 +231,6 @@ criteria = [
   "Artifacts using dictionary terms must match the dictionary's spelling and meaning.",
 ]
 
-[relations.indexed_by]
-description = "Indexes that list the specification."
-criteria = [
-  "Index references must include the artifact correctly and without stale names.",
-]
-
-[relations.indexes]
-description = "Specifications listed by the index."
-criteria = [
-  "Indexed artifacts must exist conceptually in the index and match its references.",
-]
-
 [modes.strict]
 allowed_file_relations = ["governed_by"]
 requires_branch_change = false

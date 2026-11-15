@@ -18,6 +18,7 @@ run = 'mise bootstrap repos update --yes .vendor/shared-harness'
 [tasks."harness:agents.md:generate"]
 description = "Regenerate AGENTS.md"
 dir = "{{ config_root }}"
+depends = ["harness:specs:install"]
 run = [
   'mise dot apply --yes "{{ config_root }}/AGENTS.md"',
   '''
@@ -65,8 +66,7 @@ description = "Regenerate harness"
 dir = "{{ config_root }}"
 depends = [
   "harness:agents.md:generate",
-  "harness:skills:install",
-  "harness:specs:install"
+  "harness:skills:install"
 ]
 
 [tasks."harness:initialize"]

@@ -473,34 +473,3 @@ output = { type = "union", items = [
   ] },
 ] }
 
-#############################
-# Relation: indexed_by / indexes
-#############################
-
-[[relations]]
-id = "indexed_by"
-description = "Indexes that list the specification."
-
-[[relations]]
-id = "indexes"
-description = "Specifications listed by the index."
-
-# Every specification document is listed by the spec index.
-# Note: intro.md indexes itself too.
-[[rules]]
-relation = "indexed_by"
-input = { type = "any", items = [
-  { type = "glob", pattern = "@/specs/*.md" },
-  { type = "glob", pattern = "@/specs/**/*.md" },
-] }
-output = { type = "list", artifacts = ["@/specs/intro.md"] }
-
-# intro.md indexes every specification document.
-# Note: intro.md indexes itself too.
-[[rules]]
-relation = "indexes"
-input = { type = "one_of", artifacts = ["@/specs/intro.md"] }
-output = { type = "union", items = [
-  { type = "files", pattern = "@/specs/*.md" },
-  { type = "files", pattern = "@/specs/**/*.md" },
-] }
