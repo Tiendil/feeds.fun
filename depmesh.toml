@@ -131,6 +131,7 @@ output = { type = "list", artifacts = [
   "@/specs/meta/format.md",
   "@/specs/meta/content.md",
   "@/specs/meta/directories.md",
+  "@/specs/meta/dictionary.md",
 ] }
 
 # General meta specifications govern every specification document.
@@ -140,6 +141,7 @@ input = { type = "one_of", artifacts = [
   "@/specs/meta/format.md",
   "@/specs/meta/content.md",
   "@/specs/meta/directories.md",
+  "@/specs/meta/dictionary.md",
 ] }
 output = { type = "files", pattern = "@/specs/**/*.md" }
 

@@ -175,6 +175,7 @@ This index lists the available specifications and their goals.
 - `specs/frontend_architecture/tests.md` — the architecture of Feeds Fun frontend tests, including where tests live, how they relate to frontend modules, and how they cover user-facing logic.
 - `specs/meta/backend_modules.md` — requirements for the structure, abstraction level, and content of specifications for individual Feeds Fun backend modules.
 - `specs/meta/content.md` — requirements for the level of detail in specification contracts.
+- `specs/meta/dictionary.md` — conventions for project-level dictionaries and shared project terminology.
 - `specs/meta/directories.md` — conventions for organizing specification files into subject areas.
 - `specs/meta/format.md` — the structure and style conventions for specifications in this project.
 - `specs/programming/code.md` — conventions for program implementations.
@@ -385,3 +386,46 @@ The script stores its relation-pair queue and runtime files only under `@/.sessi
 Relation-pair state and structured pair-operation history are stored in
 `@/.session/inconsistency-check/state.sqlite3`. The previously migrated `taskwarrior/` database and `operations.jsonl`
 remain as recoverable artifacts; the script does not read, write, or delete them.
+
+<!--
+The following specifications are included in full and apply within their stated scopes.
+-->
+
+<!-- BEGIN SPECIFICATION: specs/dictionary.md -->
+
+# Feeds Fun dictionary
+
+## Goal of the document
+
+This document defines Feeds Fun terminology that is shared by multiple specifications and dependency metadata rules.
+
+## Scope
+
+The scope of this specification is limited to project-specific terminology.
+
+Detailed behavior, implementation requirements, and configuration schemas are out of scope.
+
+## Terms
+
+Terms defined in this section are stable project vocabulary. Project artifacts MUST use these terms when referring to the corresponding concepts and MUST preserve them across behavioral, architectural, implementation, and storage changes while their definitions remain accurate. A dictionary term MAY be renamed only when its existing name or definition has become incorrect or ambiguous.
+
+- `feed` - an RSS, Atom, or similar source of news entries.
+- `entry` - one news article or item loaded from a feed.
+- `tag` - semantic label assigned to an entry.
+- `rule` - user-defined score expression based on tags.
+- `collection` - curated feed collection configuration.
+- `integration` - external source-specific behavior, such as YouTube or Reddit support.
+- `benefit parameter` - one named normalized whole-number value accepted by a benefit package template at materialization time.
+- `benefit package template` - the locally controlled definition from which one configured product benefit can be materialized.
+- `benefit package` - one concrete set of entitlement guarantees produced by materializing a benefit package template with normalized benefit parameters.
+- `package materialization` - deterministic validation and application of normalized benefit parameters to one configured benefit package template.
+- `entitlement guarantee` - one entitlement kind and integer value promised by a benefit package or another entitlement-granting product concept.
+- `purchase state` - the current provider-independent understanding of one purchase at one provider update time.
+- `benefit transaction` - one immutable accepted operation that records and atomically applies one complete purchased state.
+- `business state` - every field of a current-state snapshot except its provider update time.
+- `provider update time` - the authoritative time associated with provider-reported purchased state and used to order competing versions of that state.
+- `provider status` - the open-ended lifecycle description received from the external authority for provider-reported purchased state.
+- `audit record` - append-only durable record of a business change or event, including its actor and subject entities.
+- `architecture test` - a test that verifies cross-cutting structural rules or conventions defined by an architecture specification.
+
+<!-- END SPECIFICATION: specs/dictionary.md -->

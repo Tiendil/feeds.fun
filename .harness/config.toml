@@ -4,6 +4,7 @@ specs = [
   "meta/format.md",
   "meta/content.md",
   "meta/directories.md",
+  "meta/dictionary.md",
   "programming/code.md",
   "programming/content.md",
   "documentation/changelog.md",
@@ -14,6 +15,8 @@ url = "git@github.com:Tiendil/harness.git"
 ref = "feature/agents-md-construction"
 
 [agents_md]
+embedded_specs = ["specs/dictionary.md"]
+
 index_goal_prefixes_to_remove = [
   "This document describes ",
 ]

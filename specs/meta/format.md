@@ -84,8 +84,8 @@ It SHOULD NOT attempt to enumerate every unrelated or excluded concern.
 It MUST NOT explain where to find requirements that belong to other specifications.
 
 The `Dictionary` section SHOULD be placed immediately after the `Scope` section.
-It SHOULD contain only terms that are specific to the specification.
-Terms that are used by multiple specifications SHOULD be defined in `./specs/dictionary.md`.
+It SHOULD define the specialized terminology needed to understand the specification's contract.
+Independently reusable specifications SHOULD include those definitions locally, even when other specifications use the same terms.
 
 ## Style
 
