@@ -1,4 +1,5 @@
 ["backend:run"]
+tags = ["agent"]
 description = "Run a command in the backend development container"
 raw = true
 raw_args = true
@@ -6,6 +7,7 @@ quiet = true
 run = "docker compose --profile dev run --rm backend-utils"
 
 ["backend:poetry"]
+tags = ["agent"]
 description = "Run Poetry in the backend development container"
 raw = true
 raw_args = true
@@ -13,6 +15,7 @@ quiet = true
 run = "mise run backend:run -- poetry"
 
 ["backend:ffun"]
+tags = ["agent"]
 description = "Run the backend CLI in the development container"
 raw = true
 raw_args = true
@@ -20,6 +23,7 @@ quiet = true
 run = "mise run backend:poetry -- run ffun"
 
 ["backend:yoyo"]
+tags = ["agent"]
 description = "Run Yoyo in the backend development container"
 raw = true
 raw_args = true
@@ -27,6 +31,7 @@ quiet = true
 run = "mise run backend:poetry -- run yoyo"
 
 ["backend:test"]
+tags = ["agent"]
 description = "Run backend tests"
 raw = true
 raw_args = true

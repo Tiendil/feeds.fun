@@ -40,6 +40,7 @@ fragments = [
   ".vendor/shared-harness/agents.md.d/behavior/restrictions/git.md",
   ".vendor/shared-harness/agents.md.d/specifications.md",
   ".vendor/shared-harness/agents.md.d/cli_tools/intro.md",
+  ".vendor/shared-harness/agents.md.d/cli_tools/mise.md",
   ".vendor/shared-harness/agents.md.d/cli_tools/donna.md",
   ".vendor/shared-harness/agents.md.d/cli_tools/depmesh.md",
   ".vendor/shared-harness/agents.md.d/cli_tools/ast-grep.md",

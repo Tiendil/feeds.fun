@@ -11,17 +11,9 @@ All development-related operations MUST be performed in Docker containers, see `
 
 You MUST not perform any development-related operations directly on the host machine.
 
-Project commands are available as mise tasks. Run `mise tasks ls` to discover them.
+Project commands are available as mise tasks. See the `mise` section for agent permissions and available tasks.
 
-Command you are allowed to use:
-
-- `mise run backend:run -- <command>` — run commands in the backend environment.
-- `mise run backend:poetry -- <arguments>` — run Poetry commands in the backend environment.
-- `mise run backend:ffun -- <arguments>` — run Feeds Fun CLI commands in the backend environment.
-- `mise run backend:yoyo -- <arguments>` — run Yoyo migration commands in the backend environment.
-- `mise run docker:build` — build base Docker images for development. Call this command after making changes to Docker configs or dependencies.
-- `mise run frontend:run -- <command>` — run utils in the frontend environment.
-- `mise run journal:task -- <arguments>` — run Taskwarrior commands related to project journaling.
+Run `mise run docker:build` after making changes to Docker configurations or dependencies.
 
 Code and file searches MUST run on the host using host-installed tools, including `ast-grep` and `rg`, without Docker or development-helper wrappers.
 Read and manipulate code on the host machine as well.
@@ -189,6 +181,57 @@ This index lists the available specifications and their goals.
 These CLI tools MUST have the highest priority when an agent is deciding which tool to use for a given task.
 
 You MUST run all listed tools on the host machine unless explicitly instructed to run them in other ways (in a Docker container, in a virtual environment, etc.).
+
+### `mise`
+
+Use mise to discover and run project tasks. Project tasks tagged `agent` are available to agents, subject to all other project instructions and task-specific restrictions.
+
+You MUST ask the developer for permission before running any other mise task or directly invoking any project script.
+Approved tasks and authorized workflows may run their configured scripts and child tasks; this does not authorize invoking those internals directly or bypassing this rule through a generic runner.
+Adding the `agent` tag to any other task requires developer approval.
+
+Run `mise tasks ls --no-global --hidden --tag agent` to inspect tagged task metadata.
+Pass task arguments after `--`, for example `mise run <task> -- <arguments>`.
+
+The following tasks are available to agents. This list includes task definitions within this repository and its vendored files:
+
+- `mise run backend:ffun` — Run the backend CLI in the development container
+- `mise run backend:poetry` — Run Poetry in the backend development container
+- `mise run backend:run` — Run a command in the backend development container
+- `mise run backend:test` — Run backend tests
+- `mise run backend:yoyo` — Run Yoyo in the backend development container
+- `mise run check:backend:autoflake` — Check for unused Python imports and variables
+- `mise run check:backend:black` — Check Python code formatting
+- `mise run check:backend:cli:configs` — Check that the development CLI prints configuration
+- `mise run check:backend:cli:help` — Check that the development CLI help works
+- `mise run check:backend:flake8` — Check Python code conventions
+- `mise run check:backend:isort` — Check Python import formatting
+- `mise run check:backend:mypy` — Check backend types
+- `mise run check:backend:poetry` — Check backend package configuration
+- `mise run check:backend:spelling` — Check backend code spelling
+- `mise run check:backend:tach` — Check backend module boundaries
+- `mise run check:consistency` — Manage the specification consistency queue
+- `mise run check:format` — Check backend and frontend formatting
+- `mise run check:frontend:prettier` — Check frontend formatting
+- `mise run check:frontend:spelling` — Check frontend code spelling
+- `mise run check:frontend:vue-tsc` — Check frontend types
+- `mise run check:runtime` — Build and check the production backend image
+- `mise run check:semantics` — Check backend and frontend code semantics
+- `mise run check:spelling` — Check backend and frontend code spelling
+- `mise run docker:build` — Build the backend and frontend development images
+- `mise run docker:down:multi-user` — Stop and remove multi-user development containers and shared services, including PostgreSQL
+- `mise run docker:down:single-user` — Stop and remove single-user development containers and shared services, including PostgreSQL
+- `mise run docker:up:multi-user` — Start the multi-user development services in the background
+- `mise run docker:up:single-user` — Start the single-user development services in the background
+- `mise run frontend:run` — Run a command in the frontend development container
+- `mise run frontend:test` — Run frontend tests
+- `mise run harness:agents.md:generate` — Regenerate AGENTS.md
+- `mise run harness:generate` — Regenerate harness
+- `mise run harness:load` — Update shared harness
+- `mise run harness:skills:install` — Install shared harness skills
+- `mise run harness:specs:install` — Install selected shared harness specifications
+- `mise run journal:tail` — Show or follow project journal records
+- `mise run journal:task` — Run Taskwarrior with the project journal configuration
 
 ### `donna`
 
