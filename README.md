@@ -366,6 +366,7 @@ Both shutdown commands also stop and remove shared services, including PostgreSQ
 The [shared harness](https://github.com/Tiendil/harness) provides common agent instructions, specifications, and skills. Its checkout is needed to:
 
 - Regenerate `AGENTS.md` from fragments: `mise run harness:agents.md:generate`.
+- Regenerate Codex configuration: `mise run harness:codex:generate`.
 - Refresh specifications copied from the harness: `mise run harness:specs:install`.
 - Refresh skills copied from the harness: `mise run harness:skills:install`.
 
@@ -376,6 +377,8 @@ mise bootstrap repos apply
 ```
 
 This checks out the harness in `.vendor/shared-harness` using the repository and version configured in [`.harness/config.toml`](.harness/config.toml). To update the checkout later, run `mise run harness:load` before regenerating instructions or refreshing shared specifications and skills.
+
+Run `mise run harness:generate` to regenerate all harness artifacts.
 
 ## Utils
 

@@ -1,0 +1,3 @@
+# Feeds Fun Codex overrides.
+# Matching top-level keys replace shared values entirely, including tables and arrays.
+# Write relative paths for the generated configuration's .codex/ directory.
