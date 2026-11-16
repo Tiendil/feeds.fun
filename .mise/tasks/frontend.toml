@@ -1,0 +1,12 @@
+["frontend:run"]
+description = "Run a command in the frontend development container"
+raw = true
+raw_args = true
+quiet = true
+run = "docker compose --profile dev run --rm frontend-utils"
+
+["frontend:test"]
+description = "Run frontend tests"
+raw = true
+raw_args = true
+run = "mise run frontend:run -- npm run test:unit -- --run"

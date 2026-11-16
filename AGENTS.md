@@ -11,14 +11,17 @@ All development-related operations MUST be performed in Docker containers, see `
 
 You MUST not perform any development-related operations directly on the host machine.
 
-Most important commands have script shortcuts in `./bin` directory.
+Project commands are available as mise tasks. Run `mise tasks ls` to discover them.
 
 Command you are allowed to use:
 
-- `./bin/backend-utils.sh` — run utils in the backend environment, for example `/bin/backend-utils.sh poetry run <your command>`
-- `./bin/build-dev-containers.sh` — build base Docker images for development. Call this command after making changes to Docker configs or dependencies.
-- `./bin/frontend-utils.sh` — run utils in the frontend environment.
-- `./bin/taskwarior.sh` — run Taskwarrior commands related to project journaling.
+- `mise run backend:run -- <command>` — run commands in the backend environment.
+- `mise run backend:poetry -- <arguments>` — run Poetry commands in the backend environment.
+- `mise run backend:ffun -- <arguments>` — run Feeds Fun CLI commands in the backend environment.
+- `mise run backend:yoyo -- <arguments>` — run Yoyo migration commands in the backend environment.
+- `mise run docker:build` — build base Docker images for development. Call this command after making changes to Docker configs or dependencies.
+- `mise run frontend:run -- <command>` — run utils in the frontend environment.
+- `mise run journal:task -- <arguments>` — run Taskwarrior commands related to project journaling.
 
 Code and file searches MUST run on the host using host-installed tools, including `ast-grep` and `rg`, without Docker or development-helper wrappers.
 Read and manipulate code on the host machine as well.
@@ -280,11 +283,11 @@ Use a classic line-oriented diff, such as `git --no-pager diff --no-ext-diff` or
 You MUST use it to write journal records with these exact command templates from the project root:
 
 ```bash
-./bin/taskwarior.sh log +journal +agent kind:goal "<goal description>"
-./bin/taskwarior.sh log +journal +agent kind:step "<phase progress or completion handoff>"
-./bin/taskwarior.sh log +journal +agent kind:thought "<important thought>"
-./bin/taskwarior.sh log +journal +agent kind:assumption "<important assumption>"
-./bin/taskwarior.sh log +journal +agent kind:change "<what changed and where>"
+mise run journal:task -- log +journal +agent kind:goal "<goal description>"
+mise run journal:task -- log +journal +agent kind:step "<phase progress or completion handoff>"
+mise run journal:task -- log +journal +agent kind:thought "<important thought>"
+mise run journal:task -- log +journal +agent kind:assumption "<important assumption>"
+mise run journal:task -- log +journal +agent kind:change "<what changed and where>"
 ```
 
 Journal messages MUST be single-line strings.
@@ -300,7 +303,7 @@ You MUST log:
 You MAY add extra tags after `+agent` and before the message:
 
 ```bash
-./bin/taskwarior.sh log +journal +agent kind:<message-kind> +<extra-tag>... "<single-line journal message>"
+mise run journal:task -- log +journal +agent kind:<message-kind> +<extra-tag>... "<single-line journal message>"
 ```
 
 For each non-trivial Donna action request or long-running agent task:
@@ -326,12 +329,12 @@ You MUST NOT log:
 You can read the logged journal with:
 
 ```bash
-./bin/journal-tail.py --lines 20
+mise run journal:tail -- --lines 20
 ```
 
-### `inconsistency-check.py`
+### `mise run check:consistency`
 
-`./bin/inconsistency-check.py` — a direct helper script for managing the depmesh-backed consistency-check queue.
+`mise run check:consistency` — a task for managing the depmesh-backed consistency-check queue.
 
 Use this script only when the developer explicitly asks you to run it, or when an active workflow explicitly instructs
 you to run it. Do not run it opportunistically as a general dependency or consistency check.
@@ -367,20 +370,20 @@ are cleared.
 
 Main commands:
 
-- `python ./bin/inconsistency-check.py enqueue @/path/to/file` — manually add one file and all configured depmesh relation pairs for that file to the isolated queue.
-- `python ./bin/inconsistency-check.py enqueue @/first @/second` — enqueue multiple files.
-- `python ./bin/inconsistency-check.py enqueue-changed` — enqueue all relation pairs for files changed relative to `main` without processing unchecked pairs or spawning child checkers.
-- `python ./bin/inconsistency-check.py sync-queue` — reconcile the mode-eligible queue without processing pairs.
-- `python ./bin/inconsistency-check.py list-pairs --current` — show only current-checksum records for relations still returned by `depmesh`.
-- `python ./bin/inconsistency-check.py list-operations --last 20` — show the latest pair operations oldest-to-newest within the selected tail.
-- `python ./bin/inconsistency-check.py progress --file @/path/to/file` — show queued records where the file is either the changed side or the related side.
-- `python ./bin/inconsistency-check.py mark-consistent --changed @/changed --related @/related --relation <relation>` — explicitly mark the current-checksum relation pair as consistent.
-- `python ./bin/inconsistency-check.py mark-unchecked --changed @/changed --related @/related --relation <relation>` — reset the current-checksum relation pair to unchecked, clear its previous reviewer result, and require checker reevaluation.
-- `python ./bin/inconsistency-check.py mark-inconsistent --changed @/changed --related @/related --relation <relation> --report "<markdown>"` — explicitly mark the current-checksum relation pair as inconsistent.
-- `python ./bin/inconsistency-check.py clear-queue` — delete all records from the isolated relation-pair queue without deleting pair-operation history.
-- `python ./bin/inconsistency-check.py run-cycle` — reconcile the queue and process one mode-eligible dependency frontier.
-- `python ./bin/inconsistency-check.py process-queue` — process one mode-eligible dependency frontier.
-- `python ./bin/inconsistency-check.py self-check` — run deterministic script verification without spawning a child Codex checker.
+- `mise run check:consistency -- enqueue @/path/to/file` — manually add one file and all configured depmesh relation pairs for that file to the isolated queue.
+- `mise run check:consistency -- enqueue @/first @/second` — enqueue multiple files.
+- `mise run check:consistency -- enqueue-changed` — enqueue all relation pairs for files changed relative to `main` without processing unchecked pairs or spawning child checkers.
+- `mise run check:consistency -- sync-queue` — reconcile the mode-eligible queue without processing pairs.
+- `mise run check:consistency -- list-pairs --current` — show only current-checksum records for relations still returned by `depmesh`.
+- `mise run check:consistency -- list-operations --last 20` — show the latest pair operations oldest-to-newest within the selected tail.
+- `mise run check:consistency -- progress --file @/path/to/file` — show queued records where the file is either the changed side or the related side.
+- `mise run check:consistency -- mark-consistent --changed @/changed --related @/related --relation <relation>` — explicitly mark the current-checksum relation pair as consistent.
+- `mise run check:consistency -- mark-unchecked --changed @/changed --related @/related --relation <relation>` — reset the current-checksum relation pair to unchecked, clear its previous reviewer result, and require checker reevaluation.
+- `mise run check:consistency -- mark-inconsistent --changed @/changed --related @/related --relation <relation> --report "<markdown>"` — explicitly mark the current-checksum relation pair as inconsistent.
+- `mise run check:consistency -- clear-queue` — delete all records from the isolated relation-pair queue without deleting pair-operation history.
+- `mise run check:consistency -- run-cycle` — reconcile the queue and process one mode-eligible dependency frontier.
+- `mise run check:consistency -- process-queue` — process one mode-eligible dependency frontier.
+- `mise run check:consistency -- self-check` — run deterministic script verification without spawning a child Codex checker.
 
 The script stores its relation-pair queue and runtime files only under `@/.session/inconsistency-check/`.
 Relation-pair state and structured pair-operation history are stored in

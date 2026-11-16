@@ -35,7 +35,7 @@ export COMMIT_BODY=$(poetry run changy version show $NEXT_VERSION)
 
 echo "Building Python package"
 
-poetry build
+mise run package:build:backend
 
 echo "Set frontend version"
 

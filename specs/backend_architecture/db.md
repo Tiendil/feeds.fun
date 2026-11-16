@@ -287,13 +287,13 @@ Development migration commands MUST be run through the backend development conta
 The preferred command for applying migrations in development is:
 
 ```bash
-./bin/backend-utils.sh poetry run ffun migrate
+mise run backend:ffun -- migrate
 ```
 
 The preferred command for creating a new backend migration is:
 
 ```bash
-./bin/backend-utils.sh poetry run yoyo new --message "what you want to do" ./ffun/<component>/migrations/
+mise run backend:yoyo -- new --message "what you want to do" ./ffun/<component>/migrations/
 ```
 
 The migration path in the command above intentionally uses the path layout visible inside the backend container.
@@ -311,13 +311,13 @@ Tests MUST be run through backend development container commands.
 The preferred command for all backend tests is:
 
 ```bash
-./bin/backend-tests.sh
+mise run backend:test
 ```
 
 The preferred command for targeted backend tests is:
 
 ```bash
-./bin/backend-utils.sh poetry run pytest <path>
+mise run backend:poetry -- run pytest <path>
 ```
 
 Backend test setup SHOULD apply all migrations before database-backed tests run and roll them back after the test session.

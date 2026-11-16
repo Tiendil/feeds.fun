@@ -1,0 +1,23 @@
+["docker:pull:postgresql"]
+description = "Pull the development PostgreSQL image"
+run = "docker compose pull postgresql"
+
+["docker:build"]
+description = "Build the backend and frontend development images"
+run = "docker compose --profile dev-build build backend-build frontend-build"
+
+["docker:up:multi-user"]
+description = "Start the multi-user development services in the background"
+run = "docker compose --profile multi-user up -d"
+
+["docker:up:single-user"]
+description = "Start the single-user development services in the background"
+run = "docker compose --profile single-user up -d"
+
+["docker:down:multi-user"]
+description = "Stop and remove multi-user development containers and shared services, including PostgreSQL"
+run = "docker compose --profile multi-user down"
+
+["docker:down:single-user"]
+description = "Stop and remove single-user development containers and shared services, including PostgreSQL"
+run = "docker compose --profile single-user down"

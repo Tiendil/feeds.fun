@@ -1,7 +1,7 @@
 
-### `inconsistency-check.py`
+### `mise run check:consistency`
 
-`./bin/inconsistency-check.py` — a direct helper script for managing the depmesh-backed consistency-check queue.
+`mise run check:consistency` — a task for managing the depmesh-backed consistency-check queue.
 
 Use this script only when the developer explicitly asks you to run it, or when an active workflow explicitly instructs
 you to run it. Do not run it opportunistically as a general dependency or consistency check.
@@ -37,20 +37,20 @@ are cleared.
 
 Main commands:
 
-- `python ./bin/inconsistency-check.py enqueue @/path/to/file` — manually add one file and all configured depmesh relation pairs for that file to the isolated queue.
-- `python ./bin/inconsistency-check.py enqueue @/first @/second` — enqueue multiple files.
-- `python ./bin/inconsistency-check.py enqueue-changed` — enqueue all relation pairs for files changed relative to `main` without processing unchecked pairs or spawning child checkers.
-- `python ./bin/inconsistency-check.py sync-queue` — reconcile the mode-eligible queue without processing pairs.
-- `python ./bin/inconsistency-check.py list-pairs --current` — show only current-checksum records for relations still returned by `depmesh`.
-- `python ./bin/inconsistency-check.py list-operations --last 20` — show the latest pair operations oldest-to-newest within the selected tail.
-- `python ./bin/inconsistency-check.py progress --file @/path/to/file` — show queued records where the file is either the changed side or the related side.
-- `python ./bin/inconsistency-check.py mark-consistent --changed @/changed --related @/related --relation <relation>` — explicitly mark the current-checksum relation pair as consistent.
-- `python ./bin/inconsistency-check.py mark-unchecked --changed @/changed --related @/related --relation <relation>` — reset the current-checksum relation pair to unchecked, clear its previous reviewer result, and require checker reevaluation.
-- `python ./bin/inconsistency-check.py mark-inconsistent --changed @/changed --related @/related --relation <relation> --report "<markdown>"` — explicitly mark the current-checksum relation pair as inconsistent.
-- `python ./bin/inconsistency-check.py clear-queue` — delete all records from the isolated relation-pair queue without deleting pair-operation history.
-- `python ./bin/inconsistency-check.py run-cycle` — reconcile the queue and process one mode-eligible dependency frontier.
-- `python ./bin/inconsistency-check.py process-queue` — process one mode-eligible dependency frontier.
-- `python ./bin/inconsistency-check.py self-check` — run deterministic script verification without spawning a child Codex checker.
+- `mise run check:consistency -- enqueue @/path/to/file` — manually add one file and all configured depmesh relation pairs for that file to the isolated queue.
+- `mise run check:consistency -- enqueue @/first @/second` — enqueue multiple files.
+- `mise run check:consistency -- enqueue-changed` — enqueue all relation pairs for files changed relative to `main` without processing unchecked pairs or spawning child checkers.
+- `mise run check:consistency -- sync-queue` — reconcile the mode-eligible queue without processing pairs.
+- `mise run check:consistency -- list-pairs --current` — show only current-checksum records for relations still returned by `depmesh`.
+- `mise run check:consistency -- list-operations --last 20` — show the latest pair operations oldest-to-newest within the selected tail.
+- `mise run check:consistency -- progress --file @/path/to/file` — show queued records where the file is either the changed side or the related side.
+- `mise run check:consistency -- mark-consistent --changed @/changed --related @/related --relation <relation>` — explicitly mark the current-checksum relation pair as consistent.
+- `mise run check:consistency -- mark-unchecked --changed @/changed --related @/related --relation <relation>` — reset the current-checksum relation pair to unchecked, clear its previous reviewer result, and require checker reevaluation.
+- `mise run check:consistency -- mark-inconsistent --changed @/changed --related @/related --relation <relation> --report "<markdown>"` — explicitly mark the current-checksum relation pair as inconsistent.
+- `mise run check:consistency -- clear-queue` — delete all records from the isolated relation-pair queue without deleting pair-operation history.
+- `mise run check:consistency -- run-cycle` — reconcile the queue and process one mode-eligible dependency frontier.
+- `mise run check:consistency -- process-queue` — process one mode-eligible dependency frontier.
+- `mise run check:consistency -- self-check` — run deterministic script verification without spawning a child Codex checker.
 
 The script stores its relation-pair queue and runtime files only under `@/.session/inconsistency-check/`.
 Relation-pair state and structured pair-operation history are stored in

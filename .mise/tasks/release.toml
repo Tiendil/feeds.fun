@@ -1,0 +1,14 @@
+["package:build:backend"]
+description = "Build the backend distribution for release"
+dir = "{{ vars.harness_project_root }}/ffun"
+run = "poetry build"
+
+["package:publish:frontend"]
+description = "Publish the frontend distribution to npm"
+dir = "{{ vars.harness_project_root }}/site"
+run = "npm publish"
+
+["release:prepare"]
+description = "Prepare, commit, and tag a release"
+usage = 'arg "<bump_version>" help="Version bump passed to Poetry and npm"'
+run = './bin/prepare-release.sh "${usage_bump_version?}"'

@@ -24,7 +24,7 @@ timeout = 300
 
 set -e
 
-./bin/backend-utils.sh poetry run pytest --maxfail=1 ffun
+mise run backend:test -- --maxfail=1
 ```
 
 ## Fix broken test
@@ -57,7 +57,7 @@ goto_on_failure = "fix_frontend_tests"
 
 set -e
 
-./bin/frontend-utils.sh npm run test:unit -- --run --bail=1
+mise run frontend:test -- --bail=1
 ```
 
 ## Fix frontend tests
@@ -90,7 +90,7 @@ goto_on_failure = "fix_backend_format_autoflake"
 
 set -e
 
-./bin/backend-utils.sh poetry run autoflake .
+mise run format:backend:autoflake
 ```
 
 ## Fix backend formatting: autoflake
@@ -122,7 +122,7 @@ goto_on_failure = "fix_backend_format_isort"
 
 set -e
 
-./bin/backend-utils.sh poetry run isort .
+mise run format:backend:isort
 ```
 
 ## Fix backend formatting: isort
@@ -154,7 +154,7 @@ goto_on_failure = "fix_backend_format_black"
 
 set -e
 
-./bin/backend-utils.sh poetry run black .
+mise run format:backend:black
 ```
 
 ## Fix backend formatting: black
@@ -186,7 +186,7 @@ goto_on_failure = "fix_frontend_format"
 
 set -e
 
-./bin/frontend-utils.sh npm run format
+mise run format:frontend:prettier
 ```
 
 ## Fix frontend formatting
@@ -218,7 +218,7 @@ goto_on_failure = "fix_backend_semantics_tach"
 
 set -e
 
-./bin/backend-utils.sh poetry run tach check
+mise run check:backend:tach
 ```
 
 ## Fix backend semantic checks: tach
@@ -250,7 +250,7 @@ goto_on_failure = "fix_backend_semantics_autoflake_check"
 
 set -e
 
-./bin/backend-utils.sh poetry run autoflake --check --quiet .
+mise run check:backend:autoflake
 ```
 
 ## Fix backend semantic checks: autoflake check
@@ -282,7 +282,7 @@ goto_on_failure = "fix_backend_semantics_flake8"
 
 set -e
 
-./bin/backend-utils.sh poetry run flake8 .
+mise run check:backend:flake8
 ```
 
 ## Fix backend semantic checks: flake8
@@ -322,7 +322,7 @@ goto_on_failure = "fix_backend_semantics_mypy"
 
 set -e
 
-./bin/backend-utils.sh poetry run mypy --show-traceback .
+mise run check:backend:mypy
 ```
 
 ## Fix backend semantic checks: mypy
@@ -372,7 +372,7 @@ goto_on_failure = "fix_backend_semantics_poetry_check"
 
 set -e
 
-./bin/backend-utils.sh poetry check
+mise run check:backend:poetry
 ```
 
 ## Fix backend semantic checks: poetry check
@@ -404,7 +404,7 @@ goto_on_failure = "fix_frontend_semantics"
 
 set -e
 
-./bin/frontend-utils.sh npm run type-check
+mise run check:frontend:vue-tsc
 ```
 
 ## Fix frontend semantic checks
@@ -436,7 +436,7 @@ goto_on_failure = "fix_backend_spellcheck"
 
 set -e
 
-./bin/backend-utils.sh poetry run codespell --toml pyproject.toml ./ffun
+mise run check:backend:spelling
 ```
 
 ## Fix backend spellcheck
@@ -468,7 +468,7 @@ goto_on_failure = "fix_frontend_spellcheck"
 
 set -e
 
-./bin/frontend-utils.sh codespell --toml /repository/codespell.toml ./src
+mise run check:frontend:spelling
 ```
 
 ## Fix frontend spellcheck
@@ -500,7 +500,7 @@ goto_on_failure = "fix_runtime_checks_help"
 
 set -e
 
-./bin/backend-utils.sh poetry run ffun --help
+mise run check:backend:cli:help
 ```
 
 ## Fix runtime checks: help
@@ -532,7 +532,7 @@ goto_on_failure = "fix_runtime_checks_print_configs"
 
 set -e
 
-./bin/backend-utils.sh poetry run ffun print-configs
+mise run check:backend:cli:configs
 ```
 
 ## Fix runtime checks: print configs

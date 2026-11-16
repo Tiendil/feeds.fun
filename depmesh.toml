@@ -81,36 +81,6 @@ output = { type = "union", items = [
   ] } },
 ] }
 
-#################################
-# Relation: imports / imported_by
-#################################
-
-[[relations]]
-id = "imports"
-description = "Backend Python files imported by the artifact."
-
-[[relations]]
-id = "imported_by"
-description = "Backend Python files that import the artifact."
-
-# Tach provides direct backend Python imports for project modules.
-[[rules]]
-relation = "imports"
-input = { type = "glob", pattern = "@/ffun/ffun/{**module_path}.py" }
-output = {
-  type = "command",
-  command = "python ./bin/tach-map-query.py --direction dependencies --artifact @/ffun/ffun/{module_path}.py",
-}
-
-# Tach provides reverse backend Python import lookups for project modules.
-[[rules]]
-relation = "imported_by"
-input = { type = "glob", pattern = "@/ffun/ffun/{**module_path}.py" }
-output = {
-  type = "command",
-  command = "python ./bin/tach-map-query.py --direction dependents --artifact @/ffun/ffun/{module_path}.py",
-}
-
 ################################
 # Relation: governed_by / governs
 ################################
@@ -180,6 +150,8 @@ input = { type = "any", items = [
   { type = "glob", pattern = "@/site/*.js" },
   { type = "glob", pattern = "@/bin/**/*.py" },
   { type = "glob", pattern = "@/bin/**/*.sh" },
+  { type = "one_of", artifacts = ["@/mise.toml"] },
+  { type = "glob", pattern = "@/.mise/tasks/*.toml" },
 ] }
 output = { type = "list", artifacts = ["@/specs/programming/code.md"] }
 
@@ -195,6 +167,8 @@ output = { type = "union", items = [
   { type = "files", pattern = "@/site/*.js" },
   { type = "files", pattern = "@/bin/**/*.py" },
   { type = "files", pattern = "@/bin/**/*.sh" },
+  { type = "list", artifacts = ["@/mise.toml"] },
+  { type = "files", pattern = "@/.mise/tasks/*.toml" },
 ] }
 
 # CLI command-family specifications are governed by shared CLI behavior.
@@ -366,12 +340,10 @@ input = { type = "one_of", artifacts = [
   "@/AGENTS.md",
   "@/depmesh.toml",
   "@/ffun/tach.toml",
-  "@/bin/tach-map-query.py",
-  "@/ffun/tach_map_query.py",
 ] }
 output = { type = "list", artifacts = ["@/specs/backend_architecture/modules_layout.md"] }
 
-# The backend module layout spec governs depmesh/tach configuration and helpers.
+# The backend module layout spec governs depmesh/tach configuration.
 [[rules]]
 relation = "governs"
 input = { type = "one_of", artifacts = ["@/specs/backend_architecture/modules_layout.md"] }
@@ -379,8 +351,6 @@ output = { type = "list", artifacts = [
   "@/AGENTS.md",
   "@/depmesh.toml",
   "@/ffun/tach.toml",
-  "@/bin/tach-map-query.py",
-  "@/ffun/tach_map_query.py",
 ] }
 
 # README.md is governed by its documentation spec.

@@ -206,7 +206,6 @@ disallow_any_expr = false
 [[tool.mypy.overrides]]
 module = [
   "get_arxiv_taxonomy",
-  "tach_map_query",
 ]
 disallow_any_expr = false
 

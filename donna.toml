@@ -8,4 +8,4 @@ workflow_dirs = [
 ]
 
 [journal]
-cmd = ["./bin/taskwarior.sh", "log", "+journal", "+donna", "kind:event", "{message}"]
+cmd = ["mise", "--quiet", "run", "journal:task", "--", "log", "+journal", "+donna", "kind:event", "{message}"]

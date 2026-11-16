@@ -1,0 +1,12 @@
+["db:dump"]
+description = "Dump the development database to stdout"
+raw = true
+quiet = true
+run = "docker compose run --rm postgresql pg_dump -h postgresql -U ffun -F c -W ffun"
+
+["db:restore"]
+description = "Restore the development database from a backup file"
+usage = 'arg "<file>" help="Backup file to restore"'
+raw = true
+quiet = true
+run = 'docker compose run --rm -v "${usage_file?}:/backup_file" postgresql pg_restore -h postgresql -U root -d ffun -F c -C /backup_file'

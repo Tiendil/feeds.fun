@@ -141,7 +141,7 @@ Additional sections MAY be added when they help readers evaluate, run, operate, 
 3. start Docker Compose services.
 4. start backend workers.
 
-`README.md` MUST explain how to run backend utility commands through `./bin/backend-utils.sh`.
+`README.md` MUST explain how to run backend utility commands through the most specific available backend mise shortcuts.
 
 `README.md` MUST explain how to apply and create database migrations.
 

@@ -35,13 +35,13 @@ Development-related test execution MUST happen through the project development c
 The preferred command form for running all frontend tests is:
 
 ```bash
-./bin/frontend-tests.sh
+mise run frontend:test
 ```
 
 The preferred command form for running targeted frontend tests is:
 
 ```bash
-./bin/frontend-utils.sh npm run test:unit -- --run <path>
+mise run frontend:run -- npm run test:unit -- --run <path>
 ```
 
 Tests SHOULD be deterministic for the same repository state.

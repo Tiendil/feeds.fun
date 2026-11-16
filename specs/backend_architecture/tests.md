@@ -32,13 +32,13 @@ Development-related test execution MUST happen through the project development c
 The preferred command form for running all backend tests is:
 
 ```bash
-./bin/backend-tests.sh
+mise run backend:test
 ```
 
 The preferred command form for running targeted backend tests is:
 
 ```bash
-./bin/backend-utils.sh poetry run pytest <path>
+mise run backend:poetry -- run pytest <path>
 ```
 
 Tests SHOULD be deterministic for the same repository state and filesystem state.

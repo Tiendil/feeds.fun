@@ -29,7 +29,7 @@ timeout = 3600
 ```bash donna script
 #!/usr/bin/env bash
 
-python ./bin/inconsistency-check.py run-cycle
+mise run check:consistency -- run-cycle
 ```
 
 ## Resolve Reported Issue
@@ -67,7 +67,7 @@ Stderr:
 6. If the report is incorrect or not actionable, do not change source files to satisfy it. Journal the rationale and
    mark the exact reported check as consistent using the documented `mark-consistent` command and the identifiers
    printed in stdout.
-7. Verify source changes with the existing Docker-backed project scripts or `@/workflows/polish.donna.md`.
+7. Verify source changes with the existing Docker-backed mise tasks or `@/workflows/polish.donna.md`.
 8. After resolving or dismissing the report, `{{ donna.lib.goto("run_consistency_cycle") }}`.
 
 ## Handle Checker Failure

@@ -6,11 +6,11 @@
 You MUST use it to write journal records with these exact command templates from the project root:
 
 ```bash
-./bin/taskwarior.sh log +journal +agent kind:goal "<goal description>"
-./bin/taskwarior.sh log +journal +agent kind:step "<phase progress or completion handoff>"
-./bin/taskwarior.sh log +journal +agent kind:thought "<important thought>"
-./bin/taskwarior.sh log +journal +agent kind:assumption "<important assumption>"
-./bin/taskwarior.sh log +journal +agent kind:change "<what changed and where>"
+mise run journal:task -- log +journal +agent kind:goal "<goal description>"
+mise run journal:task -- log +journal +agent kind:step "<phase progress or completion handoff>"
+mise run journal:task -- log +journal +agent kind:thought "<important thought>"
+mise run journal:task -- log +journal +agent kind:assumption "<important assumption>"
+mise run journal:task -- log +journal +agent kind:change "<what changed and where>"
 ```
 
 Journal messages MUST be single-line strings.
@@ -26,7 +26,7 @@ You MUST log:
 You MAY add extra tags after `+agent` and before the message:
 
 ```bash
-./bin/taskwarior.sh log +journal +agent kind:<message-kind> +<extra-tag>... "<single-line journal message>"
+mise run journal:task -- log +journal +agent kind:<message-kind> +<extra-tag>... "<single-line journal message>"
 ```
 
 For each non-trivial Donna action request or long-running agent task:
@@ -52,5 +52,5 @@ You MUST NOT log:
 You can read the logged journal with:
 
 ```bash
-./bin/journal-tail.py --lines 20
+mise run journal:tail -- --lines 20
 ```

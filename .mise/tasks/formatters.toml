@@ -1,0 +1,15 @@
+["format:backend:autoflake"]
+description = "Remove unused Python imports and variables"
+run = "mise run backend:poetry -- run autoflake ."
+
+["format:backend:isort"]
+description = "Format Python imports"
+run = "mise run backend:poetry -- run isort ."
+
+["format:backend:black"]
+description = "Format Python code"
+run = "mise run backend:poetry -- run black ."
+
+["format:frontend:prettier"]
+description = "Format frontend code"
+run = "mise run frontend:run -- npm run format"

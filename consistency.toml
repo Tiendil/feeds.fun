@@ -14,7 +14,7 @@ discovery_jobs = 20
 [journal]
 # Disabled because recursive dependency traversal can produce hundreds of subprocess-backed journal writes.
 # Uncomment to restore detailed consistency-check journaling.
-# cmd = ["./bin/taskwarior.sh", "log", "+journal", "+consistency", "kind:{kind}", "{message}"]
+# cmd = ["mise", "--quiet", "run", "journal:task", "--", "log", "+journal", "+consistency", "kind:{kind}", "{message}"]
 
 # Agent-model options, ordered by estimated consistency-check quality.
 # Estimates are specific to this project's diff-to-specification workload. Relative cost uses
@@ -205,18 +205,6 @@ criteria = [
 description = "Artifacts verified by the test."
 criteria = [
   "The tested artifact must match the expectations and edge cases encoded in the test.",
-]
-
-[relations.imports]
-description = "Backend Python files imported by the artifact."
-criteria = [
-  "Imported APIs, names, types, side effects, and call signatures must still be available and compatible.",
-]
-
-[relations.imported_by]
-description = "Backend Python files that import the artifact."
-criteria = [
-  "Caller code must use available APIs, names, types, side effects, and call signatures correctly.",
 ]
 
 [modes.strict]

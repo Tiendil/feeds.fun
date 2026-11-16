@@ -12,7 +12,7 @@ working-tree text bytes are unavailable.
 Project journal logging belongs in ``log_project_journal``. Relation-pair
 state and operation history use the isolated SQLite database under
 ``.session/inconsistency-check``; project journal entries must use
-``bin/taskwarior.sh`` through ``log_project_journal`` and carry the
+``mise run journal:task`` through ``log_project_journal`` and carry the
 ``+consistency`` tag.
 """
 
@@ -5010,7 +5010,7 @@ def run_self_check() -> ExitCode:
     pair_records = load_check_records()
     project_journal = json.loads(
         run_command(
-            ["./bin/taskwarior.sh", "rc.verbose:nothing", "+journal", "export"],
+            ["mise", "--quiet", "run", "journal:task", "--", "rc.verbose:nothing", "+journal", "export"],
             check=True,
             failure_context="exporting project journal during self-check",
         ).stdout
