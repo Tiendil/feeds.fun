@@ -361,6 +361,22 @@ mise run docker:down:single-user
 
 Both shutdown commands also stop and remove shared services, including PostgreSQL.
 
+## Shared harness
+
+The [shared harness](https://github.com/Tiendil/harness) provides common agent instructions, specifications, and skills. Its checkout is needed to:
+
+- Regenerate `AGENTS.md` from fragments: `mise run harness:agents.md:generate`.
+- Refresh specifications copied from the harness: `mise run harness:specs:install`.
+- Refresh skills copied from the harness: `mise run harness:skills:install`.
+
+Prepare it from the Feeds Fun repository root:
+
+```sh
+mise bootstrap repos apply
+```
+
+This checks out the harness in `.vendor/shared-harness` using the repository and version configured in [`.harness/config.toml`](.harness/config.toml). To update the checkout later, run `mise run harness:load` before regenerating instructions or refreshing shared specifications and skills.
+
 ## Utils
 
 List all backend utils:
