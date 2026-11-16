@@ -32,6 +32,7 @@ fragments = [
   ".vendor/shared-harness/agents.md.d/behavior/reaction_on_developer_commands.md",
   ".vendor/shared-harness/agents.md.d/behavior/ask_developer_when.md",
   ".vendor/shared-harness/agents.md.d/behavior/working_with_text_artifacts.md",
+  ".vendor/shared-harness/agents.md.d/behavior/introducing_changes.md",
   ".harness/agents.md.d/behavior/introducing_changes.md",
   ".vendor/shared-harness/agents.md.d/behavior/restrictions/intro.md",
   ".vendor/shared-harness/agents.md.d/behavior/restrictions/project.md",

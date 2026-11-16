@@ -5,8 +5,16 @@ kind = "donna.lib.workflow"
 start_operation_id = "run_backend_format_autoflake"
 ```
 
-Polish the repository by formatting code, running semantic validations, and running runtime checks in the required order.
-Successful completion guarantees that formatting, semantic validations, spelling checks, runtime checks, and backend and frontend tests all pass against the final repository state.
+Polish backend and frontend code by formatting it, running semantic and spelling checks, checking the development CLI, and running backend and frontend tests in the required order.
+Successful completion means these checks pass against the final repository state.
+
+This workflow covers:
+
+- Backend and frontend application code and tests.
+- Dependencies, configuration, and execution environments used by these checks.
+- Task definitions, scripts, and workflow execution logic that determine how these checks run.
+
+Prose-only documentation and specification changes, workflow descriptions, agent instructions and their generation, and independent tooling are outside this workflow's scope when they do not affect the code or checks above.
 
 ## Run backend tests
 

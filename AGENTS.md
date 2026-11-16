@@ -95,18 +95,37 @@ Special exceptions to the above rules are:
 
 ### Introducing changes
 
-You MUST separate the stage of introducing changes ("I've introduced some changes and will introduce more later") from the stage of finalizing changes ("I've finished introducing all changes and and count them as final").
+You MUST distinguish implementation from final validation.
 
-On the introducing changes stage:
+- **Implementation:** the planned changes are still in progress. Use focused checks permitted by the project to guide the work.
+- **Final validation:** the planned changes are complete and ready for review. Perform the final validation required by the project before reporting completion.
 
-- You MUST NOT run linters, formatters, or full test suites unless explicitly instructed to do so by the developer or by the project instructions.
-- You MUST NOT run any polishing-related workflows unless explicitly instructed to do so by the developer or by the project instructions.
-- You MAY run subsets of tests to verify that your changes are working as expected.
+Final validation may require corrections. Make those corrections and repeat the validation required by the project or active workflow for the resulting state.
 
-On the finalizing changes stage:
+Task permissions do not override the project's rules about when to run a task.
 
-- You MUST not run separate linters, formatters, or full test suites unless explicitly instructed to do so by the developer or by the project instructions.
-- Instead, you MUST run dedicated polishing workflow that are designed to groom the code after you've introduced changes.
+You MUST NOT report work as complete while required validation has failed or remains incomplete. Report any validation that could not be completed.
+
+#### Feeds Fun validation
+
+During implementation, you MAY run focused tests through permitted mise tasks.
+
+During implementation, you MUST NOT run linters, formatters, full test suites, or the Polish workflow unless the developer or an active workflow explicitly requires them at that stage.
+
+When the planned changes are complete and ready for final validation, assess whether any changes can affect behavior or checks within the scope declared in `workflows/polish.donna.md`:
+
+- If they can, you MUST run `donna -p llm run @/workflows/polish.donna.md` to successful completion.
+- If they cannot, you MUST NOT run the Polish workflow.
+
+The developer or an active workflow MAY explicitly override this choice for the current changes.
+
+When the Polish workflow applies, you MUST use it during final validation instead of running its linters, formatters, or full test suites separately, unless the developer or an active workflow explicitly requires separate execution at that stage.
+
+Validate changes outside the Polish workflow's scope as follows:
+
+- Agent instructions or their Cog generation: run `mise run harness:agents.md:generate` and inspect the generated `AGENTS.md`.
+- Donna workflow definitions: run `donna -p llm validate @/path/to/workflow.donna.md` for each changed workflow and inspect its rendered instructions.
+- Prose-only documentation or specifications: review the changed content, examples, references, and consistency with affected artifacts.
 
 ### Resticted operations
 
@@ -251,10 +270,6 @@ Run `donna -p llm skill usage` when:
 
 Run `donna -p llm new-session` when the developer explicitly instructs you to start a new **Donna** session.
 
-Special instructions:
-
-- Use donna polish workflow to groom the code after you've introduced changes (instead of running linters, formatters and while tests manually).
-
 Here is a list of available workflows.
 
 #### Inconsistency Check Workflow
@@ -269,8 +284,16 @@ consistency issue or checker failure needs agent judgment.
 
 Run `donna -p llm run @/workflows/polish.donna.md` to execute the workflow.
 
-Polish the repository by formatting code, running semantic validations, and running runtime checks in the required order.
-Successful completion guarantees that formatting, semantic validations, spelling checks, runtime checks, and backend and frontend tests all pass against the final repository state.
+Polish backend and frontend code by formatting it, running semantic and spelling checks, checking the development CLI, and running backend and frontend tests in the required order.
+Successful completion means these checks pass against the final repository state.
+
+This workflow covers:
+
+- Backend and frontend application code and tests.
+- Dependencies, configuration, and execution environments used by these checks.
+- Task definitions, scripts, and workflow execution logic that determine how these checks run.
+
+Prose-only documentation and specification changes, workflow descriptions, agent instructions and their generation, and independent tooling are outside this workflow's scope when they do not affect the code or checks above.
 
 
 ### `depmesh`

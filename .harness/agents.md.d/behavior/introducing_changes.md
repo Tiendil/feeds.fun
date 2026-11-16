@@ -1,15 +1,21 @@
 
-### Introducing changes
+#### Feeds Fun validation
 
-You MUST separate the stage of introducing changes ("I've introduced some changes and will introduce more later") from the stage of finalizing changes ("I've finished introducing all changes and and count them as final").
+During implementation, you MAY run focused tests through permitted mise tasks.
 
-On the introducing changes stage:
+During implementation, you MUST NOT run linters, formatters, full test suites, or the Polish workflow unless the developer or an active workflow explicitly requires them at that stage.
 
-- You MUST NOT run linters, formatters, or full test suites unless explicitly instructed to do so by the developer or by the project instructions.
-- You MUST NOT run any polishing-related workflows unless explicitly instructed to do so by the developer or by the project instructions.
-- You MAY run subsets of tests to verify that your changes are working as expected.
+When the planned changes are complete and ready for final validation, assess whether any changes can affect behavior or checks within the scope declared in `workflows/polish.donna.md`:
 
-On the finalizing changes stage:
+- If they can, you MUST run `donna -p llm run @/workflows/polish.donna.md` to successful completion.
+- If they cannot, you MUST NOT run the Polish workflow.
 
-- You MUST not run separate linters, formatters, or full test suites unless explicitly instructed to do so by the developer or by the project instructions.
-- Instead, you MUST run dedicated polishing workflow that are designed to groom the code after you've introduced changes.
+The developer or an active workflow MAY explicitly override this choice for the current changes.
+
+When the Polish workflow applies, you MUST use it during final validation instead of running its linters, formatters, or full test suites separately, unless the developer or an active workflow explicitly requires separate execution at that stage.
+
+Validate changes outside the Polish workflow's scope as follows:
+
+- Agent instructions or their Cog generation: run `mise run harness:agents.md:generate` and inspect the generated `AGENTS.md`.
+- Donna workflow definitions: run `donna -p llm validate @/path/to/workflow.donna.md` for each changed workflow and inspect its rendered instructions.
+- Prose-only documentation or specifications: review the changed content, examples, references, and consistency with affected artifacts.
