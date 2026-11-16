@@ -7,16 +7,17 @@ Every agent MUST follow the rules and guidelines outlined in this document when 
 
 ## Environment
 
-All development-related operations MUST be performed in Docker containers, see `./docker-compose.yml` for details.
+Read, edit, and search repository files on the host.
 
-You MUST not perform any development-related operations directly on the host machine.
+Invoke mise from the host. Task definitions determine whether their
+commands run on the host or in Docker.
 
-Project commands are available as mise tasks. See the `mise` section for agent permissions and available tasks.
+Commands that execute backend/frontend application code or require
+backend/frontend dependencies MUST run through the corresponding
+mise tasks.
 
-Run `mise run docker:build` after making changes to Docker configurations or dependencies.
-
-Code and file searches MUST run on the host using host-installed tools, including `ast-grep` and `rg`, without Docker or development-helper wrappers.
-Read and manipulate code on the host machine as well.
+Run `mise run docker:build` after changing development Docker
+configuration or backend/frontend dependencies.
 
 ## Principles
 
