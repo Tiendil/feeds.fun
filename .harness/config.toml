@@ -14,6 +14,11 @@ specs = [
 url = "git@github.com:Tiendil/harness.git"
 ref = "feature/agents-md-construction"
 
+[codex]
+# Enable selected shared MCP servers when generating .codex/config.toml.
+# For Playwright, use ["playwright"]. An empty list keeps shared defaults disabled.
+enabled_mcp_servers = ["playwright"]
+
 [agents_md]
 embedded_specs = ["specs/dictionary.md"]
 
