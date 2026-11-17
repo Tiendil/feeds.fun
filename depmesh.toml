@@ -225,28 +225,40 @@ relation = "governs"
 input = { type = "one_of", artifacts = ["@/specs/meta/backend_modules.md"] }
 output = { type = "files", pattern = "@/specs/backend_architecture/modules/*.md" }
 
-# Backend module specifications are additionally governed by the backend database architecture.
+# Backend module specifications are governed by backend database architecture and PostgreSQL conventions.
 [[rules]]
 relation = "governed_by"
 input = { type = "glob", pattern = "@/specs/backend_architecture/modules/*.md" }
-output = { type = "list", artifacts = ["@/specs/backend_architecture/db.md"] }
+output = { type = "list", artifacts = [
+  "@/specs/backend_architecture/db.md",
+  "@/specs/programming/postgresql.md",
+] }
 
-# The backend database architecture governs every backend module specification.
+# Backend database architecture and PostgreSQL conventions govern backend module specifications.
 [[rules]]
 relation = "governs"
-input = { type = "one_of", artifacts = ["@/specs/backend_architecture/db.md"] }
+input = { type = "one_of", artifacts = [
+  "@/specs/backend_architecture/db.md",
+  "@/specs/programming/postgresql.md",
+] }
 output = { type = "files", pattern = "@/specs/backend_architecture/modules/*.md" }
 
-# Backend Python files are governed by all backend architecture specs.
+# Backend Python files are governed by backend architecture specifications and PostgreSQL conventions.
 [[rules]]
 relation = "governed_by"
 input = { type = "glob", pattern = "@/ffun/ffun/**/*.py" }
-output = { type = "files", pattern = "@/specs/backend_architecture/*.md" }
+output = { type = "union", items = [
+  { type = "files", pattern = "@/specs/backend_architecture/*.md" },
+  { type = "list", artifacts = ["@/specs/programming/postgresql.md"] },
+] }
 
-# Backend architecture specs govern all backend Python files.
+# Backend architecture specifications and PostgreSQL conventions govern backend Python files.
 [[rules]]
 relation = "governs"
-input = { type = "glob", pattern = "@/specs/backend_architecture/*.md" }
+input = { type = "any", items = [
+  { type = "glob", pattern = "@/specs/backend_architecture/*.md" },
+  { type = "one_of", artifacts = ["@/specs/programming/postgresql.md"] },
+] }
 output = { type = "files", pattern = "@/ffun/ffun/**/*.py" }
 
 # Backend CLI Python files are additionally governed by shared CLI behavior.

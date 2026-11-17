@@ -39,8 +39,7 @@ A subclass MUST NOT repeat slot names owned by a base class.
 Classes MUST NOT include `__dict__` in `__slots__` unless dynamically named instance attributes are an intentional part of the class contract.
 Classes MUST include `__weakref__` only when instances need weak-reference support and no base class already provides it.
 
-Existing classes SHOULD NOT be changed solely to adopt `__slots__`.
-They MUST adopt this convention when their instance layout or implementation is substantially changed, unless an exception below applies.
+Existing classes MUST adopt this convention when their instance layout or implementation is substantially changed, unless an exception below applies.
 
 ### Exceptions
 

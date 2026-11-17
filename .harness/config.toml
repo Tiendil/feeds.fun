@@ -8,6 +8,7 @@ specs = [
   "programming/code.md",
   "programming/content.md",
   "programming/python.md",
+  "programming/postgresql.md",
   "documentation/changelog.md",
 ]
 

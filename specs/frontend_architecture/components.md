@@ -37,7 +37,6 @@ This limitation does not prohibit low-cost accessibility metadata, such as an ac
 New application tooltip implementations MUST use the globally registered `AppTooltip` component.
 Centralized tooltip ownership is an intentional architectural constraint because it keeps interaction and positioning behavior consistent, applies fixes through one implementation, and prevents feature-specific tooltip behavior from diverging.
 Native `title` attributes MUST NOT be introduced for new application tooltips.
-Existing `title`-based tooltips MAY remain unchanged until they are deliberately migrated.
 Semantic uses of a `title` attribute, such as naming an embedded document, are not application tooltips and MAY remain native attributes.
 `AppTooltip` MUST support concise plain-text content through its `text` property and structured content with intentional line breaks through its `content` slot.
 `AppTooltip` MUST receive exactly one rendered element in its default trigger slot.

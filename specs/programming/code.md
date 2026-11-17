@@ -7,7 +7,14 @@ This document describes conventions for program implementations.
 ## Scope
 
 This specification applies to program source code in all programming languages.
+It also covers retroactive application of programming specifications to existing implementations and artifacts.
 The content of programming specifications is out of scope.
+
+## Applying specifications to code
+
+Programming specifications MUST be applied to newly written code.
+Existing implementations and artifacts MUST NOT be changed retroactively to conform to a programming specification unless the developer explicitly requests the change.
+This restriction applies regardless of how the change is made, including when it is carried out by newly written code.
 
 ## Prefer enums over primitive values
 

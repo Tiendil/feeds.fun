@@ -175,7 +175,7 @@ You MUST NOT perform the following operations without explicit instructions to d
 
 This index lists the available specifications and their goals.
 
-- `specs/backend_architecture/db.md` — how Feeds Fun backend code works with PostgreSQL, including persistence boundaries, transaction handling, query conventions, migration ownership, and database-focused testing practices.
+- `specs/backend_architecture/db.md` — the Feeds Fun backend architecture for PostgreSQL-backed persistence.
 - `specs/backend_architecture/entities.md` — the architecture of Feeds Fun backend entities and data structures used to pass domain, configuration, integration, and command information between backend modules.
 - `specs/backend_architecture/errors.md` — how Feeds Fun backend modules represent fatal errors and warnings, and how those values move from lower layers to API, CLI, and worker boundaries.
 - `specs/backend_architecture/modules/audit.md` — the responsibility and observable audit behavior of the `ffun.audit` backend module.
@@ -186,7 +186,6 @@ This index lists the available specifications and their goals.
 - `specs/backend_architecture/modules/resources.md` — the responsibility and observable accounting behavior of the `ffun.resources` backend module.
 - `specs/backend_architecture/modules/subscriptions.md` — the responsibility and observable subscription behavior of the `ffun.subscriptions` backend module.
 - `specs/backend_architecture/modules_layout.md` — the stable backend package layout and ownership boundaries for Feeds Fun.
-- `specs/backend_architecture/python.md` — language-level implementation conventions for Python code in the Feeds Fun backend.
 - `specs/backend_architecture/tests.md` — the architecture of Feeds Fun backend tests, including where tests live, how they relate to backend modules, and how they cover entities and errors.
 - `specs/behavior/cli.md` — the stable shared behavior of the Feeds Fun backend command-line interface.
 - `specs/behavior/cli/benefits.md` — the Feeds Fun CLI command family for applying administrator-authorized benefit transactions and refreshing subscription entitlements from current benefit configuration.
@@ -206,6 +205,7 @@ This index lists the available specifications and their goals.
 - `specs/meta/format.md` — the structure and style conventions for specifications in this project.
 - `specs/programming/code.md` — conventions for program implementations.
 - `specs/programming/content.md` — content requirements for programming specifications.
+- `specs/programming/postgresql.md` — conventions for relational schema design and SQL in PostgreSQL.
 - `specs/programming/python.md` — language-level implementation conventions for Python source code.
 
 ## CLI Tools
