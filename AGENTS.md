@@ -83,7 +83,18 @@ For the needs of this section, text artifacts are any text-based files, includin
 You may use grep-like/search/specialized tools to discover relevant text artifacts files.
 Search results MUST be treated only as discovery hints.
 
+#### Reading and reusing content
+
 You MUST read text artifacts in full from beginning to end before relying on, interpreting, reviewing, or changing them.
+A complete copy of a text artifact already available in the active context satisfies this requirement.
+
+You MUST reuse previously read content while it remains available and current.
+You MUST NOT reread an artifact merely because a new turn or work phase begins.
+
+Unless explicitly told otherwise, you MUST assume you are the only active editor of text artifacts.
+You MUST NOT reread artifacts or perform freshness checks merely to guard against hypothetical concurrent edits.
+
+Reread only when the required content is no longer available, there is concrete evidence of an intervening change, or the developer or an active workflow explicitly requires a fresh read.
 
 You MUST NOT use partial-file reading methods (such as `sed`, `head`, `tail`, line-range readers, grep context output, etc.) to read text artifacts.
 
@@ -195,6 +206,7 @@ This index lists the available specifications and their goals.
 - `specs/meta/format.md` — the structure and style conventions for specifications in this project.
 - `specs/programming/code.md` — conventions for program implementations.
 - `specs/programming/content.md` — content requirements for programming specifications.
+- `specs/programming/python.md` — language-level implementation conventions for Python source code.
 
 ## CLI Tools
 
