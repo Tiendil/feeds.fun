@@ -30,6 +30,10 @@ Tests MUST NOT depend on user-specific files outside test-created temporary dire
 
 Tests SHOULD prefer coverage through public module boundaries when that is practical for the behavior under test.
 
+Tests SHOULD prefer end-to-end coverage through public boundaries when that is practical for the behavior under test.
+
+Tests SHOULD exercise behavior of other top-level modules through their public boundaries.
+
 Tests SHOULD verify observable behavior and locally owned validation instead of implementation declarations or private implementation details.
 
 **Example:** A test for URL normalization checks the returned URL and whether invalid input is rejected.
@@ -47,9 +51,11 @@ Ordinary unit tests SHOULD NOT inspect runtime representations solely to restate
 
 Tests SHOULD use mocks, stubs, and spies as little as possible.
 
-Tests SHOULD prefer real project code, temporary files, local test services, and explicit fixtures over mocked collaborators.
+Tests SHOULD prefer real project code, temporary files, local test services, explicit fixtures, test constructors, and small fakes over mocked collaborators.
 
 Real collaborators reduce the risk that a test passes against behavior that differs from production.
+
+Patches SHOULD be scoped to the test that needs them and SHOULD patch the name as it is looked up by the code under test.
 
 ## Test organization
 
@@ -97,6 +103,74 @@ Corner cases include:
   - paths or URLs that require normalization.
 - repeated calls that may reveal state leaks.
 
+### Migrations
+
+Migration-sensitive changes SHOULD be verified through tests that exercise the resulting operation behavior after migrations are applied.
+
+### Entities
+
+Entity tests SHOULD verify local invariants of entities.
+
+Entity tests MUST verify behavior or invariants owned by the entity.
+
+Entity tests SHOULD cover:
+
+- validation of individual values and invariants of the entity as a whole.
+- non-trivial defaults or default factories.
+- normalization behavior owned by the entity.
+- entity-specific methods and properties.
+- serialization or deserialization behavior owned by the entity.
+- rejection of invalid values that the entity is responsible for rejecting.
+
+Entity tests MUST NOT be added only to satisfy file-to-module layout symmetry.
+
+### Configuration and application setup
+
+Settings tests MUST verify behavior owned by configuration handling or application setup.
+
+Settings tests SHOULD cover:
+
+- supported settings structure.
+- environment variable parsing.
+- path normalization.
+- invalid configuration failures.
+
+Settings tests MUST NOT be added only to satisfy file-to-module layout symmetry.
+
+Configuration and application setup tests SHOULD cover:
+
+- application initialization failures.
+
+### Error behavior
+
+Error tests SHOULD verify the observable behavior defined for a specific error or error category.
+
+Error tests SHOULD cover:
+
+- custom error codes.
+- custom message formatting.
+- custom structured details.
+
+### HTTP API implementations
+
+API tests SHOULD cover:
+
+- route behavior.
+- dependency behavior.
+- authentication and authorization boundaries.
+- request validation.
+- response shape for stable API contracts.
+- warnings.
+- errors and status categories.
+
+API tests SHOULD verify that fatal errors are mapped to the expected HTTP status category and response body shape.
+
+### Background processing
+
+Worker and background-processing tests SHOULD verify that expected non-fatal problems are represented as warning log records, retries, or persisted processing states.
+
+Worker and background-processing tests SHOULD verify that warning-producing behavior does not fail the whole operation when the operation can continue or persist a meaningful state.
+
 ## Fixtures and temporary data
 
 Tests that need files SHOULD create those files in temporary directories.
@@ -112,9 +186,23 @@ Tests that change the current working directory MUST restore it before the test 
 Temporary files keep file-based setup isolated.
 Small fixtures make the relevant data easy to see.
 
+Tests that require specific shared state MUST prepare that state at the start of the relevant test or through automatic setup that applies to that test.
+
+### Application-owned state
+
+Tests MUST prepare and mutate application-owned state through the production code that owns the corresponding state transition and invariants.
+
+Tests MUST NOT bypass production logic by writing directly to databases, files, queues, caches, or other application-owned state unless the developer explicitly approves the exception.
+
+An approved exception MUST be documented next to the bypass and MUST explain why the required state cannot be produced through production code.
+
+Tests MAY inspect application-owned state directly to assert observable effects; this permission does not allow direct mutation.
+
 ## Assertions
 
 Tests SHOULD assert structured values before rendered text when structured values are available.
+
+API response tests SHOULD parse response bodies before asserting response contents.
 
 Tests MUST NOT use identity assertions for ordinary value checks.
 
@@ -124,6 +212,8 @@ Rendered output tests MAY assert selected lines, fields, or records when exact t
 
 Structured assertions focus on the values the contract guarantees.
 Exact comparisons are useful when callers depend on the rendering itself.
+
+When a test uses logs to verify branch-specific behavior, it MUST assert both expected log counts and zero counts for mutually exclusive branch log events.
 
 ### Persistence
 

@@ -44,19 +44,7 @@ mise run backend:poetry -- run pytest <path>
 
 Tests that require specific shared state MUST prepare that state at the start of the relevant test or with an autouse fixture at the test class or test module level.
 
-Tests MUST prepare and mutate application-owned state through the production code that owns the corresponding state transition and invariants.
-
-Tests MUST NOT bypass production logic by writing directly to databases, files, queues, caches, or other application-owned state unless the developer explicitly approves the exception.
-
-An approved exception MUST be documented next to the bypass and MUST explain why the required state cannot be produced through production code.
-
-Tests MAY inspect application-owned state directly to assert observable effects; this permission does not allow direct mutation.
-
 Tests MUST NOT clean up shared state after themselves unless the developer explicitly requests cleanup behavior.
-
-Tests SHOULD prefer end-to-end coverage through public boundaries when that is practical for the behavior under test.
-
-Tests SHOULD exercise behavior of other top-level modules through their public boundaries.
 
 Tests MAY use any convenient functionality from the parent top-level module when testing behavior owned by that parent module. This includes private module-level helpers when the helper is the direct subject of the corresponding required test class.
 
@@ -76,15 +64,9 @@ Tests with non-`None` identity assertions SHOULD make the identity contract clea
 
 Tests MUST NOT use identity assertions for boolean values. Use `assert condition` instead of `assert condition is True`, and `assert not condition` instead of `assert condition is False`.
 
-When a test uses `assert_logs` to verify branch-specific behavior, it MUST assert both expected log counts and zero counts for mutually exclusive branch log events.
-
 ## Mocking
 
-Tests SHOULD prefer real project code, local services, explicit fixtures, test constructors, and small fakes over mocks.
-
 When a test must replace a Python collaborator, setting, method, or attribute, it SHOULD use the `pytest-mock` `MockerFixture`.
-
-Patches SHOULD be scoped to the test that needs them and SHOULD patch the name as it is looked up by the code under test.
 
 Use `mocker.patch("<import.path>", ...)` for imported module-level collaborators and settings.
 
@@ -130,7 +112,7 @@ Tests SHOULD be organized around the tested function or tested class.
 
 Each production module-level function MUST have a corresponding test class.
 
-Yoyo migration modules under module-local `migrations` packages do not need separate per-function test classes for their migration step functions. Migration-sensitive changes SHOULD be verified through tests that exercise the resulting operation behavior after migrations are applied.
+Yoyo migration modules under module-local `migrations` packages do not need separate per-function test classes for their migration step functions.
 
 Each class SHOULD have a corresponding test class.
 
@@ -203,22 +185,6 @@ Behavior tests for the re-exported function MUST live in the operation module's 
 
 ## Entity tests
 
-Entity tests SHOULD verify local invariants of entities.
-
-Entity tests MUST verify behavior or invariants owned by the entity.
-
-Entity tests SHOULD cover:
-
-- entity-specific Pydantic field validation.
-- entity-specific Pydantic model validation.
-- non-trivial defaults or default factories.
-- normalization behavior owned by the entity.
-- entity-specific methods and properties.
-- serialization or deserialization behavior owned by the entity.
-- rejection of invalid values that the entity is responsible for rejecting.
-
-Entity tests MUST NOT be added only to satisfy file-to-module layout symmetry.
-
 Entity tests MUST NOT verify that constructor arguments are assigned to fields unchanged.
 
 Entity tests MUST NOT verify simple Pydantic model construction when the entity has no custom validators, constrained
@@ -243,17 +209,6 @@ Entity tests MAY assert `pydantic.ValidationError` for invalid low-level model c
 
 ## Settings tests
 
-Settings tests MUST verify behavior owned by the settings class or application setup boundary.
-
-Settings tests SHOULD cover:
-
-- supported settings structure.
-- environment variable parsing.
-- path normalization.
-- invalid configuration failures.
-
-Settings tests MUST NOT be added only to satisfy file-to-module layout symmetry.
-
 Settings tests MUST NOT verify that literal default values are assigned unchanged when the settings class has no custom
 parsing, validation, normalization, computed values, or application setup behavior.
 
@@ -262,15 +217,6 @@ For settings-only modules that contain only passive settings declarations, the a
 
 ## Error tests
 
-Error tests SHOULD verify behavior customized by concrete error classes.
-
-Error tests SHOULD cover:
-
-- custom error codes.
-- custom message formatting.
-- custom structured details.
-- behavior added by an intermediate error class.
-
 Error tests SHOULD NOT test unchanged inheritance from project or module root error classes.
 
 Error tests SHOULD NOT test behavior inherited unchanged from the shared base error class.
@@ -278,8 +224,6 @@ Error tests SHOULD NOT test behavior inherited unchanged from the shared base er
 Tests for exception boundaries SHOULD verify that expected low-level failures are converted into Feeds Fun errors, API errors, warning log records, or persisted error states.
 
 Tests for exception boundaries SHOULD verify that `pydantic.ValidationError` from external input is converted into Feeds Fun errors, API errors, warning log records, or persisted error states.
-
-API tests SHOULD verify that fatal errors are mapped to the expected HTTP status category and response body shape.
 
 API tests SHOULD verify that unmapped project exceptions use the default failure category.
 
@@ -291,29 +235,11 @@ Full CLI execution blocks are assumed to be covered by manual testing.
 Command module tests SHOULD cover only narrow helper functions that own non-trivial local behavior and can be tested
 without invoking the command runner.
 
-Worker and background-processing tests SHOULD verify that expected non-fatal problems are represented as warning log records, retries, or persisted processing states.
-
-Worker and background-processing tests SHOULD verify that warning-producing behavior does not fail the whole operation when the operation can continue or persist a meaningful state.
-
 ## Behavior coverage
 
 Architecture specifications are the source of expected backend-wide conventions.
 
 Backend tests SHOULD cover examples and rules in architecture specifications when the corresponding behavior is implemented and runtime-testable.
-
-Configuration and application setup tests SHOULD cover:
-
-- application initialization failures.
-
-API tests SHOULD cover:
-
-- route behavior.
-- dependency behavior.
-- authentication and authorization boundaries.
-- request validation.
-- response shape for stable API contracts.
-- warnings.
-- errors and status categories.
 
 Parser and integration tests SHOULD cover:
 
@@ -341,7 +267,3 @@ Command helper tests SHOULD cover:
 ## Fixtures and temporary data
 
 Fixture paths SHOULD use forward slashes in expected normalized identifiers.
-
-## Assertions
-
-API response tests SHOULD parse response bodies before asserting response contents.
