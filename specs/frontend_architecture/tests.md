@@ -22,12 +22,11 @@ The following topics are out of scope:
 
 - `unit test` - a test focused on one frontend module or one small group of closely related functions, components, or stores.
 - `integration test` - a test that checks multiple frontend modules through a public boundary such as component rendering, store behavior, router behavior, or API client behavior.
-- `DOM test` - a test that uses the Vitest `jsdom` environment to verify browser-facing behavior.
 - `component test` - a test that mounts or renders a Vue component to verify its behavior.
 
 ## General principles
 
-The [automated test conventions](../programming/tests.md) apply to frontend tests.
+The [automated test conventions](../programming/tests.md), [TypeScript test conventions](../programming/typescript.tests.md), and [Vitest conventions](../programming/libs/vitest.md) apply to frontend tests.
 
 Tests MUST be written as part of the frontend TypeScript project.
 
@@ -44,8 +43,6 @@ The preferred command form for running targeted frontend tests is:
 ```bash
 mise run frontend:run -- npm run test:unit -- --run <path>
 ```
-
-Tests SHOULD prefer real project code, explicit fixtures, and the configured `jsdom` environment over mocked collaborators.
 
 ## Test module layout
 
@@ -69,12 +66,6 @@ View-level integration tests SHOULD live under the `views` module or the feature
 
 Tests SHOULD be organized around the tested function, component, store, or public module behavior.
 
-Tests for one exported function SHOULD be grouped in one `describe("<functionName>")` block.
-
-Tests for one component SHOULD be grouped in one `describe("<ComponentName>")` block.
-
-Tests for one store SHOULD be grouped in one `describe("<storeName>")` block.
-
 Examples:
 
 - `it("returns fallback value for empty input", ...)`.
@@ -97,8 +88,6 @@ Logic tests SHOULD cover:
 - API-client request and response shaping when the API boundary is mocked.
 
 Logic tests SHOULD NOT verify Vue rendering unless the tested logic explicitly owns DOM transformation.
-
-Logic tests that inspect HTML or browser APIs MUST use the configured `jsdom` environment.
 
 Logic tests MAY use spies when they verify integration with a third-party library and direct observable output is not enough.
 

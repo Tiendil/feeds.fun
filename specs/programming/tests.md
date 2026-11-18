@@ -83,11 +83,6 @@ Mirroring the implementation helps developers find the tests for a module.
 
 A test file for a single implementation module MUST derive its name from that module's name using the project's test file naming convention.
 
-Test files MUST follow the naming convention for their language when one is listed below.
-
-- Python uses the `test_` prefix and the `.py` extension, as in `tests/test_<module>.py`.
-- TypeScript uses the `.test.ts` suffix, as in `tests/<module>.test.ts`.
-
 ## Test organization
 
 Test names MUST describe the execution path or behavior being verified.

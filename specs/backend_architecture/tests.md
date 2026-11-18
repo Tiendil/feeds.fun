@@ -24,7 +24,7 @@ The following topics are out of scope:
 
 ## Test execution
 
-The [automated test conventions](../programming/tests.md) and [pytest conventions](../programming/libs/pytest.md) apply to backend tests.
+The [automated test conventions](../programming/tests.md), [Python test conventions](../programming/python.tests.md), and [pytest conventions](../programming/libs/pytest.md) apply to backend tests.
 
 Development-related test execution MUST happen through the project development container commands.
 
@@ -46,18 +46,6 @@ API integration tests SHOULD live under the API package that owns the tested rou
 
 Command integration tests SHOULD live under `./ffun/ffun/cli/tests/` when command behavior is present.
 
-Test data constructors reused by multiple test modules in the same package SHOULD live in `tests/make.py`.
-
-`tests/make.py` SHOULD contain small factory functions that create valid entities, value objects, queue items, and other domain data for tests.
-
-`tests/make.py` MUST NOT contain assertions or behavior-verification helpers.
-
-Test helper functions reused by multiple test modules in the same package SHOULD live in `tests/helpers.py`.
-
-`tests/helpers.py` SHOULD contain assertion helpers, cleanup helpers, and test workflow utilities.
-
-`tests/helpers.py` MUST NOT contain ordinary domain data constructors when those constructors fit `tests/make.py`.
-
 ## Test organization
 
 Tests SHOULD be organized around the tested function or tested class.
@@ -67,44 +55,6 @@ Each production module-level function MUST have a corresponding test class.
 Yoyo migration modules under module-local `migrations` packages do not need separate per-function test classes for their migration step functions.
 
 Each class SHOULD have a corresponding test class.
-
-Test classes MUST use `Test<SubjectName>` naming, where `<SubjectName>` is the tested function or class name converted to PascalCase.
-
-Examples:
-
-- function `normalize_url` -> `class TestNormalizeUrl`.
-- class `FeedLoader` -> `class TestFeedLoader`.
-- class `Resource` -> `class TestResource`.
-
-Tests for a class MUST group method tests inside the class's test class.
-
-Tests for a class method MUST use this method name format:
-
-```text
-test_<method_name>__<test_name>
-```
-
-`<method_name>` MUST be the tested method name in snake case.
-
-`<test_name>` MUST describe the execution path or behavior being verified in snake case.
-
-Examples:
-
-- `test_normalize__empty_value`.
-- `test_process__provider_returns_error`.
-- `test_replace_tags__circular_replacement`.
-
-When a test class tests one module-level function, test methods MAY omit the function name and use this format:
-
-```text
-test_<test_name>
-```
-
-Examples:
-
-- `TestNormalizeUrl.test_success`.
-- `TestNormalizeUrl.test_invalid_scheme`.
-- `TestNormalizeUrl.test_trailing_slash`.
 
 Test-only helper functions do not need corresponding test classes.
 
@@ -131,7 +81,7 @@ class TestGetEntry:
         assert domain.get_entry is operations.get_entry
 ```
 
-This re-export is an example of an explicit identity contract under the [pytest conventions](../programming/libs/pytest.md#assertions).
+This re-export is an example of an explicit identity contract under the [Python test conventions](../programming/python.tests.md#assertions).
 
 Behavior tests for the re-exported function MUST live in the operation module's tests, not in the domain module's tests.
 
