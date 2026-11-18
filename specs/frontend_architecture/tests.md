@@ -7,6 +7,7 @@ This document describes the architecture of Feeds Fun frontend tests, including 
 ## Scope
 
 The scope of this specification is limited to frontend test organization and architectural testing expectations for source code under `site/src`.
+The [automated test conventions](../programming/tests.md), [TypeScript test conventions](../programming/typescript.tests.md), and [Vitest conventions](../programming/libs/vitest.md) apply to frontend tests.
 
 The following topics are out of scope:
 
@@ -24,27 +25,9 @@ The following topics are out of scope:
 - `integration test` - a test that checks multiple frontend modules through a public boundary such as component rendering, store behavior, router behavior, or API client behavior.
 - `component test` - a test that mounts or renders a Vue component to verify its behavior.
 
-## General principles
-
-The [automated test conventions](../programming/tests.md), [TypeScript test conventions](../programming/typescript.tests.md), and [Vitest conventions](../programming/libs/vitest.md) apply to frontend tests.
+## Test module layout
 
 Tests MUST be written as part of the frontend TypeScript project.
-
-Development-related test execution MUST happen through the project development container commands.
-
-The preferred command form for running all frontend tests is:
-
-```bash
-mise run frontend:test
-```
-
-The preferred command form for running targeted frontend tests is:
-
-```bash
-mise run frontend:run -- npm run test:unit -- --run <path>
-```
-
-## Test module layout
 
 Test files MUST NOT be placed directly under `./site/src`.
 Cross-cutting frontend architecture tests MUST live under `./site/src/tests`.

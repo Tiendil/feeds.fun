@@ -7,6 +7,7 @@ This document describes the architecture of Feeds Fun backend tests, including w
 ## Scope
 
 The scope of this specification is limited to backend test organization and architectural testing expectations for Python code under `ffun/ffun`.
+The [automated test conventions](../programming/tests.md), [Python test conventions](../programming/python.tests.md), and [pytest conventions](../programming/libs/pytest.md) apply to backend tests.
 
 The following topics are out of scope:
 
@@ -21,24 +22,6 @@ The following topics are out of scope:
 
 - `unit test` - a test focused on one backend module or one small group of closely related functions or entities.
 - `integration test` - a test that checks multiple backend modules through a public boundary such as API handler execution, application setup, parser execution, feed loading, or command execution.
-
-## Test execution
-
-The [automated test conventions](../programming/tests.md), [Python test conventions](../programming/python.tests.md), and [pytest conventions](../programming/libs/pytest.md) apply to backend tests.
-
-Development-related test execution MUST happen through the project development container commands.
-
-The preferred command form for running all backend tests is:
-
-```bash
-mise run backend:test
-```
-
-The preferred command form for running targeted backend tests is:
-
-```bash
-mise run backend:poetry -- run pytest <path>
-```
 
 ## Test module layout
 
