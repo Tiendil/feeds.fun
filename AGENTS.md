@@ -186,7 +186,7 @@ This index lists the available specifications and their goals.
 - `specs/backend_architecture/modules/resources.md` — the responsibility and observable accounting behavior of the `ffun.resources` backend module.
 - `specs/backend_architecture/modules/subscriptions.md` — the responsibility and observable subscription behavior of the `ffun.subscriptions` backend module.
 - `specs/backend_architecture/modules_layout.md` — the stable backend package layout and ownership boundaries for Feeds Fun.
-- `specs/backend_architecture/tests.md` — the architecture of Feeds Fun backend tests, including where tests live, how they relate to backend modules, and how they cover entities and errors.
+- `specs/backend_architecture/tests.md` — the architecture of Feeds Fun backend tests, including where tests live and how they relate to backend modules.
 - `specs/behavior/cli.md` — the stable shared behavior of the Feeds Fun backend command-line interface.
 - `specs/behavior/cli/benefits.md` — the Feeds Fun CLI command family for applying administrator-authorized benefit transactions and refreshing subscription entitlements from current benefit configuration.
 - `specs/behavior/cli/entitlements.md` — the Feeds Fun CLI command family for inspecting user entitlements.

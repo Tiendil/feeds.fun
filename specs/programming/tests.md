@@ -131,7 +131,7 @@ Migration-sensitive changes SHOULD be verified through tests that exercise the r
 
 Entity tests SHOULD verify local invariants of entities.
 
-Entity tests MUST verify behavior or invariants owned by the entity.
+Entity tests MUST verify only behavior or invariants owned by the entity.
 
 Entity tests SHOULD cover:
 
@@ -141,6 +141,10 @@ Entity tests SHOULD cover:
 - entity-specific methods and properties.
 - serialization or deserialization behavior owned by the entity.
 - rejection of invalid values that the entity is responsible for rejecting.
+
+Entity tests MAY assert that low-level model construction raises the modeling library’s validation exception for invalid input.
+
+Entity tests MUST NOT require filesystem access unless the entity itself explicitly owns path normalization that depends on filesystem semantics.
 
 Entity tests MUST NOT be added only to satisfy file-to-module layout symmetry.
 
@@ -171,6 +175,8 @@ Error tests SHOULD cover:
 - custom message formatting.
 - custom structured details.
 
+Tests for exception boundaries SHOULD verify that expected low-level failures, including failures when validating external input, are converted into the errors, warnings, or persisted error states defined by the boundary’s contract.
+
 ### HTTP API implementations
 
 API tests SHOULD cover:
@@ -184,6 +190,21 @@ API tests SHOULD cover:
 - errors and status categories.
 
 API tests SHOULD verify that fatal errors are mapped to the expected HTTP status category and response body shape.
+
+If an API defines a default error response, tests SHOULD trigger an error with no dedicated response and verify that the API returns the default.
+
+### CLI tests
+
+Automated CLI tests SHOULD cover only helpers that own non-trivial behavior and can be tested without invoking the command runner.
+
+Command helper tests SHOULD cover:
+
+- parsing or validation helpers extracted from commands.
+- output-shaping helpers when they return structured data.
+- command-adjacent workflows that are callable without invoking the CLI runner.
+- warnings or errors produced by those narrow helpers.
+
+Full CLI execution is assumed to be covered by manual testing, including argument parsing, option validation, command wiring, exit behavior, and error output.
 
 ### Background processing
 
@@ -209,6 +230,12 @@ Tests SHOULD keep fixture data as small as possible while preserving the behavio
 Inline fixture data SHOULD be preferred for short configuration files and short expected outputs.
 
 Reusable fixture files MAY be added when inline data would obscure the test.
+
+Expected normalized identifiers in test fixtures SHOULD use the separators specified by the normalization contract.
+
+When the normalization contract does not specify a separator, expected path identifiers in test fixtures SHOULD use forward slashes.
+
+A fixture for a format that specifies forward slashes can use `folder/file` as the expected identifier.
 
 Tests that change the current working directory MUST restore it before the test ends.
 

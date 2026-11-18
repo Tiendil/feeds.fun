@@ -18,6 +18,10 @@ Python test files MUST use the `test_` prefix and the `.py` extension, as in `te
 
 ## Test classes and methods
 
+Each production module-level function MUST have a corresponding test class.
+
+Standalone test functions SHOULD be used only for module-level invariants or file-level checks that do not naturally belong to one tested function or class.
+
 Tests for a class MUST group method tests inside the class's test class.
 
 Test classes MUST use `Test<SubjectName>` naming, where `<SubjectName>` is the tested function or class name converted to PascalCase.
@@ -69,6 +73,10 @@ Test helper functions reused by multiple test modules in the same package SHOULD
 `helpers.py` SHOULD contain assertion helpers, cleanup helpers, and test workflow utilities.
 
 `helpers.py` MUST NOT contain ordinary domain data constructors when those constructors fit `make.py`.
+
+## Entity tests
+
+Entity tests MUST NOT verify plain `NewType`, enum member existence, or passive data-container fields unless the module owns non-trivial conversion, validation, serialization, persistence compatibility, API compatibility, or external-input compatibility behavior for them.
 
 ## Assertions
 

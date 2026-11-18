@@ -163,8 +163,6 @@ Store and integration tests SHOULD cover:
 
 Inline fixture data SHOULD be preferred for short HTML snippets, API payloads, and expected outputs.
 
-Fixture paths SHOULD use forward slashes in expected normalized identifiers.
-
 Tests that modify global browser state, timers, stores, or mocks MUST restore them before the test ends.
 
 ## Assertions
