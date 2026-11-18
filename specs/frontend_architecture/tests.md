@@ -22,11 +22,12 @@ The following topics are out of scope:
 
 - `unit test` - a test focused on one frontend module or one small group of closely related functions, components, or stores.
 - `integration test` - a test that checks multiple frontend modules through a public boundary such as component rendering, store behavior, router behavior, or API client behavior.
-- `fixture` - test data or setup used by one or more tests.
 - `DOM test` - a test that uses the Vitest `jsdom` environment to verify browser-facing behavior.
 - `component test` - a test that mounts or renders a Vue component to verify its behavior.
 
 ## General principles
+
+The [automated test conventions](../programming/tests.md) apply to frontend tests.
 
 Tests MUST be written as part of the frontend TypeScript project.
 
@@ -44,23 +45,9 @@ The preferred command form for running targeted frontend tests is:
 mise run frontend:run -- npm run test:unit -- --run <path>
 ```
 
-Tests SHOULD be deterministic for the same repository state.
-
-Tests SHOULD prefer coverage through public module boundaries when that is practical for the behavior under test.
-
-Tests SHOULD use mocks, stubs, and spies as little as possible.
-
 Tests SHOULD prefer real project code, explicit fixtures, and the configured `jsdom` environment over mocked collaborators.
 
-Tests MUST NOT depend on external network access.
-
-Tests MUST NOT depend on user-specific files outside test-created temporary directories.
-
 Tests MUST NOT modify Docker configuration or runtime parameters.
-
-Tests SHOULD verify observable behavior and locally owned validation instead of implementation declarations such as exact helper types or private implementation details.
-
-Static typing requirements SHOULD be enforced by TypeScript, static analysis, code review, or dedicated architecture checks, not by ordinary unit tests that inspect runtime shapes only to restate type declarations.
 
 ## Test module layout
 
@@ -73,16 +60,12 @@ Each implementation module or submodule SHOULD have corresponding tests under a 
 
 The name of a test file MUST be built from the name of the tested module by adding the `.test.ts` suffix.
 
-The structure of tests SHOULD mirror the implementation structure when that makes ownership clear.
-
 Examples:
 
 - `./site/src/logic/utils.ts` -> `./site/src/logic/tests/utils.test.ts`
 - `./site/src/logic/iframeSanitizer.ts` -> `./site/src/logic/tests/iframeSanitizer.test.ts`
 - `./site/src/stores/entries.ts` -> `./site/src/stores/tests/entries.test.ts` when store tests are added.
 - global component registration architecture -> `./site/src/tests/componentRegistration.test.ts`.
-
-Cross-module integration tests MAY live under the module that owns the public boundary being exercised.
 
 Component tests SHOULD live near the component or under a nearby `tests` submodule owned by the same parent directory when component tests are added.
 
@@ -98,8 +81,6 @@ Tests for one component SHOULD be grouped in one `describe("<ComponentName>")` b
 
 Tests for one store SHOULD be grouped in one `describe("<storeName>")` block.
 
-Test names MUST describe the execution path or behavior being verified.
-
 Examples:
 
 - `it("returns fallback value for empty input", ...)`.
@@ -107,31 +88,6 @@ Examples:
 - `it("emits selected tag changes", ...)`.
 
 Standalone top-level tests SHOULD be used only for module-level invariants or file-level checks that do not naturally belong to one tested function, component, or store.
-
-Every meaningful execution path of a tested function, component, store action, or module behavior MUST have a corresponding test or parametrized test case.
-
-Execution paths include:
-
-- successful path.
-- default-value path.
-- empty-input path.
-- invalid-input path.
-- handled error path.
-- branch-specific path.
-- security-sensitive path.
-
-Tests MUST cover corner cases for each tested behavior.
-
-Corner cases include:
-
-- boundary values.
-- empty collections and empty strings.
-- missing optional values.
-- duplicate values.
-- unsupported values.
-- malformed input.
-- paths or URLs that require normalization.
-- repeated calls that may reveal state leaks.
 
 ## Logic tests
 
@@ -222,13 +178,7 @@ Store and integration tests SHOULD cover:
 
 ## Fixtures and temporary data
 
-Tests that need files SHOULD create those files in temporary directories.
-
-Tests SHOULD keep fixture data as small as possible while preserving the behavior being verified.
-
 Inline fixture data SHOULD be preferred for short HTML snippets, API payloads, and expected outputs.
-
-Reusable fixture files MAY be added when inline data would obscure the test.
 
 Fixture paths SHOULD use forward slashes in expected normalized identifiers.
 
@@ -236,11 +186,7 @@ Tests that modify global browser state, timers, stores, or mocks MUST restore th
 
 ## Assertions
 
-Tests SHOULD assert structured values before rendered text when structured values are available.
-
 DOM tests SHOULD query stable user-observable DOM structure before asserting raw HTML strings.
-
-Rendered output tests SHOULD assert exact output only for stable frontend contracts.
 
 Rendered output tests MAY assert selected lines, attributes, or records when exact text is intentionally outside the relevant specification.
 

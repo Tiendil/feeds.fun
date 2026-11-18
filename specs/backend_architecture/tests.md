@@ -21,9 +21,10 @@ The following topics are out of scope:
 
 - `unit test` - a test focused on one backend module or one small group of closely related functions or entities.
 - `integration test` - a test that checks multiple backend modules through a public boundary such as API handler execution, application setup, parser execution, feed loading, or command execution.
-- `fixture` - test data or setup used by one or more tests.
 
 ## General principles
+
+The [automated test conventions](../programming/tests.md) apply to backend tests.
 
 Tests MUST be written as part of the backend Python project.
 
@@ -40,10 +41,6 @@ The preferred command form for running targeted backend tests is:
 ```bash
 mise run backend:poetry -- run pytest <path>
 ```
-
-Tests SHOULD be deterministic for the same repository state and filesystem state.
-
-Tests SHOULD prefer a real current-time value as the baseline for time-related cases when the exact calendar date is not part of the behavior under test. Hard-coded calendar datetimes SHOULD be used only when the specific date, month, year, weekday, or timezone boundary is itself relevant to the tested behavior.
 
 Tests that require specific shared state MUST prepare that state at the start of the relevant test or with an autouse fixture at the test class or test module level.
 
@@ -65,27 +62,11 @@ Tests MAY use any convenient functionality from the parent top-level module when
 
 Tests SHOULD use mocks, stubs, and monkeypatching as little as possible.
 
-Tests SHOULD prefer real project code, temporary files, local test services, and explicit fixtures over mocked collaborators.
-
-Tests MUST NOT depend on external network access.
-
 Tests MAY use Docker-provided local services when the tested behavior explicitly requires them.
-
-Tests MUST NOT depend on user-specific files outside test-created temporary directories.
 
 Tests MUST NOT modify Docker configuration or runtime parameters.
 
-Tests SHOULD verify observable behavior and locally owned validation instead of implementation declarations such as annotations, imports, or exact helper types.
-
-Tests SHOULD prefer separate tests for orthogonal execution paths or validation cases instead of one combined test that verifies all cases at once.
-
-Example: `test_a` and `test_b` are better than `test_a_or_b` when `a` and `b` describe independent behavior.
-
-Static typing requirements SHOULD be enforced by static analysis, code review, or dedicated architecture checks, not by ordinary unit tests that inspect runtime annotations.
-
 Tests MAY inspect annotations only in dedicated architecture tests that validate a broad project-wide convention. Per-entity unit tests MUST NOT inspect annotations only to restate the entity declaration.
-
-Tests MUST NOT use identity assertions for ordinary value checks.
 
 Tests MAY use `assert value is None` and `assert value is not None` when checking for `None`.
 
@@ -121,15 +102,11 @@ Each implementation module or submodule SHOULD have corresponding tests under a 
 
 The name of a test file MUST be built from the name of the tested module by adding the `test_` prefix.
 
-The structure of tests SHOULD mirror the implementation structure when that makes ownership clear.
-
 Examples:
 
 - `./ffun/ffun/core/logging.py` -> `./ffun/ffun/core/tests/test_logging.py`
 - `./ffun/ffun/domain/urls.py` -> `./ffun/ffun/domain/tests/test_urls.py`
 - `./ffun/ffun/integrations/plugins/github.py` -> `./ffun/ffun/integrations/plugins/tests/test_github.py`
-
-Cross-module integration tests MAY live under the module that owns the public boundary being exercised.
 
 API integration tests SHOULD live under the API package that owns the tested route or dependency boundary.
 
@@ -198,32 +175,6 @@ Examples:
 Test-only helper functions do not need corresponding test classes.
 
 Standalone test functions SHOULD be used only for module-level invariants or file-level checks that do not naturally belong to one tested function or class.
-
-Every possible execution path of a tested function or method MUST have a corresponding test method or parametrized test case.
-
-Execution paths include:
-
-- successful path.
-- default-value path.
-- empty-input path.
-- invalid-input path.
-- handled error path.
-- warning-producing path.
-- branch-specific path.
-
-Tests MUST cover corner cases for each tested function or method.
-
-Corner cases include:
-
-- boundary values.
-- empty collections and empty strings.
-- missing optional values.
-- duplicate values.
-- unsupported values.
-- malformed input.
-- paths that do not exist.
-- values that require normalization.
-- repeated calls that may reveal state leaks.
 
 ## Domain operation re-exports
 
@@ -389,32 +340,8 @@ Command helper tests SHOULD cover:
 
 ## Fixtures and temporary data
 
-Tests that need files SHOULD create those files in temporary directories.
-
-Tests SHOULD keep fixture data as small as possible while preserving the behavior being verified.
-
-Inline fixture data SHOULD be preferred for short configuration files and short expected outputs.
-
-Reusable fixture files MAY be added when inline data would obscure the test.
-
 Fixture paths SHOULD use forward slashes in expected normalized identifiers.
 
-Tests that change the current working directory MUST restore it before the test ends.
-
 ## Assertions
-
-Tests SHOULD assert structured values before rendered text when structured values are available.
-
-Persistence operation tests MUST verify the expected persisted effects when the behavior under test inserts or deletes rows, including the number of affected records when cardinality is part of the contract.
-
-Tests for rejected writes, idempotent no-ops, or other paths whose contract includes unchanged persisted state MUST verify that invariant.
-
-Assertions about persisted effects MUST isolate the operations responsible for those effects. They MUST supplement, not replace, structured assertions about persisted content when record contents are part of the behavior under test.
-
-Tests whose subject is a public count operation MAY verify affected-record cardinality through that operation.
-
-Rendered output tests SHOULD assert exact output only for stable API, CLI, or persisted-state contracts.
-
-Rendered output tests MAY assert selected lines, fields, or records when exact text is intentionally outside the relevant specification.
 
 API response tests SHOULD parse response bodies before asserting response contents.

@@ -189,6 +189,26 @@ output = { type = "union", items = [
   { type = "files", pattern = "@/bin/**/*.py" },
 ] }
 
+# Shared test conventions apply to backend and frontend tests and their architecture specifications.
+[[rules]]
+relation = "governed_by"
+input = { type = "any", items = [
+  { type = "glob", pattern = "@/ffun/ffun/**/tests/**/*.py" },
+  { type = "glob", pattern = "@/site/src/**/*.test.ts" },
+  { type = "one_of", artifacts = ["@/specs/backend_architecture/tests.md", "@/specs/frontend_architecture/tests.md"] },
+] }
+output = { type = "list", artifacts = ["@/specs/programming/tests.md"] }
+
+# Shared test conventions govern backend and frontend tests and their architecture specifications.
+[[rules]]
+relation = "governs"
+input = { type = "one_of", artifacts = ["@/specs/programming/tests.md"] }
+output = { type = "union", items = [
+  { type = "files", pattern = "@/ffun/ffun/**/tests/**/*.py" },
+  { type = "files", pattern = "@/site/src/**/*.test.ts" },
+  { type = "list", artifacts = ["@/specs/backend_architecture/tests.md", "@/specs/frontend_architecture/tests.md"] },
+] }
+
 # CLI command-family specifications are governed by shared CLI behavior.
 [[rules]]
 relation = "governed_by"
