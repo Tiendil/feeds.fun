@@ -24,9 +24,7 @@ The following topics are out of scope:
 
 ## General principles
 
-The [automated test conventions](../programming/tests.md) apply to backend tests.
-
-Tests MUST be written as part of the backend Python project.
+The [automated test conventions](../programming/tests.md) and [pytest conventions](../programming/libs/pytest.md) apply to backend tests.
 
 Development-related test execution MUST happen through the project development container commands.
 
@@ -42,41 +40,15 @@ The preferred command form for running targeted backend tests is:
 mise run backend:poetry -- run pytest <path>
 ```
 
-Tests that require specific shared state MUST prepare that state at the start of the relevant test or with an autouse fixture at the test class or test module level.
-
 Tests MUST NOT clean up shared state after themselves unless the developer explicitly requests cleanup behavior.
 
 Tests MAY use any convenient functionality from the parent top-level module when testing behavior owned by that parent module. This includes private module-level helpers when the helper is the direct subject of the corresponding required test class.
-
-Tests SHOULD use mocks, stubs, and monkeypatching as little as possible.
 
 Tests MAY use Docker-provided local services when the tested behavior explicitly requires them.
 
 Tests MUST NOT modify Docker configuration or runtime parameters.
 
 Tests MAY inspect annotations only in dedicated architecture tests that validate a broad project-wide convention. Per-entity unit tests MUST NOT inspect annotations only to restate the entity declaration.
-
-Tests MAY use `assert value is None` and `assert value is not None` when checking for `None`.
-
-Tests MAY use `assert <value> is <other_value>` or `assert <value> is not <other_value>` for non-`None` values only when object identity is the explicit behavior under test, such as checking singleton values, module re-exports or aliases, or registry/cache/container APIs that promise to return the exact registered or stored object instance.
-
-Tests with non-`None` identity assertions SHOULD make the identity contract clear through the test name, setup, or surrounding assertion context.
-
-Tests MUST NOT use identity assertions for boolean values. Use `assert condition` instead of `assert condition is True`, and `assert not condition` instead of `assert condition is False`.
-
-## Mocking
-
-When a test must replace a Python collaborator, setting, method, or attribute, it SHOULD use the `pytest-mock` `MockerFixture`.
-
-Use `mocker.patch("<import.path>", ...)` for imported module-level collaborators and settings.
-
-Use `mocker.patch.object(...)` when replacing an attribute on an object or class already available in the test.
-
-Use direct `unittest.mock.MagicMock` or `unittest.mock.AsyncMock` only for local fake objects or callables that are passed into the code under test.
-
-Tests SHOULD NOT use pytest `monkeypatch` for ordinary Python attribute replacement; use `MockerFixture` for consistent cleanup and call assertions.
-
-Tests MAY use specialized test tools for their own domain boundaries, for example `respx_mock` for HTTP client behavior.
 
 ## Test module layout
 
@@ -179,7 +151,7 @@ class TestGetEntry:
         assert domain.get_entry is operations.get_entry
 ```
 
-This is a narrow exception to the general rule forbidding non-`None` identity assertions.
+This re-export is an example of an explicit identity contract under the [pytest conventions](../programming/libs/pytest.md#assertions).
 
 Behavior tests for the re-exported function MUST live in the operation module's tests, not in the domain module's tests.
 

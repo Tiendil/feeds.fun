@@ -209,6 +209,32 @@ output = { type = "union", items = [
   { type = "list", artifacts = ["@/specs/backend_architecture/tests.md", "@/specs/frontend_architecture/tests.md"] },
 ] }
 
+# Shared pytest conventions apply to backend tests, pytest support code, and backend test architecture.
+[[rules]]
+relation = "governed_by"
+input = { type = "any", items = [
+  { type = "glob", pattern = "@/ffun/ffun/**/tests/**/*.py" },
+  { type = "one_of", artifacts = [
+    "@/ffun/ffun/conftest.py",
+    "@/ffun/ffun/pytest_plugin.py",
+    "@/specs/backend_architecture/tests.md",
+  ] },
+] }
+output = { type = "list", artifacts = ["@/specs/programming/libs/pytest.md"] }
+
+# Shared pytest conventions govern backend tests, pytest support code, and backend test architecture.
+[[rules]]
+relation = "governs"
+input = { type = "one_of", artifacts = ["@/specs/programming/libs/pytest.md"] }
+output = { type = "union", items = [
+  { type = "files", pattern = "@/ffun/ffun/**/tests/**/*.py" },
+  { type = "list", artifacts = [
+    "@/ffun/ffun/conftest.py",
+    "@/ffun/ffun/pytest_plugin.py",
+    "@/specs/backend_architecture/tests.md",
+  ] },
+] }
+
 # CLI command-family specifications are governed by shared CLI behavior.
 [[rules]]
 relation = "governed_by"
