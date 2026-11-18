@@ -26,6 +26,10 @@ Specific calendar dates let tests exercise the boundaries that matter to the beh
 
 Tests MUST NOT depend on external network access.
 
+Tests MAY use local services provided by the development environment when the tested behavior explicitly requires them.
+
+Tests MUST NOT modify the development environment's configuration or runtime parameters unless the developer explicitly permits it.
+
 Tests MUST NOT depend on user-specific files outside test-created temporary directories.
 
 Tests SHOULD prefer coverage through public module boundaries when that is practical for the behavior under test.
@@ -34,6 +38,9 @@ Tests SHOULD prefer end-to-end coverage through public boundaries when that is p
 
 Tests SHOULD exercise behavior of other top-level modules through their public boundaries.
 
+Tests MAY use internal functionality from the module that owns the behavior under test.
+Tests MAY exercise a private helper directly when that helper owns the behavior being verified.
+
 Tests SHOULD verify observable behavior and locally owned validation instead of implementation declarations or private implementation details.
 
 **Example:** A test for URL normalization checks the returned URL and whether invalid input is rejected.
@@ -41,6 +48,9 @@ Tests SHOULD verify observable behavior and locally owned validation instead of 
 **Counterexample:** Checking which private helper was called, which module was imported, or what type annotation was written would test implementation details.
 
 Public boundaries and behavioral assertions keep tests useful when implementation details change.
+
+Tests that inspect program structure to enforce a project-wide convention MUST be dedicated architecture tests.
+Examples of program structure include imports, field declarations, and type annotations where the language supports them.
 
 Static typing requirements SHOULD be enforced by static analysis, code review, or dedicated architecture checks.
 Ordinary unit tests SHOULD NOT inspect runtime representations solely to restate type declarations.
@@ -57,13 +67,28 @@ Real collaborators reduce the risk that a test passes against behavior that diff
 
 Patches SHOULD be scoped to the test that needs them and SHOULD patch the name as it is looked up by the code under test.
 
-## Test organization
+## Test module layout
+
+When a project is organized into modules, tests SHOULD live with the module that owns the behavior under test, using the project's conventions for test directories or packages.
+
+Projects organized into modules MUST use dedicated test directories where their test tooling supports them.
+
+Tests for implementation files in one directory SHOULD live in a test subdirectory of that directory.
 
 The structure of tests SHOULD mirror the implementation structure when that makes ownership clear.
 
 Cross-module integration tests MAY live under the module that owns the public boundary being exercised.
 
 Mirroring the implementation helps developers find the tests for a module.
+
+A test file for a single implementation module MUST derive its name from that module's name using the project's test file naming convention.
+
+Test files MUST follow the naming convention for their language when one is listed below.
+
+- Python uses the `test_` prefix and the `.py` extension, as in `tests/test_<module>.py`.
+- TypeScript uses the `.test.ts` suffix, as in `tests/<module>.test.ts`.
+
+## Test organization
 
 Test names MUST describe the execution path or behavior being verified.
 
@@ -171,6 +196,15 @@ Worker and background-processing tests SHOULD verify that expected non-fatal pro
 
 Worker and background-processing tests SHOULD verify that warning-producing behavior does not fail the whole operation when the operation can continue or persist a meaningful state.
 
+## Shared resources
+
+Tests that use a resource shared across tests MUST tolerate existing state unrelated to the behavior under test.
+Tests MUST NOT reset a shared resource unless the reset is required to verify the behavior under test.
+
+Tests MUST NOT clean up shared state after themselves unless the developer explicitly requests cleanup behavior.
+
+A test for reading one record can create that record through the application and leave the other records in the shared database in place.
+
 ## Fixtures and temporary data
 
 Tests that need files SHOULD create those files in temporary directories.
@@ -186,7 +220,7 @@ Tests that change the current working directory MUST restore it before the test 
 Temporary files keep file-based setup isolated.
 Small fixtures make the relevant data easy to see.
 
-Tests that require specific shared state MUST prepare that state at the start of the relevant test or through automatic setup that applies to that test.
+Tests MUST prepare any additional data they need at the start of the relevant test or through automatic setup that applies to that test.
 
 ### Application-owned state
 

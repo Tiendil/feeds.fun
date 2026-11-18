@@ -22,7 +22,7 @@ The following topics are out of scope:
 - `unit test` - a test focused on one backend module or one small group of closely related functions or entities.
 - `integration test` - a test that checks multiple backend modules through a public boundary such as API handler execution, application setup, parser execution, feed loading, or command execution.
 
-## General principles
+## Test execution
 
 The [automated test conventions](../programming/tests.md) and [pytest conventions](../programming/libs/pytest.md) apply to backend tests.
 
@@ -40,27 +40,7 @@ The preferred command form for running targeted backend tests is:
 mise run backend:poetry -- run pytest <path>
 ```
 
-Tests MUST NOT clean up shared state after themselves unless the developer explicitly requests cleanup behavior.
-
-Tests MAY use any convenient functionality from the parent top-level module when testing behavior owned by that parent module. This includes private module-level helpers when the helper is the direct subject of the corresponding required test class.
-
-Tests MAY use Docker-provided local services when the tested behavior explicitly requires them.
-
-Tests MUST NOT modify Docker configuration or runtime parameters.
-
-Tests MAY inspect annotations only in dedicated architecture tests that validate a broad project-wide convention. Per-entity unit tests MUST NOT inspect annotations only to restate the entity declaration.
-
 ## Test module layout
-
-Each implementation module or submodule SHOULD have corresponding tests under a `tests` submodule owned by the same parent module.
-
-The name of a test file MUST be built from the name of the tested module by adding the `test_` prefix.
-
-Examples:
-
-- `./ffun/ffun/core/logging.py` -> `./ffun/ffun/core/tests/test_logging.py`
-- `./ffun/ffun/domain/urls.py` -> `./ffun/ffun/domain/tests/test_urls.py`
-- `./ffun/ffun/integrations/plugins/github.py` -> `./ffun/ffun/integrations/plugins/tests/test_github.py`
 
 API integration tests SHOULD live under the API package that owns the tested route or dependency boundary.
 

@@ -47,18 +47,12 @@ mise run frontend:run -- npm run test:unit -- --run <path>
 
 Tests SHOULD prefer real project code, explicit fixtures, and the configured `jsdom` environment over mocked collaborators.
 
-Tests MUST NOT modify Docker configuration or runtime parameters.
-
 ## Test module layout
-
-Frontend tests MUST use the Vitest `*.test.ts` naming convention.
 
 Test files MUST NOT be placed directly under `./site/src`.
 Cross-cutting frontend architecture tests MUST live under `./site/src/tests`.
 
 Each implementation module or submodule SHOULD have corresponding tests under a `tests` submodule owned by the same parent module when that matches the existing layout.
-
-The name of a test file MUST be built from the name of the tested module by adding the `.test.ts` suffix.
 
 Examples:
 

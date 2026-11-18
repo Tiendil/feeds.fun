@@ -18,7 +18,7 @@ The [automated test conventions](../tests.md) also apply to tests written with p
 
 ## Fixtures
 
-Tests SHOULD prefer an autouse fixture at the test class or test module level for preparing specific shared state.
+Tests SHOULD prefer an autouse fixture at the test class or test module level for preparing additional data needed by the relevant tests.
 
 Keeping automatic setup close to the tests that depend on it makes their preconditions easier to find.
 

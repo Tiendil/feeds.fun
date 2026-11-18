@@ -237,10 +237,6 @@ The `tests` submodule owns colocated tests for the parent module and its submodu
 
 The `tests` submodule MUST follow the test architecture rules in `specs/backend_architecture/tests.md`.
 
-Test files SHOULD mirror implementation module names with the `test_` prefix and organize test classes around the tested function or class.
-
-See `specs/backend_architecture/tests.md` for detailed backend test architecture rules.
-
 ### `make.py`
 
 The `make` submodule MAY appear only inside tests packages, as `<module>.tests.make`.
