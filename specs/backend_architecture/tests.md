@@ -7,7 +7,7 @@ This document describes the architecture of Feeds Fun backend tests, including w
 ## Scope
 
 The scope of this specification is limited to backend test organization and architectural testing expectations for Python code under `ffun/ffun`.
-The [automated test conventions](../programming/tests.md), [Python test conventions](../programming/python.tests.md), and [pytest conventions](../programming/libs/pytest.md) apply to backend tests.
+The [automated test conventions](../programming/tests.md), [Python test conventions](../python/tests.md), and [pytest conventions](../python/libs/pytest.md) apply to backend tests.
 
 The following topics are out of scope:
 
@@ -54,6 +54,6 @@ class TestGetEntry:
         assert domain.get_entry is operations.get_entry
 ```
 
-This re-export is an example of an explicit identity contract under the [Python test conventions](../programming/python.tests.md#assertions).
+This re-export is an example of an explicit identity contract under the [Python test conventions](../python/tests.md#assertions).
 
 Behavior tests for the re-exported function MUST live in the operation module's tests, not in the domain module's tests.

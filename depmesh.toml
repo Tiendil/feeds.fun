@@ -123,6 +123,8 @@ input = { type = "any", items = [
   { type = "glob", pattern = "@/specs/frontend_architecture/**/*.md" },
   { type = "glob", pattern = "@/specs/behavior/**/*.md" },
   { type = "glob", pattern = "@/specs/programming/**/*.md" },
+  { type = "glob", pattern = "@/specs/python/**/*.md" },
+  { type = "glob", pattern = "@/specs/typescript/**/*.md" },
   { type = "one_of", artifacts = ["@/specs/meta/backend_modules.md"] },
 ] }
 output = { type = "list", artifacts = ["@/specs/programming/content.md"] }
@@ -136,6 +138,8 @@ output = { type = "union", items = [
   { type = "files", pattern = "@/specs/frontend_architecture/**/*.md" },
   { type = "files", pattern = "@/specs/behavior/**/*.md" },
   { type = "files", pattern = "@/specs/programming/**/*.md" },
+  { type = "files", pattern = "@/specs/python/**/*.md" },
+  { type = "files", pattern = "@/specs/typescript/**/*.md" },
   { type = "list", artifacts = ["@/specs/meta/backend_modules.md"] },
 ] }
 
@@ -171,92 +175,74 @@ output = { type = "union", items = [
   { type = "files", pattern = "@/.mise/tasks/*.toml" },
 ] }
 
-# Python-specific code conventions apply to backend and repository utility Python source.
+# Python specifications govern project Python files and the backend test architecture.
 [[rules]]
 relation = "governed_by"
 input = { type = "any", items = [
-  { type = "glob", pattern = "@/ffun/**/*.py" },
+  { type = "glob", pattern = "@/ffun/ffun/**/*.py" },
   { type = "glob", pattern = "@/bin/**/*.py" },
+  { type = "glob", pattern = "@/feeds_collections/**/*.py" },
+  { type = "one_of", artifacts = ["@/specs/backend_architecture/tests.md"] },
 ] }
-output = { type = "list", artifacts = ["@/specs/programming/python.md"] }
+output = { type = "files", pattern = "@/specs/python/**/*.md" }
 
-# Python code conventions govern project source code in runtime and tooling directories.
 [[rules]]
 relation = "governs"
-input = { type = "one_of", artifacts = ["@/specs/programming/python.md"] }
+input = { type = "glob", pattern = "@/specs/python/**/*.md" }
 output = { type = "union", items = [
-  { type = "files", pattern = "@/ffun/**/*.py" },
+  { type = "files", pattern = "@/ffun/ffun/**/*.py" },
   { type = "files", pattern = "@/bin/**/*.py" },
+  { type = "files", pattern = "@/feeds_collections/**/*.py" },
+  { type = "list", artifacts = ["@/specs/backend_architecture/tests.md"] },
 ] }
 
-# Backend test conventions.
+# TypeScript specifications govern project TypeScript files and the frontend test architecture.
+[[rules]]
+relation = "governed_by"
+input = { type = "any", items = [
+  { type = "glob", pattern = "@/site/src/**/*.ts" },
+  { type = "glob", pattern = "@/site/*.ts" },
+  { type = "one_of", artifacts = ["@/specs/frontend_architecture/tests.md"] },
+] }
+output = { type = "files", pattern = "@/specs/typescript/**/*.md" }
+
+[[rules]]
+relation = "governs"
+input = { type = "glob", pattern = "@/specs/typescript/**/*.md" }
+output = { type = "union", items = [
+  { type = "files", pattern = "@/site/src/**/*.ts" },
+  { type = "files", pattern = "@/site/*.ts" },
+  { type = "list", artifacts = ["@/specs/frontend_architecture/tests.md"] },
+] }
+
+# Shared test conventions govern both test suites, backend test setup, and both test architecture specs.
 [[rules]]
 relation = "governed_by"
 input = { type = "any", items = [
   { type = "glob", pattern = "@/ffun/ffun/**/tests/**/*.py" },
+  { type = "glob", pattern = "@/site/src/**/*.test.ts" },
   { type = "one_of", artifacts = [
     "@/ffun/ffun/conftest.py",
     "@/ffun/ffun/pytest_plugin.py",
     "@/specs/backend_architecture/tests.md",
+    "@/specs/frontend_architecture/tests.md",
   ] },
 ] }
-output = { type = "list", artifacts = [
-  "@/specs/programming/tests.md",
-  "@/specs/programming/python.tests.md",
-  "@/specs/programming/libs/pytest.md",
-] }
+output = { type = "list", artifacts = ["@/specs/programming/tests.md"] }
 
 [[rules]]
 relation = "governs"
-input = { type = "one_of", artifacts = [
-  "@/specs/programming/tests.md",
-  "@/specs/programming/python.tests.md",
-  "@/specs/programming/libs/pytest.md",
-] }
+input = { type = "one_of", artifacts = ["@/specs/programming/tests.md"] }
 output = { type = "union", items = [
   { type = "files", pattern = "@/ffun/ffun/**/tests/**/*.py" },
+  { type = "files", pattern = "@/site/src/**/*.test.ts" },
   { type = "list", artifacts = [
     "@/ffun/ffun/conftest.py",
     "@/ffun/ffun/pytest_plugin.py",
     "@/specs/backend_architecture/tests.md",
+    "@/specs/frontend_architecture/tests.md",
   ] },
 ] }
-
-# Frontend test conventions.
-[[rules]]
-relation = "governed_by"
-input = { type = "any", items = [
-  { type = "glob", pattern = "@/site/src/**/*.test.ts" },
-  { type = "one_of", artifacts = ["@/specs/frontend_architecture/tests.md"] },
-] }
-output = { type = "list", artifacts = [
-  "@/specs/programming/tests.md",
-  "@/specs/programming/typescript.tests.md",
-  "@/specs/programming/libs/vitest.md",
-] }
-
-[[rules]]
-relation = "governs"
-input = { type = "one_of", artifacts = [
-  "@/specs/programming/tests.md",
-  "@/specs/programming/typescript.tests.md",
-  "@/specs/programming/libs/vitest.md",
-] }
-output = { type = "union", items = [
-  { type = "files", pattern = "@/site/src/**/*.test.ts" },
-  { type = "list", artifacts = ["@/specs/frontend_architecture/tests.md"] },
-] }
-
-# Vitest configuration sets the browser environment.
-[[rules]]
-relation = "governed_by"
-input = { type = "one_of", artifacts = ["@/site/vitest.config.ts"] }
-output = { type = "list", artifacts = ["@/specs/programming/libs/vitest.md"] }
-
-[[rules]]
-relation = "governs"
-input = { type = "one_of", artifacts = ["@/specs/programming/libs/vitest.md"] }
-output = { type = "list", artifacts = ["@/site/vitest.config.ts"] }
 
 # CLI command-family specifications are governed by shared CLI behavior.
 [[rules]]

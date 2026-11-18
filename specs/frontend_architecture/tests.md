@@ -7,7 +7,7 @@ This document describes the architecture of Feeds Fun frontend tests, including 
 ## Scope
 
 The scope of this specification is limited to frontend test organization and architectural testing expectations for source code under `site/src`.
-The [automated test conventions](../programming/tests.md), [TypeScript test conventions](../programming/typescript.tests.md), and [Vitest conventions](../programming/libs/vitest.md) apply to frontend tests.
+The [automated test conventions](../programming/tests.md), [TypeScript test conventions](../typescript/tests.md), and [Vitest conventions](../typescript/libs/vitest.md) apply to frontend tests.
 
 The following topics are out of scope:
 

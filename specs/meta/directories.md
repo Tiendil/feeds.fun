@@ -30,7 +30,15 @@ New areas MUST be recorded in the catalog with descriptions of their subject mat
 
 - `meta` — General requirements governing specification documents across subject areas.
 - `programming` — Program implementations and specifications about them.
+- `python` — Python language, testing, and library conventions.
+- `typescript` — TypeScript language, testing, and library conventions.
 - `documentation` — Project documentation artifacts and conventions for maintaining them.
+
+### Language areas
+
+Language-wide conventions MUST live in `language.md` in their language area.
+Library and framework specifications MUST live in the `libs/` subdirectory of their language area.
+Other language-specific conventions MUST live in `<topic>.md` in their language area, where `<topic>` names the topic covered.
 
 ## Specification placement
 

@@ -10,7 +10,7 @@ This specification applies to Python test code and its supporting modules.
 
 ## General principles
 
-The [automated test conventions](tests.md) also apply to Python tests.
+The [automated test conventions](../programming/tests.md) also apply to Python tests.
 
 ## Test file naming
 

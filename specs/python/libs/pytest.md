@@ -14,7 +14,7 @@ This specification applies to Python tests written with pytest and their support
 
 ## General principles
 
-The [automated test conventions](../tests.md) and [Python test conventions](../python.tests.md) also apply to tests written with pytest.
+The [automated test conventions](../../programming/tests.md) and [Python test conventions](../tests.md) also apply to tests written with pytest.
 
 ## Fixtures
 

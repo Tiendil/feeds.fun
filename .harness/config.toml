@@ -8,12 +8,12 @@ specs = [
   "programming/code.md",
   "programming/content.md",
   "programming/tests.md",
-  "programming/python.md",
-  "programming/python.tests.md",
-  "programming/typescript.tests.md",
-  "programming/libs/pytest.md",
-  "programming/libs/vitest.md",
   "programming/postgresql.md",
+  "python/language.md",
+  "python/tests.md",
+  "python/libs/pytest.md",
+  "typescript/tests.md",
+  "typescript/libs/vitest.md",
   "documentation/changelog.md",
 ]
 

@@ -10,7 +10,7 @@ This specification applies to tests written in TypeScript.
 
 ## General principles
 
-The [automated test conventions](tests.md) also apply to TypeScript tests.
+The [automated test conventions](../programming/tests.md) also apply to TypeScript tests.
 
 ## Test file naming
 

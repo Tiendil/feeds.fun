@@ -14,8 +14,8 @@ This specification applies to tests written with Vitest and their test environme
 
 ## General principles
 
-The [automated test conventions](../tests.md) also apply to tests written with Vitest.
-Tests written in TypeScript also follow the [TypeScript test conventions](../typescript.tests.md).
+The [automated test conventions](../../programming/tests.md) also apply to tests written with Vitest.
+Tests written in TypeScript also follow the [TypeScript test conventions](../tests.md).
 
 ## Test groups
 
