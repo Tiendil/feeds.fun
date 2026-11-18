@@ -31,28 +31,14 @@ Cross-cutting frontend architecture tests MUST live under `./site/src/tests`.
 
 View-level integration tests SHOULD live under the `views` module or the feature module that owns the tested page behavior when view tests are added.
 
-## Logic tests
-
-Logic tests SHOULD verify pure TypeScript behavior through exported functions and values.
-
-Logic tests SHOULD cover:
-
-- input normalization.
-- validation and assertions owned by the module.
-- parsing and sanitization behavior.
-- security-sensitive transformations.
-- date, timer, and formatting helpers.
-
-Logic tests SHOULD NOT verify Vue rendering unless the tested logic explicitly owns DOM transformation.
-
-Logic tests MAY use spies when they verify integration with a third-party library and direct observable output is not enough.
-
 ## Component and view tests
 
 Component tests MUST NOT be added unless the developer explicitly requests component-level testing.
 Component behavior SHOULD be extracted into frontend logic and covered by logic tests when practical.
 Requiring explicit approval keeps the component-test surface intentional; extracting render-independent behavior produces smaller, faster tests that are less coupled to Vue mounting details.
 Architecture tests that inspect component source or registration without mounting or rendering components are not component tests under this restriction.
+
+Logic tests MAY verify DOM transformations performed directly by the code under test.
 
 View-level tests SHOULD verify page-level composition only when the behavior cannot be covered by smaller component, store, or logic tests.
 
