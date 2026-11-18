@@ -85,6 +85,9 @@ A test file for a single implementation module MUST derive its name from that mo
 
 ## Test organization
 
+Tests SHOULD be grouped by the function, class, or other program element whose behavior they verify.
+Standalone tests SHOULD be used only for module-level invariants or file-level checks that do not naturally belong in one of those groups.
+
 Test names MUST describe the execution path or behavior being verified.
 
 Tests SHOULD prefer separate tests for orthogonal execution paths or validation cases instead of one combined test that verifies all cases at once.
@@ -193,6 +196,30 @@ API tests SHOULD verify that fatal errors are mapped to the expected HTTP status
 
 If an API defines a default error response, tests SHOULD trigger an error with no dedicated response and verify that the API returns the default.
 
+### API clients
+
+API-client tests SHOULD verify request construction, response parsing, and error handling at the API client boundary.
+
+API-client tests MUST NOT call external network services.
+
+When API-client tests need a mock for request or response handling, they SHOULD mock the transport boundary and exercise the client's request construction and response parsing.
+
+### User interface tests
+
+Component and view tests SHOULD cover the following behavior when the UI contract defines it.
+
+- rendered text and attributes that are part of the component contract.
+- emitted events.
+- prop-driven branches.
+- accessible states when the component owns them.
+- security-sensitive rendering decisions.
+- conditional rendering.
+- user input handling.
+- store interaction at component boundaries.
+- error and empty states visible to users.
+
+Component tests SHOULD NOT assert private component internals, exact child implementation structure, or CSS classes unless those values are part of a stable contract.
+
 ### CLI tests
 
 Automated CLI tests SHOULD cover only helpers that own non-trivial behavior and can be tested without invoking the command runner.
@@ -227,7 +254,7 @@ Tests that need files SHOULD create those files in temporary directories.
 
 Tests SHOULD keep fixture data as small as possible while preserving the behavior being verified.
 
-Inline fixture data SHOULD be preferred for short configuration files and short expected outputs.
+Inline fixture data SHOULD be preferred for short inputs and expected outputs.
 
 Reusable fixture files MAY be added when inline data would obscure the test.
 
@@ -237,7 +264,8 @@ When the normalization contract does not specify a separator, expected path iden
 
 A fixture for a format that specifies forward slashes can use `folder/file` as the expected identifier.
 
-Tests that change the current working directory MUST restore it before the test ends.
+Tests MUST undo temporary runtime overrides that can affect other tests before the test ends.
+Examples include changing the working directory, patching a function such as `window.fetch`, and installing fake timers.
 
 Temporary files keep file-based setup isolated.
 Small fixtures make the relevant data easy to see.
@@ -245,6 +273,8 @@ Small fixtures make the relevant data easy to see.
 Tests MUST prepare any additional data they need at the start of the relevant test or through automatic setup that applies to that test.
 
 ### Application-owned state
+
+Tests that can exercise a mutable in-memory component in isolation SHOULD use a fresh, test-owned instance for each test.
 
 Tests MUST prepare and mutate application-owned state through the production code that owns the corresponding state transition and invariants.
 
@@ -268,6 +298,8 @@ Rendered output tests MAY assert selected lines, fields, or records when exact t
 
 Structured assertions focus on the values the contract guarantees.
 Exact comparisons are useful when callers depend on the rendering itself.
+
+Security-sensitive sanitization tests SHOULD assert both allowed output and removed unsafe input.
 
 When a test uses logs to verify branch-specific behavior, it MUST assert both expected log counts and zero counts for mutually exclusive branch log events.
 

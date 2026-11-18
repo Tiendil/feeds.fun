@@ -20,8 +20,6 @@ Python test files MUST use the `test_` prefix and the `.py` extension, as in `te
 
 Each production module-level function MUST have a corresponding test class.
 
-Standalone test functions SHOULD be used only for module-level invariants or file-level checks that do not naturally belong to one tested function or class.
-
 Tests for a class MUST group method tests inside the class's test class.
 
 Test classes MUST use `Test<SubjectName>` naming, where `<SubjectName>` is the tested function or class name converted to PascalCase.
