@@ -272,6 +272,10 @@ They own shared technical primitives, cross-domain value types, and utilities.
 Other backend modules MAY import any submodule of a foundational module when they need functionality owned by that submodule.
 Foundational modules MUST NOT depend on shared-service, domain-level, or edge-layer modules, so shared primitives do not acquire higher-level dependencies.
 
+`ffun.domain.entities.SerializedId` MUST represent the canonical string form of an entity identifier at shared boundaries that accept identifiers owned by different domain modules.
+It is a universal domain primitive rather than an identifier owned by any one subsystem.
+Code within an owning module SHOULD retain the identifier's more specific semantic type until it reaches such a boundary.
+
 ### Product composition module
 
 `ffun.product` owns the following application-wide product definitions when they have no more specific domain owner:

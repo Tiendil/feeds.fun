@@ -14,6 +14,12 @@ Project-specific architectural requirements are out of scope.
 - `project-controlled class` — a class whose instance layout is defined by project code rather than generated or prescribed by a framework, library, standard-library protocol, metaclass, or inherited implementation contract.
 - `test class` — a class defined only to organize or support automated tests.
 
+## Enumeration types
+
+String-valued enums SHOULD use `enum.StrEnum`.
+Integer-valued enums SHOULD use `enum.IntEnum`.
+These classes provide standard string and integer behavior for enum members used as primitive values.
+
 ## Exhaustiveness checking
 
 Code that exhaustively branches over an enum or another statically closed union SHOULD pass the unreachable value to `typing.assert_never()` instead of raising `AssertionError` directly.
@@ -21,6 +27,20 @@ Code that exhaustively branches over an enum or another statically closed union 
 **Rationale:** Unlike directly raising `AssertionError`, `typing.assert_never()` requires static confirmation that no possible value remains.
 
 Ordinary domain or validation exceptions remain appropriate when an unsupported value can legitimately arrive through an untyped or external boundary.
+
+## Semantic primitive types
+
+Mappings keyed by semantic ids SHOULD use the semantic id type when possible.
+
+Semantic primitive types SHOULD use `typing.NewType` when runtime behavior is identical to the underlying primitive.
+This lets a type checker distinguish values with different meanings that share the same runtime type.
+For example, a type checker can reject a `CustomerId` argument to a function expecting an `OrderId` when both types are defined over `int`.
+
+Semantic primitive types SHOULD be owned by the module that owns the corresponding concept.
+
+## Optional values
+
+Optional values in internal Python code MUST be represented with `None` instead of sentinel strings.
 
 ## Class instance layout
 

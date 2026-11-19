@@ -21,16 +21,9 @@ The following topics are out of scope:
 ## Dictionary
 
 - `entity` - a typed Python object that represents one backend concept and can be passed across module boundaries.
-- `value entity` - an entity whose equality is based on its data rather than object identity.
-- `boundary entity` - an entity that is passed between modules with different responsibilities.
 - `serialized representation` - a plain data representation prepared for an external protocol such as JSON, HTTP response data, logs, or persistent storage.
-- `serialized id` - the canonical string representation of an entity identifier used by a shared boundary that accepts identifiers from multiple domain modules.
 
 ## General principles
-
-Backend concepts MUST be represented as explicit typed entities before they cross backend module boundaries.
-
-Boundary entities MUST NOT be represented as untyped dictionaries unless the data is already being prepared as a serialized representation.
 
 Backend entities SHOULD use Pydantic v2 for structured data models.
 
@@ -42,10 +35,6 @@ Entities other than configuration settings objects acting as configuration-loadi
 - process execution.
 - terminal output.
 - configuration file discovery.
-
-Value entities SHOULD be immutable after construction when practical.
-
-Entities that can be used for de-duplication SHOULD be hashable when practical.
 
 ## Pydantic baseline
 
@@ -79,49 +68,19 @@ Separating independent validation concerns keeps invariants locally understandab
 
 Entities SHOULD use Pydantic serialization methods at boundaries that need model dumps or JSON.
 
+Serialized representations SHOULD be produced from Pydantic models through explicit boundary code, not by leaking Pydantic dump shapes into domain behavior.
+
 The shared base entity MUST provide a copy-with-changes operation.
 
-Very small internal helper values MAY use plain Python classes with `__slots__` when Pydantic would add no practical value.
+Very small internal helper values MAY use plain Python classes when Pydantic would add no practical value.
 
 Project data structures MUST NOT use `dataclasses.dataclass`.
 
-## Enumeration conventions
-
-Closed sets of named values MUST be represented as Python enum classes.
-
-String-valued external protocols, modes, provider names, setting kinds, category names, and similar closed type sets SHOULD use `enum.StrEnum`.
-
-Integer-valued closed sets SHOULD use `enum.IntEnum` when the integer value is part of the external contract or persisted state.
-
-Existing `str, enum.Enum` and `int, enum.Enum` classes MAY remain when they already define stable serialized or persisted values.
-
-New or changed enum classes SHOULD use `enum.StrEnum` or `enum.IntEnum` instead of `str, enum.Enum` or `int, enum.Enum`.
-
-Plain strings MUST NOT be used as the primary internal representation for values that have a finite configured, persisted, or specified set of allowed names.
-
-Enum values that cross external boundaries MUST preserve the specified serialized or persisted value exactly.
-
 ## Semantic primitive types
-
-Semantically specific primitive values MUST have semantically specific Python types before they cross module boundaries.
-
-For example, a user id, feed id, entry id, tag id, URL, score rule id, or provider key MUST NOT be represented as an unqualified primitive value in entities or public function signatures when the value has a distinct Feeds Fun meaning.
-
-Semantic primitive types SHOULD use `typing.NewType` when runtime behavior is identical to the underlying primitive.
-
-Raw primitive types MAY be used at parsing, rendering, storage, and serialization boundaries where external data is converted into or out of project types.
-
-Raw primitive types MAY be used inside local helper code when the value has already been validated or when adding a semantic type would not improve module-boundary clarity.
-
-Semantic primitive types SHOULD be owned by the module that owns the corresponding backend concept.
 
 Shared semantic primitive types SHOULD belong to the domain module.
 
-Module-specific semantic primitive types SHOULD belong to the owning module.
-
 A semantic identifier shared by independent domain modules MAY belong to the domain module when placing it in a narrower owning module would reverse the intended dependency direction or create a circular dependency.
-
-`ffun.domain.entities.SerializedId` MUST represent the canonical string form of an entity identifier at shared boundaries that accept identifiers owned by different domain modules. It is a universal domain primitive rather than an identifier owned by any one subsystem. Code within an owning module SHOULD retain the identifier's more specific semantic type until it reaches such a boundary.
 
 ## Entity ownership
 
@@ -178,22 +137,6 @@ Command entities MUST model command selection and parsed options independently f
 Command entities MUST NOT contain rendered output.
 
 Command entities MUST NOT perform command execution.
-
-## Data structure conventions
-
-Ordered input from users, feeds, provider responses, and configuration files SHOULD be represented with ordered collections.
-
-Sets MAY be used internally for de-duplication, but externally visible output order MUST be produced explicitly according to the relevant behavior or API specification.
-
-Mappings keyed by semantic ids SHOULD use the semantic id type when possible.
-
-Optional values MUST be represented with `None` instead of sentinel strings.
-
-Serialized representations MUST be created at protocol boundaries and SHOULD be treated as write-only output data.
-
-Serialized representations SHOULD be produced from Pydantic models through explicit boundary code, not by leaking Pydantic dump shapes into domain behavior.
-
-Entity methods that return dictionaries for logging MUST return structured values with stable keys and MUST NOT contain presentation formatting.
 
 ## Validation boundaries
 

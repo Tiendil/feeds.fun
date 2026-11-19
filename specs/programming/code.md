@@ -16,9 +16,9 @@ Programming specifications MUST be applied to newly written code.
 Existing implementations and artifacts MUST NOT be changed retroactively to conform to a programming specification unless the developer explicitly requests the change.
 This restriction applies regardless of how the change is made, including when it is carried out by newly written code.
 
-## Prefer enums over primitive values
+## Enums for closed sets
 
-Project-owned closed sets of named values SHOULD use enums instead of primitive values or constants.
+Project-owned closed sets of named values MUST use enums instead of primitive values or constants.
 Primitive values or constants MAY be used when exact literal values are required by a third-party interface or when the values do not represent independently named project concepts.
 
 **Rationale:** Enums make allowed values discoverable and help tools detect invalid member references.
@@ -59,6 +59,20 @@ Code that branches over an enum SHOULD prefer `match` or `switch` statements ove
 Code that dispatches on an enum MUST handle every member permitted at that point by the operation's contract.
 Code SHOULD use static exhaustiveness checking to verify that coverage when supported by the language or type checker.
 
+## Types at module boundaries
+
+Where the language supports distinct types, structured application values MUST have explicit types before crossing a module boundary.
+Untyped mappings MUST NOT be used for those values unless the data is already being prepared as a serialized representation.
+
+### Semantic primitive types
+
+Where the language supports distinct types, primitive values with a distinct domain meaning MUST use a type specific to that meaning before crossing a module boundary.
+Data model fields and public function signatures MUST use the corresponding semantic types for these values.
+
+Raw primitive types MAY be used at parsing, rendering, storage, and serialization boundaries where external data is converted into or out of project types.
+
+Raw primitive types MAY be used inside local helper code when the value has already been validated or when adding a semantic type would not improve module-boundary clarity.
+
 ## Runtime type validation
 
 Functions called through project-controlled typed interfaces SHOULD treat declared parameter types as caller contracts.
@@ -87,6 +101,21 @@ A validation function or method MAY return a constructed value when it intention
 Constructing and returning that value MUST be part of the operation's explicit contract; this exception does not permit returning dependencies resolved or information incidentally extracted during validation.
 
 Framework validation hooks whose protocols require returning the validated value or instance are exempt from the success-result restriction.
+
+## Data structure conventions
+
+Input whose order is significant SHOULD be represented with ordered collections.
+
+Sets MAY be used internally for de-duplication.
+Externally visible output order MUST be produced explicitly according to the relevant behavior or API specification.
+
+Value objects whose equality is based on their data SHOULD be immutable after construction when practical.
+Objects used for de-duplication SHOULD be hashable when practical.
+
+Outgoing serialized representations MUST be created at protocol boundaries.
+Domain logic SHOULD operate on the corresponding typed application values.
+
+Structured log data MUST use stable keys and MUST NOT contain presentation formatting.
 
 ## Function boundaries
 
