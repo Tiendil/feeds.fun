@@ -333,9 +333,3 @@ Domain-level modules MUST NOT import implementation submodules from another doma
 Code that imports objects, functions, classes, entities, constants, or other named Python definitions from another module MUST import them from the module where they are defined. Importing a definition into a module for local use does not make that module a supported import path for other callers. Callers MUST NOT import definitions through unrelated intermediate modules unless a specification or a code comment explicitly documents that import path as a supported public facade.
 
 When a named definition moves to another module, all imports of that definition MUST be updated to the new definition module as part of the same change. Obsolete compatibility import paths and re-export-only modules MUST be removed instead of preserved as hidden alternate public paths.
-
-## Data structures
-
-Backend domain data structures SHOULD inherit from `ffun.core.entities.BaseEntity` unless a third-party interface or standard-library protocol requires another type.
-
-Backend data structures MUST NOT use `dataclass` for domain entities.

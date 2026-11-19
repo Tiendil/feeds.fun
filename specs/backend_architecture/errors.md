@@ -68,8 +68,6 @@ The project root exception MUST be named `Error`.
 
 The project root exception MUST inherit from `Exception`.
 
-The project root exception MUST NOT inherit from Pydantic model classes.
-
 The project root exception MUST be owned by `ffun.core.errors`.
 
 Each module that defines fatal errors SHOULD define one module root error class.
@@ -117,8 +115,6 @@ Warnings MUST NOT be used for invalid API input, invalid command line arguments,
 
 Warnings SHOULD be represented as structured log records, explicit result states, or persisted error states.
 
-Warnings are not exceptions, Pydantic entities, or Python `warnings` module warnings.
-
 Code that adds warnings SHOULD include enough context for API, CLI, worker, and operator output to be useful.
 
 Examples of warning-producing situations include:
@@ -126,16 +122,6 @@ Examples of warning-producing situations include:
 - a transient network problem while loading a feed.
 - an entry that cannot be processed by one tag processor but can still be handled later.
 - a feed source response that is malformed but can be represented as a source-specific feed error state.
-
-## Pydantic validation errors
-
-Pydantic validation errors MUST NOT be exposed directly across high-level module boundaries for user-provided data.
-
-Pydantic validation errors raised while loading application configuration MAY propagate directly when their field-level diagnostics are intended for operators and the invalid configuration remains unusable.
-
-Modules that create Pydantic entities from user-provided, provider-provided, or other runtime external input MUST convert `pydantic.ValidationError` into Feeds Fun errors, API errors, warning log records, or persisted error states at the nearest exception boundary with useful context.
-
-Pydantic validation errors MAY be used directly inside tests for low-level entity validation.
 
 ## Exception boundaries
 
@@ -158,7 +144,6 @@ External systems include:
 
 - filesystem operations.
 - TOML parsing.
-- Pydantic model validation for external input.
 - regular expression compilation.
 - PostgreSQL operations.
 - HTTP and feed-source requests.

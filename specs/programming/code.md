@@ -90,6 +90,11 @@ Functions and methods that receive the constructed typed value MUST assume those
 Validation functions and methods MUST only verify invariants.
 They MUST return no data on success, apart from any validation status required by their contract, and MUST signal failure through the error mechanism defined by their contract.
 
+Each validation function, method, or hook SHOULD enforce one cohesive invariant or one closely related family of constraints.
+Independent concerns SHOULD use separate validators.
+A single validator MAY examine multiple values when they jointly define one invariant.
+Separating independent validation concerns keeps invariants locally understandable, independently testable, and easier to diagnose.
+
 Validation functions and methods MUST NOT return information merely retrieved, resolved, transformed, or extracted as a by-product of validation.
 They MAY perform such operations internally when required to verify invariants.
 Callers that need the resulting information MUST obtain it separately, unless the operation explicitly acts as a validating constructor.

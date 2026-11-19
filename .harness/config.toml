@@ -12,6 +12,8 @@ specs = [
   "python/language.md",
   "python/tests.md",
   "python/libs/pytest.md",
+  "python/libs/pydantic.md",
+  "python/libs/pydantic.dto_foundation.md",
   "typescript/tests.md",
   "typescript/libs/vitest.md",
   "documentation/changelog.md",
@@ -27,7 +29,10 @@ ref = "feature/agents-md-construction"
 enabled_mcp_servers = ["playwright"]
 
 [agents_md]
-embedded_specs = ["specs/dictionary.md"]
+embedded_specs = [
+  "specs/dictionary.md",
+  "specs/programming/code.md",
+]
 
 index_goal_prefixes_to_remove = [
   "This document describes ",
