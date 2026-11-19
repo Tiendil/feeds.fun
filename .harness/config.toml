@@ -31,6 +31,7 @@ enabled_mcp_servers = ["playwright"]
 [agents_md]
 embedded_specs = [
   "specs/dictionary.md",
+  "specs/meta/language.md",
   "specs/programming/code.md",
 ]
 
@@ -47,6 +48,7 @@ fragments = [
   ".vendor/shared-harness/agents.md.d/principles/implementation.md",
   ".vendor/shared-harness/agents.md.d/behavior/intro.md",
   ".vendor/shared-harness/agents.md.d/behavior/reaction_on_developer_commands.md",
+  ".harness/agents.md.d/behavior/communication.md",
   ".vendor/shared-harness/agents.md.d/behavior/ask_developer_when.md",
   ".vendor/shared-harness/agents.md.d/behavior/working_with_text_artifacts.md",
   ".vendor/shared-harness/agents.md.d/behavior/introducing_changes.md",

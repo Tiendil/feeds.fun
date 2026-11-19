@@ -89,8 +89,9 @@ Independently reusable specifications SHOULD include those definitions locally, 
 
 ## Style
 
+The [language conventions](language.md) apply to specification prose and normative requirements.
+
 - Specifications MUST use Markdown syntax for formatting the document.
-- Specifications MUST follow [RFC 2119](https://datatracker.ietf.org/doc/html/rfc2119).
 - Specifications MUST NOT break long lines to fit within 80 characters or any other number; they MUST use as many characters as needed to express the idea clearly.
 - When a prose statement names four or more distinct items, those items SHOULD be formatted as a Markdown list rather than inline prose.
 - Specifications SHOULD use Markdown lists for simple enumerations, including terms with definitions and named items with descriptions or a few associated properties.
@@ -178,37 +179,6 @@ Bold inline labels MUST NOT identify:
 
 The presence or absence of a label MUST NOT change whether any text is normative.
 Specifications MUST NOT introduce additional bold inline labels without first extending this convention.
-
-## Language
-
-Specifications SHOULD address their intended human readers and provide the context they need.
-Specifications SHOULD explain or reference any project knowledge that readers need to apply the requirements.
-Specifications SHOULD use a limited vocabulary of familiar words and keep sentence structures simple.
-Specifications SHOULD NOT use rare, ornate, invented, or needlessly formal wording when familiar wording conveys the intended meaning.
-Simplification SHOULD preserve the technical distinctions that readers need to interpret and apply the specification.
-
-Established technical terms MAY be used when they communicate the intended meaning more clearly than an everyday substitute.
-Specifications SHOULD explain terms and abbreviations unfamiliar to their intended readers at first use.
-The same concept SHOULD have the same name throughout the document, without synonyms introduced solely for stylistic variety.
-
-Each sentence SHOULD have one main point.
-Conditions and exceptions SHOULD stay close to the statements they qualify.
-Specifications SHOULD prefer active voice and direct verbs such as “check.”
-A sentence SHOULD name the actor when responsibility matters.
-Long noun phrases SHOULD be rewritten when they obscure relationships between components, actions, or properties.
-A sentence SHOULD repeat a name when a pronoun or other reference could identify more than one thing.
-
-Specifications SHOULD state conditions, alternatives, and the order of actions explicitly where they affect interpretation.
-Specifications SHOULD state quantities, units, and bounds precisely where they affect the specified behavior.
-Distinctions such as “all” versus “some” or “either” versus “both” SHOULD be explicit where they affect the specified behavior.
-Vague qualifiers such as “fast,” “adequate,” or “normally” SHOULD be replaced with concrete criteria when readers need those criteria to implement or verify a requirement.
-Each requirement SHOULD express one main obligation.
-Requirements SHOULD remain distinguishable from surrounding explanations and examples.
-
-Specifications SHOULD NOT use idioms, decorative metaphors, or promotional claims.
-Specifications SHOULD NOT use rhetorical questions or filler.
-Specifications SHOULD state uncertainty and missing information plainly where they affect interpretation.
-A specification MAY depart from these recommendations when doing so improves readability or when strict adherence would add little practical value.
 
 ## Terminology stability
 
