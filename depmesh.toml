@@ -145,6 +145,23 @@ output = { type = "union", items = [
   { type = "list", artifacts = ["@/specs/meta/backend_modules.md"] },
 ] }
 
+# The layers and slices spec governs all backend and frontend architecture specs.
+[[rules]]
+relation = "governed_by"
+input = { type = "any", items = [
+  { type = "glob", pattern = "@/specs/backend_architecture/**/*.md" },
+  { type = "glob", pattern = "@/specs/frontend_architecture/**/*.md" },
+] }
+output = { type = "list", artifacts = ["@/specs/programming/layers_and_slices.md"] }
+
+[[rules]]
+relation = "governs"
+input = { type = "one_of", artifacts = ["@/specs/programming/layers_and_slices.md"] }
+output = { type = "union", items = [
+  { type = "files", pattern = "@/specs/backend_architecture/**/*.md" },
+  { type = "files", pattern = "@/specs/frontend_architecture/**/*.md" },
+] }
+
 # Copied code conventions apply to backend, frontend, and repository utility source code.
 [[rules]]
 relation = "governed_by"

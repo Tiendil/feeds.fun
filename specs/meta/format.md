@@ -71,8 +71,9 @@ The `Goal of the document` section MUST NOT define requirements for the document
 - MUST list something.
 - MUST describe something.
 
-`This document describes the abstraction level and content conventions for backend module specifications` is an appropriate goal because it identifies the document's content.
-`This document describes conventions that keep backend module specifications focused` is inappropriate because it claims an intended effect on governed specifications.
+**Example:** `This document describes the abstraction level and content conventions for backend module specifications` is an appropriate goal because it identifies the document's content.
+
+**Counterexample:** `This document describes conventions that keep backend module specifications focused` is inappropriate because it claims an intended effect on governed specifications.
 
 The `Scope` section MUST identify the class of artifacts, behavior, or concerns to which the specification applies.
 It MUST describe that boundary at a stable conceptual level.
@@ -144,8 +145,7 @@ A callout SHOULD be omitted when it merely restates already clear content.
 
 ### Bold inline labels
 
-A non-normative callout SHOULD use the narrowest applicable bold inline label so readers can distinguish the callout's role from normative requirements.
-A callout MAY remain unlabeled when its non-normative role is already unambiguous from the surrounding structure.
+A non-normative callout MUST use the narrowest applicable bold inline label.
 A bold inline label MUST use exactly one of these forms:
 
 - `**Example:**` — a conforming concrete illustration.

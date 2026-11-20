@@ -7,6 +7,7 @@ specs = [
   "meta/dictionary.md",
   "programming/code.md",
   "programming/content.md",
+  "programming/layers_and_slices.md",
   "programming/tests.md",
   "programming/postgresql.md",
   "python/language.md",
