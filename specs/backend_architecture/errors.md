@@ -2,7 +2,7 @@
 
 ## Goal of the document
 
-This document describes how Feeds Fun backend modules represent fatal errors and warnings, and how those values move from lower layers to API, CLI, and worker boundaries.
+This document describes how the Feeds Fun backend represents fatal errors and warnings and passes those values to API, CLI, and worker boundaries.
 
 ## Scope
 
@@ -22,8 +22,8 @@ The following topics are out of scope:
 - `fatal error` - a problem that prevents the requested backend operation from completing successfully.
 - `non-fatal problem` - a problem discovered while processing a backend operation that does not prevent the operation from producing useful output or continuing later.
 - `error code` - a stable machine-readable identifier for a fatal error when the error is rendered across an external boundary.
-- `slice root error` - the `Error` exception class in a top-level slice's `errors` submodule that roots the fatal errors owned by the slice and its sub-slices.
-- `exception boundary` - a module boundary where expected low-level exceptions are converted into Feeds Fun exceptions, API errors, feed error states, or log records.
+- `module root error` - the `Error` exception class in a top-level module's `errors` Python module that serves as the root for fatal errors owned by that module and its nested modules.
+- `exception boundary` - a Python module boundary where expected low-level exceptions are converted into Feeds Fun exceptions, API errors, feed error states, or log records.
 - `stored-state integrity failure` - an unexpected failure to validate or reconstruct persisted application state according to its owning domain model.
 
 ## General principles
@@ -50,18 +50,18 @@ The project root exception MUST inherit from `Exception`.
 
 The project root exception MUST be owned by `ffun.core.errors`.
 
-Each top-level slice that owns fatal errors directly or through a sub-slice SHOULD define one slice root error class.
+Each top-level module that owns fatal errors directly or through a nested module SHOULD define one module root error class.
 
-A slice root error class MUST be named `Error`.
+A module root error class MUST be named `Error`.
 
-The project root exception also serves as the `ffun.core` slice root error.
-Every other slice root error class MUST inherit from the project root exception.
+The project root exception also serves as the `ffun.core` module root error.
+Every other module root error class MUST inherit from the project root exception.
 
-Concrete fatal error classes MUST inherit from the root error class of their top-level slice.
+Concrete fatal error classes MUST inherit from the root error class of their top-level module.
 
-Slice root error classes SHOULD be abstract classification classes and SHOULD NOT be raised directly when a more specific concrete error is available.
+Module root error classes SHOULD be abstract classification classes and SHOULD NOT be raised directly when a more specific concrete error is available.
 
-Intermediate abstract error classes MAY exist under a slice root when a slice or sub-slice needs a narrower ownership boundary.
+Intermediate abstract error classes MAY exist under a module root when a top-level or nested module needs a narrower ownership boundary.
 
 ## Exception data
 
@@ -104,7 +104,7 @@ Merely recognizing an exception type is not sufficient reason to catch it.
 An exception is expected only when its occurrence is part of the called operation's documented contract and the caller has a defined response.
 Exceptions caused by violated internal invariants, invalid persisted state, programming defects, or unexpected infrastructure failures are not expected merely because they use a project-specific exception class.
 
-Modules that call external systems MUST convert expected low-level failures into Feeds Fun errors, API errors, warning log records, or persisted error states at the boundary where useful domain context is still available.
+Code that calls external systems MUST convert expected low-level failures into Feeds Fun errors, API errors, warning log records, or persisted error states at the boundary where useful domain context is still available.
 
 A low-level failure is expected when one of the following is true:
 
@@ -123,7 +123,7 @@ External systems include:
 - LLM provider requests.
 - shell command execution.
 
-Modules SHOULD NOT catch broad low-level exception classes only to satisfy a module-boundary conversion rule.
+Code SHOULD NOT catch broad low-level exception classes only to satisfy a conversion rule at a Python module boundary.
 
 Unexpected low-level failures MAY propagate unchanged until the developer explicitly requests handling for that class of failure.
 
@@ -139,31 +139,31 @@ Code that handles expected user, provider, source, storage, or environment failu
 
 Invalid external input MUST be reported through the error architecture instead of by returning partially valid entities.
 
-For PostgreSQL operations, modules SHOULD catch and convert specific database exceptions only when the exception represents an expected business or consistency condition.
+For PostgreSQL operations, code SHOULD catch and convert specific database exceptions only when the exception represents an expected business or consistency condition.
 
 For example, a `ForeignKeyViolation` MAY be converted to an operation-specific stale-reference, concurrency, or integrity error when the operation is designed to race with deletion or accepts externally supplied entity ids.
 
-Modules SHOULD NOT wrap unexpected PostgreSQL infrastructure failures such as connection errors, pool failures, timeouts, SQL syntax errors, or unexpected constraint violations unless the developer explicitly decides that the module should handle them.
+Code SHOULD NOT wrap unexpected PostgreSQL infrastructure failures such as connection errors, pool failures, timeouts, SQL syntax errors, or unexpected constraint violations unless the developer explicitly approves that handling.
 
 A failure to validate or reconstruct persisted application state according to its owning domain model MUST be treated as an unexpected stored-state integrity failure.
 
-For HTTP, feed-source, LLM provider, and other third-party service calls, modules MUST convert expected service outcomes into module-specific errors or persisted states when those outcomes are part of normal operation.
+For HTTP, feed-source, LLM provider, and other third-party service calls, code MUST convert expected service outcomes into module-specific errors or persisted states when those outcomes are part of normal operation.
 
 Examples include unavailable feed sources, malformed feed responses, known protocol errors, provider-declared rate limits, authentication failures, and documented validation failures.
 
-Unknown third-party failures SHOULD NOT be broadly normalized unless the module boundary intentionally treats all failures of that operation as a recoverable domain outcome.
+Unknown third-party failures SHOULD NOT be broadly normalized unless the Python module boundary intentionally treats all failures of that operation as a recoverable domain outcome.
 
 When converting an exception, the original exception SHOULD be preserved as the cause when it helps debugging.
 
 ## Boundary mapping
 
-Lower-level modules MUST NOT convert errors directly into HTTP responses, terminal output, process termination, or frontend-visible records.
+Lower-level Python modules MUST NOT convert errors directly into HTTP responses, terminal output, process termination, or frontend-visible records.
 
-The mapping from exception classes to external boundary behavior SHOULD be owned by the boundary module.
+The module responsible for the boundary SHOULD own the mapping from exception classes to external behavior.
 
-The mapping MAY map specific slice root error classes to specific response or exit categories.
+The mapping MAY map specific module root error classes to specific response or exit categories.
 
-The mapping MAY map specific concrete error classes to specific response or exit categories when a slice root is too broad.
+The mapping MAY map specific concrete error classes to specific response or exit categories when a module root is too broad.
 
 The mapping MUST define a default failure category for project exceptions that are not explicitly mapped.
 

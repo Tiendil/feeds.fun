@@ -1,8 +1,8 @@
-# Backend layers and slices
+# Backend modules and roles
 
 ## Goal of the document
 
-This document describes the Feeds Fun backend layout by layer and slice.
+This document describes the Feeds Fun backend layout by module and role.
 
 ## Scope
 
@@ -10,14 +10,15 @@ This specification applies to Python source files under `ffun/ffun`.
 
 ## File and package layout
 
-The backend layout follows the [shared layers and slices specification](../programming/layers_and_slices.md).
+The backend layout follows the [shared modules and roles specification](../programming/modules_and_roles.md).
+Each declared module is implemented as a Python package.
 
-A declared top-level slice named `ffun.<name>` MUST use `./ffun/ffun/<name>/` as its source directory.
-A declared sub-slice MUST use the subdirectory of its parent slice that matches the final component of its package name.
+A declared top-level module named `ffun.<name>` MUST use `./ffun/ffun/<name>/` as its source directory.
+A declared nested module MUST use the subdirectory of its parent module that matches the final component of its package name.
 
-## Slices
+## Modules
 
-A top-level slice MUST own the definitions and behavior that directly implement its responsibilities.
+A top-level module MUST own the definitions and behavior that directly implement its responsibilities.
 
 - `ffun.api` owns the backend's HTTP entry points.
 - `ffun.application` owns application construction and application-wide settings.
@@ -25,7 +26,7 @@ A top-level slice MUST own the definitions and behavior that directly implement 
 - `ffun.auth` owns authentication and authorization logic.
 - `ffun.benefits` owns benefit package templates and the benefit transactions that coordinate changes to purchased state and its corresponding entitlements.
 - `ffun.cli` owns the command-line interface for managing the backend.
-- `ffun.core` owns the domain-neutral technical infrastructure shared by backend slices.
+- `ffun.core` owns the domain-neutral technical infrastructure shared by backend modules.
 - `ffun.data_protection` owns data protection and privacy-related behavior.
 - `ffun.dispatcher` owns dispatching entries to tag processor queues and tracking per-processor entry processing status.
 - `ffun.domain` owns the shared code that represents and supports foundational Feeds Fun domain concepts.
@@ -48,7 +49,7 @@ A top-level slice MUST own the definitions and behavior that directly implement 
 - `ffun.openai` owns OpenAI service integration.
 - `ffun.parsers` owns feed, entry, site, and OPML parsing logic.
 - `ffun.processors_quality` owns quality validation for tagging processors.
-- `ffun.product` owns product-specific definitions and behavior with no more specific domain owner when multiple top-level slices need them directly for their own production responsibilities.
+- `ffun.product` owns product-specific definitions and behavior with no more specific domain owner when multiple top-level modules need them directly for their own production responsibilities.
 - `ffun.queues` owns the shared infrastructure for persistent work queues.
 - `ffun.resources` owns per-user resource accounting and enforces caller-supplied limits on reservations.
 - `ffun.scores` owns score rules and score calculation.
@@ -59,70 +60,70 @@ A top-level slice MUST own the definitions and behavior that directly implement 
 
 ### `ffun.api`
 
-The `ffun.api.spa` sub-slice owns the HTTP endpoints used by the frontend.
+The `ffun.api.spa` nested module owns the HTTP endpoints used by the frontend.
 
 ### `ffun.core`
 
-The shared `entities` submodule in `ffun.core` MUST define the common entity base used by higher-level modules.
+The shared `entities.py` file in `ffun.core` MUST define the common entity base used by higher-level modules.
 
 ### `ffun.domain`
 
 Semantic identifiers owned by `ffun.domain` MUST be dependency-neutral and shared across independent domain modules.
 
-A semantic identifier shared by independent domain-level slices SHOULD belong to `ffun.domain` when placing it in a narrower owning slice would reverse the intended dependency direction or create a cycle.
+A semantic identifier shared by independent domain-level modules SHOULD belong to `ffun.domain` when placing it in a narrower owning module would reverse the intended dependency direction or create a cycle.
 
-## Layers
+## Roles
 
-Paths in layer placement rules are relative to the source directory of the file's most specific declared slice.
+Paths in role placement rules are relative to the source directory of the file's most specific declared module.
 
-An **orphaned file** is a Python file in a declared slice whose path matches no placement rule for a layer other than Public or Private.
+An **orphaned file** is a Python file in a declared module whose path matches no placement rule for a role other than Public or Private.
 
 ### Domain
 
-`domain.py` belongs to the Domain layer.
+`domain.py` has the Domain role.
 
-The Domain layer implements the business logic owned by its slice.
+Files with the Domain role implement the business logic owned by their module.
 
 Domain functions SHOULD hide low-level communication details from callers.
 Callers should not need to know whether a workflow uses PostgreSQL, HTTP, providers, local tools, or multiple operation calls.
 
 ### Entities
 
-`entities.py` belongs to the Entities layer.
+`entities.py` has the Entities role.
 
-The Entities layer defines types, semantic identifiers, enums, and entities that represent the slice's concepts.
+Files with the Entities role define types, semantic identifiers, enums, and entities that represent their module's concepts.
 Entities SHOULD describe domain data and boundary data.
 Entities SHOULD omit storage implementation details unless storage metadata is itself part of the domain concept.
 
 ### Errors
 
-`errors.py` belongs to the Errors layer.
+`errors.py` has the Errors role.
 
-The Errors layer defines the slice's exception types and error values.
-Errors SHOULD express failures in terms of the slice's responsibilities so callers can decide how to respond.
+Files with the Errors role define their module's exception types and error values.
+Errors SHOULD express failures in terms of the module's responsibilities so callers can decide how to respond.
 
-Production errors MUST be defined in production modules.
-Test modules MAY define test-only error classes when they need them to verify error handling.
+Production errors MUST be defined in production files.
+Test files MAY define test-only error classes when they need them to verify error handling.
 
 See the [backend error architecture](errors.md) for detailed error rules.
 
 ### Migrations
 
-Python files matching `migrations/*.py` belong to the Migrations layer.
+Python files matching `migrations/*.py` have the Migrations role.
 
-The Migrations layer implements changes to the database schema and stored data.
+Files with the Migrations role implement changes to the database schema and stored data.
 
-Dedicated tests MAY be omitted for Yoyo migrations in the Migrations layer.
+Dedicated tests MAY be omitted for Yoyo migrations with the Migrations role.
 
 See the [database migration rules](db.md#schema-migrations) for migration ownership and behavior.
 
 ### Operations
 
-`operations.py` belongs to the Operations layer.
+`operations.py` has the Operations role.
 
-The Operations layer implements the technical details of a slice's communication with storage and other external systems.
+Files with the Operations role implement the technical details of their module's communication with storage and other external systems.
 
-Operation functions SHOULD provide individual actions that the slice’s Domain layer can compose into workflows.
+Operation functions SHOULD provide individual actions that code with the Domain role in the same module can compose into workflows.
 
 See the [backend database architecture](db.md) for PostgreSQL-specific rules.
 
@@ -145,36 +146,36 @@ An operation that uses an upsert internally SHOULD still use `save_` or `update_
 
 ### Settings
 
-`settings.py` belongs to the Settings layer.
+`settings.py` has the Settings role.
 
-The Settings layer defines how a slice produces validated, typed settings from configuration inputs and defaults.
-Modules in the Settings layer MUST NOT perform business operations, database queries, provider calls, or other runtime side effects.
+Files with the Settings role define how a module produces validated, typed settings from configuration inputs and defaults.
+Files with the Settings role MUST NOT perform business operations, database queries, provider calls, or other runtime side effects.
 
 The following rules apply to configuration entities and settings objects throughout `ffun/ffun`.
 
-Configuration entities SHOULD use Pydantic to reject malformed data before it reaches lower layers.
+Configuration entities SHOULD use Pydantic to reject malformed data before it reaches code that consumes the configuration.
 
-Settings classes that load configuration from environment variables or `.env` files SHOULD inherit from `ffun.core.settings.BaseSettings` to keep environment loading consistent across slices.
+Settings classes that load configuration from environment variables or `.env` files SHOULD inherit from `ffun.core.settings.BaseSettings` to keep environment loading consistent across modules.
 
 A settings object acting as the configuration-loading boundary MAY read configuration files from explicitly configured or declared paths.
 It MUST limit its filesystem access to reading those files.
 
 ### Tests
 
-Python files under directories named `tests` at any depth belong to the Tests layer.
+Python files under directories named `tests` at any depth have the Tests role.
 
-The Tests layer contains the slice's colocated tests and their support code.
+Files with the Tests role contain their module's colocated tests and test support code.
 
-The `make` submodule MAY appear only inside tests packages, as `<module>.tests.make`.
+The `make` Python submodule MAY appear only inside tests packages, as `<module>.tests.make`.
 
 Object constructors and pure fake data factories SHOULD live in `tests.make`.
 Helpers that perform actions or coordinate multiple calls SHOULD live in `tests.helpers`.
-These placement preferences apply even when only one test module uses the factory or helper.
+These placement preferences apply even when only one test file uses the factory or helper.
 
 #### Direct public function re-exports
 
 A test of a direct public function re-export SHOULD only verify that the public name refers to the original function.
-Tests dedicated to the function’s behavior MUST live with the module that defines it.
+Tests dedicated to the function’s behavior MUST live with the Python module that defines it.
 
 Example:
 
@@ -186,25 +187,25 @@ class TestGetEntry:
 
 ### Utilities
 
-`utils.py` belongs to the Utilities layer.
+`utils.py` has the Utilities role.
 
-The Utilities layer provides technical helpers that support the slice's implementation.
+Files with the Utilities role provide technical helpers that support their module's implementation.
 
 ### Public
 
-An orphaned file belongs to the Public layer when its slice permits that layer.
+An orphaned file has the Public role when its module permits that role.
 
-The Public layer contains slice-specific public interfaces.
+Files with the Public role contain public interfaces specific to their module.
 
 ### Private
 
-An orphaned file belongs to the Private layer when its slice permits that layer.
+An orphaned file has the Private role when its module permits that role.
 
-The Private layer contains slice-specific implementation modules.
+Files with the Private role contain implementation code specific to their module.
 
-## Permitted layer and slice pairs
+## Permitted module and role pairs
 
-Every declared slice MAY contain files assigned to any layer in this list.
+Every declared module MAY contain files with any role in this list.
 
 - Domain.
 - Entities.
@@ -213,65 +214,65 @@ Every declared slice MAY contain files assigned to any layer in this list.
 - Tests.
 - Utilities.
 
-A slice MAY contain files in the Migrations layer for changes it owns under the database migration rules.
-A slice MAY contain files in the Operations layer when it owns the interaction with an external system that those files implement.
+A module MAY contain files with the Migrations role for changes it owns under the database migration rules.
+A module MAY contain files with the Operations role when it owns the interaction with an external system that those files implement.
 
-Foundational slices and `ffun.product` MAY contain files in the Public layer.
-Other declared slices MAY contain files in the Private layer.
+Foundational modules and `ffun.product` MAY contain files with the Public role.
+Other declared modules MAY contain files with the Private role.
 
 ## Dependencies and public interfaces
 
-Dependency rules apply to direct Python imports across layer or slice boundaries.
+Dependency rules apply to direct Python imports between files with different roles or owning modules.
 
 ### Import paths
 
-For each definition it exposes at a boundary, a slice SHOULD provide a single public import path.
+For each definition it exposes at a boundary, a module SHOULD provide a single public import path.
 
-When importing a named Python definition, code MUST use its defining module or an import path explicitly documented as a public facade in a specification or code comment.
-A caller SHOULD import a definition from its defining module when that module exposes the definition to the caller as part of a public interface.
+When importing a named Python definition, code MUST use its defining Python module or an import path explicitly documented as a public facade in a specification or code comment.
+A caller SHOULD import a definition from its defining Python module when that Python module exposes the definition to the caller as part of a public interface.
 
 **Rationale:** A single public path gives callers a consistent way to import a definition.
 
-**Example:** The Feeds slice defines `Feed` in its public `entities` submodule.
+**Example:** The Feeds module defines `Feed` in its public `entities.py` file.
 A caller with access to that interface uses `from ffun.feeds.entities import Feed`.
 
 When moving a definition makes an import path obsolete, the same change MUST update affected imports to a supported path and remove the obsolete path.
 
-When a public interface exposes a definition from a private module, it MUST re-export the definition directly unless it adds behavior that belongs to its layer or slice.
+When a public interface exposes a definition from a private Python module, it MUST re-export the definition directly unless it adds behavior that belongs to its role or owning module.
 
 **Rationale:** A direct re-export preserves the definition's identity and contract.
 
 **Example:** `ffun.feeds.domain` exposes `save_feed` through `save_feed = operations.save_feed`.
-A caller outside the slice with access to that interface uses `from ffun.feeds.domain import save_feed`.
+A caller outside the module with access to that interface uses `from ffun.feeds.domain import save_feed`.
 
 **Example:** `ffun.library.domain` wraps `operations.unlink_all` to own the transaction.
 
 ### Public import interfaces
 
-A slice MUST expose public interfaces only through modules assigned to a layer unless this specification explicitly allows a broader set of modules for that slice.
-A module is private to its slice unless explicitly declared a public interface.
+A module MUST expose public interfaces only through Python modules assigned a role unless this specification explicitly allows a broader set of Python modules for it.
+A Python module is private to its owning module unless explicitly declared a public interface.
 
-The submodules in this list are public interfaces of the slices that contain them.
+The Python submodules in this list are public interfaces of their owning modules.
 
 - `domain`.
 - `entities`.
 - `errors`.
 
-Modules in the Public layer are public import interfaces for functionality owned by their slice.
-Other production modules in foundational slices and `ffun.product` are also public import interfaces for functionality owned by their slice.
+Files with the Public role are public import interfaces for functionality owned by their module.
+Other production files in foundational modules and `ffun.product` are also public import interfaces for functionality owned by their module.
 
-A module in the Private layer MAY be imported only by a module directly assigned to the same slice.
+A file with the Private role MAY be imported only by a file belonging directly to the same module.
 
-All `tests.make` and `tests.helpers` submodules are public interfaces for code in another slice’s Tests layer.
+All `tests.make` and `tests.helpers` Python submodules are public interfaces for code with the Tests role in another module.
 
 Backend production code MUST NOT import `tests.make` or `tests.helpers`.
 
-### Layer dependencies
+### Role dependencies
 
-Layer dependency rules apply only to imports between different layers when both files belong directly to the same slice.
+Role dependency rules apply only to imports between different roles when both files belong directly to the same module.
 
-Within that scope, modules in any layer MAY import modules in Public or Private.
-Modules in Public or Private MAY import modules in any layer except Tests.
+Within that scope, files with any role MAY import files with the Public or Private role.
+Files with the Public or Private role MAY import files with any role except Tests.
 Other imports within that scope are allowed only when their direction is listed below.
 
 - Domain: Entities, Errors, Operations, Settings, Utilities
@@ -282,25 +283,25 @@ Other imports within that scope are allowed only when their direction is listed 
 - Tests: Domain, Entities, Errors, Operations, Settings, Utilities
 - Utilities: Entities, Errors, Settings
 
-### Slice roles
+### Module kinds
 
-#### Role definitions
+#### Definitions
 
-- **Foundational slices** provide shared technical infrastructure or foundational domain concepts.
-- **Shared-service slices** provide common services for backend slices.
-- **Edge slices** own boundaries through which external callers start or use the backend.
-- **Domain-level slices** implement backend capabilities and workflows within their areas of responsibility.
+- **Foundational modules** provide shared technical infrastructure or foundational domain concepts.
+- **Shared-service modules** provide common services for backend modules.
+- **Edge modules** own boundaries through which external callers start or use the backend.
+- **Domain-level modules** implement backend capabilities and workflows within their areas of responsibility.
 
-#### Role membership
+#### Membership
 
 - Foundational: `ffun.core`, `ffun.domain`
 - Shared-service: `ffun.audit`, `ffun.locks`, `ffun.queues`
-- Edge: `ffun.api`, `ffun.application`, `ffun.cli`, and their sub-slices at any depth
-- Domain-level: every other declared top-level slice except `ffun.product`
+- Edge: `ffun.api`, `ffun.application`, `ffun.cli`, and their nested modules at any depth
+- Domain-level: every other declared top-level module except `ffun.product`
 
-### Slice dependencies
+### Module dependencies
 
-A dependency between slices is allowed only when this specification permits its direction.
+A dependency between modules is allowed only when this specification permits its direction.
 
 - Foundational: Foundational
 - Shared-service: Foundational, Shared-service
@@ -310,15 +311,15 @@ A dependency between slices is allowed only when this specification permits its 
 
 Permissions to depend on `ffun.product` apply to the product-specific definitions and behavior the caller uses.
 
-TODO Resolve how the foundational slice dependency rule applies to `ffun.core.migrations`.
+TODO Resolve how the foundational module dependency rule applies to `ffun.core.migrations`.
 The [Tach configuration](../../ffun/tach.toml) permits `ffun.core.migrations` to depend on `ffun.application`.
 
 ## Current boundary problems that should be fixed
 
-- Break the API–Application slice cycle.
+- Break the API–Application module cycle.
   Application imports API’s private root route handlers to register routes, and the root handlers import Application’s private settings to get the site domain. [Application wiring](../../ffun/ffun/application/application.py#L9) · [Root handlers](../../ffun/ffun/api/root/http_handlers.py#L8)
 
-- CLI queue and metrics tests and Librarian’s background processor tests use Queues’ private `operations` module to prepare or inspect queues.
+- CLI queue and metrics tests and Librarian’s background processor tests use Queues’ private `operations.py` to prepare or inspect queues.
   The CLI queue test also imports the private `FakeQueueItem` test type. [CLI queue tests](../../ffun/ffun/cli/commands/tests/test_queues.py) · [CLI metrics tests](../../ffun/ffun/cli/commands/tests/test_metrics.py) · [Librarian background processor tests](../../ffun/ffun/librarian/tests/test_background_processors.py)
 
   ```python
@@ -326,8 +327,8 @@ The [Tach configuration](../../ffun/tach.toml) permits `ffun.core.migrations` to
   from ffun.queues.tests.entities import FakeQueueItem
   ```
 
-- Feed Discovery’s Domain module imports the Integrations slice’s private `settings` module to look up a plugin for the source URL.
-  Integrations tests import Feed Discovery’s Entities module, forming a slice dependency cycle. [Feed Discovery Domain](../../ffun/ffun/feeds_discoverer/domain.py) · [Integrations plugin test](../../ffun/ffun/integrations/tests/test_plugin.py)
+- Feed Discovery’s `domain.py` imports Integrations’ private `settings.py` to look up a plugin for the source URL.
+  Integrations tests import Feed Discovery’s `entities.py`, forming a module dependency cycle. [Feed Discovery Domain](../../ffun/ffun/feeds_discoverer/domain.py) · [Integrations plugin test](../../ffun/ffun/integrations/tests/test_plugin.py)
 
   ```python
   # ffun.feeds_discoverer.domain
@@ -347,13 +348,13 @@ The [Tach configuration](../../ffun/tach.toml) permits `ffun.core.migrations` to
   from ffun.integrations.tests.helpers import FakeIntegration
   ```
 
-- Meta’s Domain module imports Ontology’s private `cache` module to look up tag IDs and UIDs during tag renormalization. [Meta Domain](../../ffun/ffun/meta/domain.py)
+- Meta’s `domain.py` imports Ontology’s private `cache.py` to look up tag IDs and UIDs during tag renormalization. [Meta Domain](../../ffun/ffun/meta/domain.py)
 
   ```python
   from ffun.ontology import cache as o_cache
   ```
 
-- Tags and Ontology form a slice dependency cycle. Tag normalization uses Ontology’s tag types, and those types use Tags’ category type. [Tags Domain](../../ffun/ffun/tags/domain.py) · [Ontology Entities](../../ffun/ffun/ontology/entities.py)
+- Tags and Ontology form a module dependency cycle. Tag normalization uses Ontology’s tag types, and those types use Tags’ category type. [Tags Domain](../../ffun/ffun/tags/domain.py) · [Ontology Entities](../../ffun/ffun/ontology/entities.py)
 
   ```python
   # ffun.tags.domain
@@ -363,16 +364,16 @@ The [Tach configuration](../../ffun/tach.toml) permits `ffun.core.migrations` to
   from ffun.tags.entities import TagCategories
   ```
 
-- Ontology’s Domain module imports Tags’ private `converters` module to turn tag UIDs into display names. [Ontology Domain](../../ffun/ffun/ontology/domain.py)
+- Ontology’s `domain.py` imports Tags’ private `converters.py` to turn tag UIDs into display names. [Ontology Domain](../../ffun/ffun/ontology/domain.py)
 
   ```python
   from ffun.tags import converters
   ```
 
-- Users test fixtures, factories, and Domain and Operations tests import `primary_oidc_service_id` from Auth’s private `settings` module for test user mappings.
+- Users test fixtures, factories, and Domain and Operations tests import `primary_oidc_service_id` from Auth’s private `settings.py` for test user mappings.
   The Operations tests also import `single_user_service_id` to test mappings across providers. [Fixtures](../../ffun/ffun/users/tests/fixtures.py) · [Factories](../../ffun/ffun/users/tests/make.py) · [Domain tests](../../ffun/ffun/users/tests/test_domains.py) · [Operations tests](../../ffun/ffun/users/tests/test_operations.py)
 
-  Auth’s Domain module imports Users’ Domain module, so these test imports form a slice dependency cycle. [Auth Domain](../../ffun/ffun/auth/domain.py)
+  Auth’s `domain.py` imports Users’ `domain.py`, so these test imports form a module dependency cycle. [Auth Domain](../../ffun/ffun/auth/domain.py)
 
   ```python
   # ffun.users.tests.test_operations
@@ -382,13 +383,13 @@ The [Tach configuration](../../ffun/tach.toml) permits `ffun.core.migrations` to
   from ffun.users import domain as u_domain
   ```
 
-- Google’s Entities module imports its chat request and response base classes through LLM Framework’s private `provider_interface` module. Both classes are defined in LLM Framework’s public `entities` module. [Google Entities](../../ffun/ffun/google/entities.py) · [LLM Framework Entities](../../ffun/ffun/llms_framework/entities.py)
+- Google’s `entities.py` imports its chat request and response base classes through LLM Framework’s private `provider_interface.py`. Both classes are defined in LLM Framework’s public `entities.py`. [Google Entities](../../ffun/ffun/google/entities.py) · [LLM Framework Entities](../../ffun/ffun/llms_framework/entities.py)
 
   ```python
   from ffun.llms_framework.provider_interface import ChatRequest, ChatResponse
   ```
 
-- Librarian’s processor tests import `ChatResponseTest` from LLM Framework’s private `provider_interface` module to build fake responses for a tag deduplication test. [Librarian processor tests](../../ffun/ffun/librarian/processors/tests/test_llm_general.py)
+- Librarian’s processor tests import `ChatResponseTest` from LLM Framework’s private `provider_interface.py` to build fake responses for a tag deduplication test. [Librarian processor tests](../../ffun/ffun/librarian/processors/tests/test_llm_general.py)
 
   ```python
   from ffun.llms_framework.provider_interface import ChatResponseTest
@@ -402,14 +403,14 @@ The [Tach configuration](../../ffun/tach.toml) permits `ffun.core.migrations` to
   from ffun.llms_framework.keys_statuses import Statuses
   ```
 
-- Processor Quality’s Domain module imports Librarian’s private processor registry and context class to run a configured processor on its quality route. [Processor Quality Domain](../../ffun/ffun/processors_quality/domain.py)
+- Processor Quality’s `domain.py` imports Librarian’s private processor registry and context class to run a configured processor on its quality route. [Processor Quality Domain](../../ffun/ffun/processors_quality/domain.py)
 
   ```python
   from ffun.librarian.background_processors import processors as ln_processors
   from ffun.librarian.processors.base import ProcessorContext
   ```
 
-- Core and Domain form a slice dependency cycle. Core’s test helpers import Domain’s `UserId` for log assertions, and Domain’s entities use Core’s base types. [Core test helpers](../../ffun/ffun/core/tests/helpers.py) · [Domain Entities](../../ffun/ffun/domain/entities.py)
+- Core and Domain form a module dependency cycle. Core’s test helpers import Domain’s `UserId` for log assertions, and Domain’s entities use Core’s base types. [Core test helpers](../../ffun/ffun/core/tests/helpers.py) · [Domain Entities](../../ffun/ffun/domain/entities.py)
 
   ```python
   # ffun.core.tests.helpers
@@ -427,11 +428,11 @@ The [Tach configuration](../../ffun/tach.toml) permits `ffun.core.migrations` to
   from ffun.feeds_collections.collections import collections
   ```
 
-- Several modules use shared types through incidental imports in another module. The types are defined in `ffun.domain.entities`. The following modules expose the names as a side effect of importing them for local use.
+- Several Python modules use shared types through incidental imports in another Python module. The types are defined in `ffun.domain.entities`. The following files expose the names as a side effect of importing them for local use.
 
-  - Feeds Entities exposes `FeedId`, which Loader Domain imports directly and SPA Entities accesses through the Feeds Entities module. [Loader Domain](../../ffun/ffun/loader/domain.py) · [SPA Entities](../../ffun/ffun/api/spa/entities.py)
-  - Feed Collections Entities exposes `CollectionId`, which Loader tests import and SPA Entities accesses through the Feed Collections Entities module. [Loader tests](../../ffun/ffun/loader/tests/test_domain.py) · [SPA Entities](../../ffun/ffun/api/spa/entities.py)
-  - LLM Framework Entities exposes `LLMTokens` and `USDCost`, which LLM Framework Domain and tests import. Google, OpenAI, and Librarian tests also import `LLMTokens` through this module. [LLM Framework Domain](../../ffun/ffun/llms_framework/domain.py) · [Google provider tests](../../ffun/ffun/google/tests/test_provider_interface.py) · [OpenAI provider tests](../../ffun/ffun/openai/tests/test_provider_interface.py) · [Librarian processor tests](../../ffun/ffun/librarian/processors/tests/test_llm_general.py)
+  - Feeds Entities exposes `FeedId`, which Loader Domain imports directly and SPA Entities accesses through Feeds’ `entities.py`. [Loader Domain](../../ffun/ffun/loader/domain.py) · [SPA Entities](../../ffun/ffun/api/spa/entities.py)
+  - Feed Collections Entities exposes `CollectionId`, which Loader tests import and SPA Entities accesses through Feed Collections’ `entities.py`. [Loader tests](../../ffun/ffun/loader/tests/test_domain.py) · [SPA Entities](../../ffun/ffun/api/spa/entities.py)
+  - LLM Framework Entities exposes `LLMTokens` and `USDCost`, which LLM Framework Domain and tests import. Google, OpenAI, and Librarian tests also import `LLMTokens` through that `entities.py` file. [LLM Framework Domain](../../ffun/ffun/llms_framework/domain.py) · [Google provider tests](../../ffun/ffun/google/tests/test_provider_interface.py) · [OpenAI provider tests](../../ffun/ffun/openai/tests/test_provider_interface.py) · [Librarian processor tests](../../ffun/ffun/librarian/processors/tests/test_llm_general.py)
   - Tags Entities exposes `TagUidPart`, which Tags’ utilities tests import. [Tags utilities tests](../../ffun/ffun/tags/tests/test_utils.py)
   - Users Entities exposes `UserId`, which Auth Domain uses as `u_entities.UserId`. [Auth Domain](../../ffun/ffun/auth/domain.py)
 
@@ -440,7 +441,7 @@ The [Tach configuration](../../ffun/tach.toml) permits `ffun.core.migrations` to
   from ffun.feeds.entities import Feed, FeedId, FeedState
   ```
 
-- Queues’ package initializer declares a public import path for five names already defined in its public Entities module. The initializer belongs to the Private layer. [Queues initializer](../../ffun/ffun/queues/__init__.py)
+- Queues’ package initializer declares a public import path for five names already defined in its public `entities.py` file. The initializer has the Private role. [Queues initializer](../../ffun/ffun/queues/__init__.py)
 
   ```python
   __all__ = ("BaseQueueItem", "DEFAULT_SECONDARY_ID", "QueueKind", "QueueRecord", "QueueRecordId")

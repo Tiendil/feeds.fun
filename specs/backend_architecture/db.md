@@ -12,8 +12,8 @@ This specification applies to database-backed Python code under `ffun/ffun` and 
 
 - `database operation` - a function that directly reads from or writes to PostgreSQL.
 - `transactional operation` - a database operation or domain function whose multiple SQL statements MUST succeed or fail as one atomic unit.
-- `operation module` - a module that owns persistence-backed commands and queries for its slice. [Operations layer](layers_and_slices.md#operations)
-- `migration` - a Yoyo file that changes the database schema or stored data. [Migrations layer](layers_and_slices.md#migrations)
+- `operation module` - a Python module in the Operations role that implements persistence-backed commands and queries for its owning module. [Operations role](modules_and_roles.md#operations)
+- `migration` - a Yoyo file that changes the database schema or stored data. [Migrations role](modules_and_roles.md#migrations)
 - `execute callable` - an object with the same contract as `ffun.core.postgresql.ExecuteType`, used to run SQL inside either a single-statement helper or an explicit transaction.
 - `approved transaction participant` - a cross-cutting technical module whose public domain interface MAY participate in another top-level module's transaction without workflow-specific approval.
 
@@ -56,8 +56,8 @@ This exception MUST NOT introduce cross-module references in production schemas,
 
 ### Transaction Ownership
 
-Domain modules MUST own transaction boundaries for new or significantly changed business workflows.
-When such a workflow must atomically change multiple database records owned by the same top-level backend module, the domain module MUST pass the transaction execute callable into operation-module helpers.
+Python modules in the Domain role MUST own transaction boundaries for new or significantly changed business workflows.
+When such a workflow must atomically change multiple database records owned by the same top-level backend module, the Python module in the Domain role MUST pass the transaction execute callable to helpers in the operation module.
 
 By default, a transaction owned by one top-level backend module MUST NOT execute database operations owned by another top-level backend module or pass its execute callable through another top-level module's domain boundary.
 The following cross-cutting technical modules are approved transaction participants for every workflow:
@@ -83,7 +83,7 @@ New code SHOULD NOT add transaction ownership to operation modules unless the op
 
 ### Operation Results and Row Mapping
 
-Operation modules SHOULD return domain entities, typed ids, primitives, or dictionaries with clear ownership. They SHOULD NOT leak raw persistence details into API handlers when a domain entity or module-level type can express the result.
+Operation modules SHOULD return domain entities, typed ids, primitives, or dictionaries with clear ownership. They SHOULD NOT leak raw persistence details into API handlers when a domain entity or a type defined at Python module scope can express the result.
 
 When an operation uses `RETURNING` to determine whether a change happened, the empty result path MUST be handled explicitly.
 
@@ -180,7 +180,7 @@ For example, `l_` is already used by `library`, so `librarian` uses `ln_` for ta
 
 ## Schema Migrations
 
-Schema changes and any conversions of stored data required by a code change MUST be implemented as Yoyo migrations in the owning slice’s Migrations layer.
+Schema changes and any conversions of stored data required by a code change MUST be implemented as Yoyo migrations assigned to the Migrations role in the owning module.
 
 Before adding a migration on a development branch, developers and agents MUST check whether that branch already introduces an unreleased migration for the same feature or schema change.
 When it does, they SHOULD amend that branch migration instead of adding another incremental migration.

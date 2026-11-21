@@ -39,7 +39,7 @@ Enum values used in external compatibility contracts MUST NOT be changed or reus
 
 Deprecated enum members SHOULD be marked using the language's native deprecation mechanism or a `DEPRECATED` comment in the language's comment syntax, including the reason for deprecation.
 
-When choosing types for enum values, consider the layer that owns the enum:
+When choosing types for enum values, consider the enum’s architectural role.
 
 - API-boundary enums SHOULD use values required by the API contract.
 - Storage-bound enums SHOULD use values that provide performance and storage efficiency.

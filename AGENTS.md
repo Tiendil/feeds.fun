@@ -185,8 +185,7 @@ You MUST NOT perform the following operations without explicit instructions to d
 This index lists the available specifications and their goals.
 
 - `specs/backend_architecture/db.md` — the Feeds Fun backend architecture for PostgreSQL-backed persistence.
-- `specs/backend_architecture/errors.md` — how Feeds Fun backend modules represent fatal errors and warnings, and how those values move from lower layers to API, CLI, and worker boundaries.
-- `specs/backend_architecture/layers_and_slices.md` — the Feeds Fun backend layout by layer and slice.
+- `specs/backend_architecture/errors.md` — how the Feeds Fun backend represents fatal errors and warnings and passes those values to API, CLI, and worker boundaries.
 - `specs/backend_architecture/modules/audit.md` — the responsibility and observable audit behavior of the `ffun.audit` backend module.
 - `specs/backend_architecture/modules/benefits.md` — the responsibility and observable benefit-application behavior of the `ffun.benefits` backend module.
 - `specs/backend_architecture/modules/entitlements.md` — the responsibility and observable entitlement behavior of the `ffun.entitlements` backend module.
@@ -194,6 +193,7 @@ This index lists the available specifications and their goals.
 - `specs/backend_architecture/modules/one_time_purchases.md` — the responsibility and observable one-time-purchase behavior of the `ffun.one_time_purchases` backend module.
 - `specs/backend_architecture/modules/resources.md` — the responsibility and observable accounting behavior of the `ffun.resources` backend module.
 - `specs/backend_architecture/modules/subscriptions.md` — the responsibility and observable subscription behavior of the `ffun.subscriptions` backend module.
+- `specs/backend_architecture/modules_and_roles.md` — the Feeds Fun backend layout by module and role.
 - `specs/behavior/cli.md` — the stable shared behavior of the Feeds Fun backend command-line interface.
 - `specs/behavior/cli/benefits.md` — the Feeds Fun CLI command family for applying administrator-authorized benefit transactions and refreshing subscription entitlements from current benefit configuration.
 - `specs/behavior/cli/entitlements.md` — the Feeds Fun CLI command family for inspecting user entitlements.
@@ -214,7 +214,7 @@ This index lists the available specifications and their goals.
 - `specs/programming/code.md` — conventions for program implementations.
 - `specs/programming/content.md` — content requirements for programming specifications.
 - `specs/programming/dto.md` — the responsibilities and ownership of data transfer objects in a DTO-centric architecture.
-- `specs/programming/layers_and_slices.md` — how projects organize source files and code elements by layer and slice.
+- `specs/programming/modules_and_roles.md` — how projects organize source files and code elements by module and role.
 - `specs/programming/postgresql.md` — conventions for relational schema design and SQL in PostgreSQL.
 - `specs/programming/tests.md` — conventions for organizing automated software tests and verifying program behavior.
 - `specs/python/language.md` — language-level implementation conventions for Python source code.
@@ -621,7 +621,7 @@ Enum values used in external compatibility contracts MUST NOT be changed or reus
 
 Deprecated enum members SHOULD be marked using the language's native deprecation mechanism or a `DEPRECATED` comment in the language's comment syntax, including the reason for deprecation.
 
-When choosing types for enum values, consider the layer that owns the enum:
+When choosing types for enum values, consider the enum’s architectural role.
 
 - API-boundary enums SHOULD use values required by the API contract.
 - Storage-bound enums SHOULD use values that provide performance and storage efficiency.

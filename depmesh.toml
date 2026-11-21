@@ -145,18 +145,18 @@ output = { type = "union", items = [
   { type = "list", artifacts = ["@/specs/meta/backend_modules.md"] },
 ] }
 
-# The layers and slices spec governs all backend and frontend architecture specs.
+# The shared modules and roles spec governs all backend and frontend architecture specs.
 [[rules]]
 relation = "governed_by"
 input = { type = "any", items = [
   { type = "glob", pattern = "@/specs/backend_architecture/**/*.md" },
   { type = "glob", pattern = "@/specs/frontend_architecture/**/*.md" },
 ] }
-output = { type = "list", artifacts = ["@/specs/programming/layers_and_slices.md"] }
+output = { type = "list", artifacts = ["@/specs/programming/modules_and_roles.md"] }
 
 [[rules]]
 relation = "governs"
-input = { type = "one_of", artifacts = ["@/specs/programming/layers_and_slices.md"] }
+input = { type = "one_of", artifacts = ["@/specs/programming/modules_and_roles.md"] }
 output = { type = "union", items = [
   { type = "files", pattern = "@/specs/backend_architecture/**/*.md" },
   { type = "files", pattern = "@/specs/frontend_architecture/**/*.md" },
@@ -201,7 +201,7 @@ input = { type = "any", items = [
   { type = "glob", pattern = "@/ffun/ffun/**/*.py" },
   { type = "glob", pattern = "@/bin/**/*.py" },
   { type = "glob", pattern = "@/feeds_collections/**/*.py" },
-  { type = "one_of", artifacts = ["@/specs/backend_architecture/layers_and_slices.md"] },
+  { type = "one_of", artifacts = ["@/specs/backend_architecture/modules_and_roles.md"] },
 ] }
 output = { type = "files", pattern = "@/specs/python/**/*.md" }
 
@@ -212,7 +212,7 @@ output = { type = "union", items = [
   { type = "files", pattern = "@/ffun/ffun/**/*.py" },
   { type = "files", pattern = "@/bin/**/*.py" },
   { type = "files", pattern = "@/feeds_collections/**/*.py" },
-  { type = "list", artifacts = ["@/specs/backend_architecture/layers_and_slices.md"] },
+  { type = "list", artifacts = ["@/specs/backend_architecture/modules_and_roles.md"] },
 ] }
 
 # TypeScript specifications govern project TypeScript files and the frontend test architecture.
@@ -243,7 +243,7 @@ input = { type = "any", items = [
   { type = "one_of", artifacts = [
     "@/ffun/ffun/conftest.py",
     "@/ffun/ffun/pytest_plugin.py",
-    "@/specs/backend_architecture/layers_and_slices.md",
+    "@/specs/backend_architecture/modules_and_roles.md",
     "@/specs/frontend_architecture/tests.md",
   ] },
 ] }
@@ -258,7 +258,7 @@ output = { type = "union", items = [
   { type = "list", artifacts = [
     "@/ffun/ffun/conftest.py",
     "@/ffun/ffun/pytest_plugin.py",
-    "@/specs/backend_architecture/layers_and_slices.md",
+    "@/specs/backend_architecture/modules_and_roles.md",
     "@/specs/frontend_architecture/tests.md",
   ] },
 ] }
@@ -445,12 +445,12 @@ input = { type = "one_of", artifacts = [
   "@/depmesh.toml",
   "@/ffun/tach.toml",
 ] }
-output = { type = "list", artifacts = ["@/specs/backend_architecture/layers_and_slices.md"] }
+output = { type = "list", artifacts = ["@/specs/backend_architecture/modules_and_roles.md"] }
 
 # The backend layout governs the generated spec index and dependency configuration.
 [[rules]]
 relation = "governs"
-input = { type = "one_of", artifacts = ["@/specs/backend_architecture/layers_and_slices.md"] }
+input = { type = "one_of", artifacts = ["@/specs/backend_architecture/modules_and_roles.md"] }
 output = { type = "list", artifacts = [
   "@/AGENTS.md",
   "@/depmesh.toml",
