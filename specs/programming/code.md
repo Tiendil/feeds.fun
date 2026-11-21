@@ -59,6 +59,12 @@ Code that branches over an enum SHOULD prefer `match` or `switch` statements ove
 Code that dispatches on an enum MUST handle every member permitted at that point by the operation's contract.
 Code SHOULD use static exhaustiveness checking to verify that coverage when supported by the language or type checker.
 
+## Interface contracts
+
+Callers MUST NOT rely on behavior outside the interface’s contract, including implementation details they can see in the source code or observe at runtime.
+
+A module MAY expose a public interface before it has production callers if a current requirement calls for the capability and direct tests verify the interface’s documented contract.
+
 ## Types at module boundaries
 
 Where the language supports distinct types, structured application values MUST have explicit types before crossing a module boundary.
@@ -79,6 +85,8 @@ Functions called through project-controlled typed interfaces SHOULD treat declar
 They SHOULD NOT perform runtime checks solely to verify that arguments match their declared types.
 
 Runtime validation remains appropriate at untyped or external boundaries, including HTTP input, CLI input, configuration, deserialized database rows, third-party responses, and plugin data.
+
+Code that parses external input SHOULD validate it during parsing, before constructing typed application values.
 
 Code MUST still validate semantic constraints that are not guaranteed by the contracts of the declared types, such as non-empty identifiers, timezone awareness, numeric ranges, configured values, and valid cross-field combinations.
 
@@ -133,6 +141,11 @@ A separate function or method MAY be introduced, including at a single call site
 
 Trivial code used at only one call site MUST remain inline when extraction would merely isolate an implementation step without providing a meaningful boundary.
 Code is trivial when its intent is clear from its operations and it neither enforces a separate invariant nor contains non-obvious control flow.
+
+## Interchangeable components
+
+When each member of a small, closed family of interchangeable components has meaningful behavior of its own, each implementation SHOULD live in a separate file, module, or package.
+Code that groups the implementations SHOULD be limited to definitions and behavior common to the family, plus code that selects or iterates over its members.
 
 ## Temporary implementation code
 

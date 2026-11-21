@@ -185,8 +185,8 @@ You MUST NOT perform the following operations without explicit instructions to d
 This index lists the available specifications and their goals.
 
 - `specs/backend_architecture/db.md` — the Feeds Fun backend architecture for PostgreSQL-backed persistence.
-- `specs/backend_architecture/entities.md` — the architecture of Feeds Fun backend entities and data structures used to pass domain, configuration, integration, and command information between backend modules.
 - `specs/backend_architecture/errors.md` — how Feeds Fun backend modules represent fatal errors and warnings, and how those values move from lower layers to API, CLI, and worker boundaries.
+- `specs/backend_architecture/layers_and_slices.md` — the Feeds Fun backend layout by layer and slice.
 - `specs/backend_architecture/modules/audit.md` — the responsibility and observable audit behavior of the `ffun.audit` backend module.
 - `specs/backend_architecture/modules/benefits.md` — the responsibility and observable benefit-application behavior of the `ffun.benefits` backend module.
 - `specs/backend_architecture/modules/entitlements.md` — the responsibility and observable entitlement behavior of the `ffun.entitlements` backend module.
@@ -194,8 +194,6 @@ This index lists the available specifications and their goals.
 - `specs/backend_architecture/modules/one_time_purchases.md` — the responsibility and observable one-time-purchase behavior of the `ffun.one_time_purchases` backend module.
 - `specs/backend_architecture/modules/resources.md` — the responsibility and observable accounting behavior of the `ffun.resources` backend module.
 - `specs/backend_architecture/modules/subscriptions.md` — the responsibility and observable subscription behavior of the `ffun.subscriptions` backend module.
-- `specs/backend_architecture/modules_layout.md` — the stable backend package layout and ownership boundaries for Feeds Fun.
-- `specs/backend_architecture/tests.md` — the architecture of Feeds Fun backend tests, including where tests live and how they relate to backend modules.
 - `specs/behavior/cli.md` — the stable shared behavior of the Feeds Fun backend command-line interface.
 - `specs/behavior/cli/benefits.md` — the Feeds Fun CLI command family for applying administrator-authorized benefit transactions and refreshing subscription entitlements from current benefit configuration.
 - `specs/behavior/cli/entitlements.md` — the Feeds Fun CLI command family for inspecting user entitlements.
@@ -216,6 +214,7 @@ This index lists the available specifications and their goals.
 - `specs/programming/code.md` — conventions for program implementations.
 - `specs/programming/content.md` — content requirements for programming specifications.
 - `specs/programming/dto.md` — the responsibilities and ownership of data transfer objects in a DTO-centric architecture.
+- `specs/programming/layers_and_slices.md` — how projects organize source files and code elements by layer and slice.
 - `specs/programming/postgresql.md` — conventions for relational schema design and SQL in PostgreSQL.
 - `specs/programming/tests.md` — conventions for organizing automated software tests and verifying program behavior.
 - `specs/python/language.md` — language-level implementation conventions for Python source code.
@@ -642,6 +641,12 @@ Code that branches over an enum SHOULD prefer `match` or `switch` statements ove
 Code that dispatches on an enum MUST handle every member permitted at that point by the operation's contract.
 Code SHOULD use static exhaustiveness checking to verify that coverage when supported by the language or type checker.
 
+## Interface contracts
+
+Callers MUST NOT rely on behavior outside the interface’s contract, including implementation details they can see in the source code or observe at runtime.
+
+A module MAY expose a public interface before it has production callers if a current requirement calls for the capability and direct tests verify the interface’s documented contract.
+
 ## Types at module boundaries
 
 Where the language supports distinct types, structured application values MUST have explicit types before crossing a module boundary.
@@ -662,6 +667,8 @@ Functions called through project-controlled typed interfaces SHOULD treat declar
 They SHOULD NOT perform runtime checks solely to verify that arguments match their declared types.
 
 Runtime validation remains appropriate at untyped or external boundaries, including HTTP input, CLI input, configuration, deserialized database rows, third-party responses, and plugin data.
+
+Code that parses external input SHOULD validate it during parsing, before constructing typed application values.
 
 Code MUST still validate semantic constraints that are not guaranteed by the contracts of the declared types, such as non-empty identifiers, timezone awareness, numeric ranges, configured values, and valid cross-field combinations.
 
@@ -716,6 +723,11 @@ A separate function or method MAY be introduced, including at a single call site
 
 Trivial code used at only one call site MUST remain inline when extraction would merely isolate an implementation step without providing a meaningful boundary.
 Code is trivial when its intent is clear from its operations and it neither enforces a separate invariant nor contains non-obvious control flow.
+
+## Interchangeable components
+
+When each member of a small, closed family of interchangeable components has meaningful behavior of its own, each implementation SHOULD live in a separate file, module, or package.
+Code that groups the implementations SHOULD be limited to definitions and behavior common to the family, plus code that selects or iterates over its members.
 
 ## Temporary implementation code
 

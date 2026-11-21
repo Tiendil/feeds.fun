@@ -194,14 +194,14 @@ output = { type = "union", items = [
   { type = "files", pattern = "@/.mise/tasks/*.toml" },
 ] }
 
-# Python specifications govern project Python files and the backend test architecture.
+# Python specifications govern project Python files and the backend layout.
 [[rules]]
 relation = "governed_by"
 input = { type = "any", items = [
   { type = "glob", pattern = "@/ffun/ffun/**/*.py" },
   { type = "glob", pattern = "@/bin/**/*.py" },
   { type = "glob", pattern = "@/feeds_collections/**/*.py" },
-  { type = "one_of", artifacts = ["@/specs/backend_architecture/tests.md"] },
+  { type = "one_of", artifacts = ["@/specs/backend_architecture/layers_and_slices.md"] },
 ] }
 output = { type = "files", pattern = "@/specs/python/**/*.md" }
 
@@ -212,7 +212,7 @@ output = { type = "union", items = [
   { type = "files", pattern = "@/ffun/ffun/**/*.py" },
   { type = "files", pattern = "@/bin/**/*.py" },
   { type = "files", pattern = "@/feeds_collections/**/*.py" },
-  { type = "list", artifacts = ["@/specs/backend_architecture/tests.md"] },
+  { type = "list", artifacts = ["@/specs/backend_architecture/layers_and_slices.md"] },
 ] }
 
 # TypeScript specifications govern project TypeScript files and the frontend test architecture.
@@ -234,7 +234,7 @@ output = { type = "union", items = [
   { type = "list", artifacts = ["@/specs/frontend_architecture/tests.md"] },
 ] }
 
-# Shared test conventions govern both test suites, backend test setup, and both test architecture specs.
+# Shared test conventions govern both test suites, backend test setup, the backend layout, and the frontend test architecture.
 [[rules]]
 relation = "governed_by"
 input = { type = "any", items = [
@@ -243,7 +243,7 @@ input = { type = "any", items = [
   { type = "one_of", artifacts = [
     "@/ffun/ffun/conftest.py",
     "@/ffun/ffun/pytest_plugin.py",
-    "@/specs/backend_architecture/tests.md",
+    "@/specs/backend_architecture/layers_and_slices.md",
     "@/specs/frontend_architecture/tests.md",
   ] },
 ] }
@@ -258,7 +258,7 @@ output = { type = "union", items = [
   { type = "list", artifacts = [
     "@/ffun/ffun/conftest.py",
     "@/ffun/ffun/pytest_plugin.py",
-    "@/specs/backend_architecture/tests.md",
+    "@/specs/backend_architecture/layers_and_slices.md",
     "@/specs/frontend_architecture/tests.md",
   ] },
 ] }
@@ -437,7 +437,7 @@ output = { type = "union", items = [
   { type = "files", pattern = "@/ffun/ffun/api/spa/tests/**/*.py" },
 ] }
 
-# Dependency mesh tooling is governed by the backend module layout spec.
+# The generated spec index and dependency configuration depend on the backend layout.
 [[rules]]
 relation = "governed_by"
 input = { type = "one_of", artifacts = [
@@ -445,12 +445,12 @@ input = { type = "one_of", artifacts = [
   "@/depmesh.toml",
   "@/ffun/tach.toml",
 ] }
-output = { type = "list", artifacts = ["@/specs/backend_architecture/modules_layout.md"] }
+output = { type = "list", artifacts = ["@/specs/backend_architecture/layers_and_slices.md"] }
 
-# The backend module layout spec governs depmesh/tach configuration.
+# The backend layout governs the generated spec index and dependency configuration.
 [[rules]]
 relation = "governs"
-input = { type = "one_of", artifacts = ["@/specs/backend_architecture/modules_layout.md"] }
+input = { type = "one_of", artifacts = ["@/specs/backend_architecture/layers_and_slices.md"] }
 output = { type = "list", artifacts = [
   "@/AGENTS.md",
   "@/depmesh.toml",

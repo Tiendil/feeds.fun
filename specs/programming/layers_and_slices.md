@@ -58,6 +58,10 @@ The `Command line` slice owns the command interface, including command registrat
 ## Membership and nesting
 
 Each project MUST declare which of its source files are subject to the layer and slice rules.
+A project MAY leave some source files outside that scope.
+
+**Rationale:** A project may adopt the rules gradually, retain legacy files that would be too costly to restructure, or defer assignments until its structure is clear enough to define layer and slice boundaries.
+
 Each governed source file and each code element it contains MUST belong directly to exactly one layer and exactly one slice.
 A code element MUST have the same direct assignments as every governed file that contains its source code.
 Code within an element follows the element's assignments.
@@ -135,6 +139,8 @@ It MUST state where each rule applies, including how it applies within a slice, 
 Dependency rules apply to direct dependencies unless they explicitly cover transitive dependencies.
 The layer and slice assignments of the source and target determine which dependency rules apply.
 Each dependency MUST satisfy all applicable direction and access rules.
+
+Dependencies between slices MUST form an acyclic graph.
 
 A project MUST define which interfaces it exposes at each governed layer or slice boundary, which callers may use them, and how callers access them.
 A project MUST define interface exposure and access using rules based on shared criteria, such as module roles, visibility markers, or naming patterns.

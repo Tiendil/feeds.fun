@@ -12,8 +12,8 @@ This specification applies to database-backed Python code under `ffun/ffun` and 
 
 - `database operation` - a function that directly reads from or writes to PostgreSQL.
 - `transactional operation` - a database operation or domain function whose multiple SQL statements MUST succeed or fail as one atomic unit.
-- `operation module` - a module-local `operations` submodule that owns persistence-backed commands and queries for the parent backend module.
-- `migration` - a yoyo migration file stored in a module-local `migrations` package.
+- `operation module` - a module that owns persistence-backed commands and queries for its slice. [Operations layer](layers_and_slices.md#operations)
+- `migration` - a Yoyo file that changes the database schema or stored data. [Migrations layer](layers_and_slices.md#migrations)
 - `execute callable` - an object with the same contract as `ffun.core.postgresql.ExecuteType`, used to run SQL inside either a single-statement helper or an explicit transaction.
 - `approved transaction participant` - a cross-cutting technical module whose public domain interface MAY participate in another top-level module's transaction without workflow-specific approval.
 
@@ -44,15 +44,15 @@ Code outside application startup and shutdown MUST treat the database pool as al
 
 ## Database Access Boundary
 
-Database operations SHOULD live in the owning backend module's `operations` submodule.
-
-Operation modules SHOULD contain direct SQL execution, row-to-entity conversion, idempotent persistence commands, and low-level persistence queries owned by the module.
-
-Domain modules SHOULD compose operation-module functions into business workflows.
-
-Top-level backend modules MUST NOT import another top-level module's `operations` submodule. Cross-module behavior SHOULD go through the other module's `domain`, `entities`, or `errors` boundary.
-
 Technical maintenance functions that directly mutate storage for cleanup, merge, repair, or tests SHOULD make that purpose clear in their name or containing boundary and SHOULD remain outside normal user-facing workflows unless explicitly intended.
+
+### Table Access Across Modules
+
+Production database schemas and runtime database access in one top-level module MUST NOT reference tables owned by another top-level module.
+Cross-module persistence behavior MUST go through the owning modules' public domain boundaries instead of bypassing those boundaries with SQL.
+
+Tests MAY reference tables owned by other top-level modules when direct database access is useful for test setup, assertions, or cleanup.
+This exception MUST NOT introduce cross-module references in production schemas, migrations, or runtime database operations.
 
 ### Transaction Ownership
 
@@ -180,9 +180,7 @@ For example, `l_` is already used by `library`, so `librarian` uses `ln_` for ta
 
 ## Schema Migrations
 
-Schema changes and any conversions of stored data required by a code change MUST be implemented as yoyo migrations in the owning module's `migrations` package.
-
-Migration files SHOULD stay close to the module that owns the changed tables.
+Schema changes and any conversions of stored data required by a code change MUST be implemented as Yoyo migrations in the owning slice’s Migrations layer.
 
 Before adding a migration on a development branch, developers and agents MUST check whether that branch already introduces an unreleased migration for the same feature or schema change.
 When it does, they SHOULD amend that branch migration instead of adding another incremental migration.
@@ -256,8 +254,6 @@ Backend test setup SHOULD apply all migrations before database-backed tests run 
 Operation tests SHOULD cover persistence-backed state changes, returned entities, idempotency, empty inputs, duplicate inputs, expected constraint failures, and important `RETURNING` empty-result paths.
 
 Transactional workflow tests SHOULD verify both successful multi-step behavior and failure paths that must leave the database unchanged.
-
-Migration-sensitive changes SHOULD be verified by tests that exercise the resulting operation behavior after migrations are applied.
 
 Tests SHOULD assert structured database-visible state when behavior depends on persistence.
 

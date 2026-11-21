@@ -22,7 +22,7 @@ The following topics are out of scope:
 - `fatal error` - a problem that prevents the requested backend operation from completing successfully.
 - `non-fatal problem` - a problem discovered while processing a backend operation that does not prevent the operation from producing useful output or continuing later.
 - `error code` - a stable machine-readable identifier for a fatal error when the error is rendered across an external boundary.
-- `module root error` - the `Error` exception class in a module's `errors` submodule; it is the root for fatal errors owned by that module.
+- `slice root error` - the `Error` exception class in a top-level slice's `errors` submodule that roots the fatal errors owned by the slice and its sub-slices.
 - `exception boundary` - a module boundary where expected low-level exceptions are converted into Feeds Fun exceptions, API errors, feed error states, or log records.
 - `stored-state integrity failure` - an unexpected failure to validate or reconstruct persisted application state according to its owning domain model.
 
@@ -34,31 +34,11 @@ Unexpected programming, infrastructure, storage, provider, or environment failur
 
 Non-fatal problems SHOULD be represented as warning log records, persisted error states, or explicit result values instead of exceptions when processing can continue and produce useful output.
 
-Lower-level modules MUST NOT convert errors directly into HTTP responses, terminal output, process termination, or frontend-visible records.
-
-The API, CLI, and worker boundary layers MUST be responsible for converting backend errors and warnings into:
-
-- HTTP responses.
-- CLI exit behavior and stderr messages.
-- worker logs and persisted processing states.
-
 Boundary-facing errors SHOULD expose stable error codes.
 
 Error codes MUST use lowercase ASCII letters, ASCII digits, and `_`.
 
 User-facing messages SHOULD be clear enough to diagnose the problem without exposing implementation stack details.
-
-## Error ownership
-
-Each backend module MAY define an `errors` submodule for errors owned by that module.
-
-Shared base error types MUST be owned by a common lower-level module that does not depend on API or CLI behavior.
-
-Module-specific error types MUST be defined in the module that can add the most useful context.
-
-Production errors MUST NOT be defined in test modules.
-
-Test-only error classes MAY be defined in test modules when they are required to verify error handling behavior.
 
 ## Error hierarchy
 
@@ -70,25 +50,18 @@ The project root exception MUST inherit from `Exception`.
 
 The project root exception MUST be owned by `ffun.core.errors`.
 
-Each module that defines fatal errors SHOULD define one module root error class.
+Each top-level slice that owns fatal errors directly or through a sub-slice SHOULD define one slice root error class.
 
-The module root error class MUST be named `Error`.
+A slice root error class MUST be named `Error`.
 
-All fatal errors owned by that module MUST inherit from the module root error class.
+The project root exception also serves as the `ffun.core` slice root error.
+Every other slice root error class MUST inherit from the project root exception.
 
-A module root error class MUST inherit from the project root exception or from a parent module's root error class.
+Concrete fatal error classes MUST inherit from the root error class of their top-level slice.
 
-A module SHOULD NOT define multiple root error classes.
+Slice root error classes SHOULD be abstract classification classes and SHOULD NOT be raised directly when a more specific concrete error is available.
 
-Modules outside the API and CLI boundary modules MUST NOT know about HTTP status codes or CLI exit codes.
-
-Module root error classes SHOULD be abstract classification classes and SHOULD NOT be raised directly when a more specific concrete error is available.
-
-Intermediate abstract error classes MAY exist under a module root when a module needs a narrower ownership boundary.
-
-The hierarchy SHOULD keep module-specific root errors under the single project root exception.
-
-Concrete error class names MAY differ, but project and module root error classes MUST be named `Error`.
+Intermediate abstract error classes MAY exist under a slice root when a slice or sub-slice needs a narrower ownership boundary.
 
 ## Exception data
 
@@ -164,6 +137,8 @@ Translation of an unexpected exception MUST leave the operation failed and MUST 
 
 Code that handles expected user, provider, source, storage, or environment failures MUST convert them into Feeds Fun-specific errors or states.
 
+Invalid external input MUST be reported through the error architecture instead of by returning partially valid entities.
+
 For PostgreSQL operations, modules SHOULD catch and convert specific database exceptions only when the exception represents an expected business or consistency condition.
 
 For example, a `ForeignKeyViolation` MAY be converted to an operation-specific stale-reference, concurrency, or integrity error when the operation is designed to race with deletion or accepts externally supplied entity ids.
@@ -182,23 +157,36 @@ When converting an exception, the original exception SHOULD be preserved as the 
 
 ## Boundary mapping
 
-The API layer MUST map boundary-facing project errors to HTTP responses.
-
-A project-specific exception class alone MUST NOT make an error boundary-facing.
-Global API infrastructure MAY render an unexpected stored-state integrity failure as a generic server-error response, but endpoint handlers MUST NOT assign it a stable application error code or present it as a condition the caller can correct.
-
-The CLI layer MUST map fatal project errors to non-zero exit behavior.
-
-The worker layer MUST map expected processing failures to logs, retries, or persisted processing states.
+Lower-level modules MUST NOT convert errors directly into HTTP responses, terminal output, process termination, or frontend-visible records.
 
 The mapping from exception classes to external boundary behavior SHOULD be owned by the boundary module.
 
-The mapping MAY map specific module root error classes to specific response or exit categories.
+The mapping MAY map specific slice root error classes to specific response or exit categories.
 
-The mapping MAY map specific concrete error classes to specific response or exit categories when a module root is too broad.
+The mapping MAY map specific concrete error classes to specific response or exit categories when a slice root is too broad.
 
 The mapping MUST define a default failure category for project exceptions that are not explicitly mapped.
 
 The API and CLI SHOULD choose the most specific category that matches the failure.
 
 The API and CLI MUST NOT treat warning log records alone as fatal errors.
+
+### API boundary
+
+The API boundary MUST map boundary-facing project errors to HTTP responses.
+The API boundary MUST decide how to represent warnings in HTTP responses.
+Only the API boundary MAY assign HTTP status codes for Feeds Fun responses.
+
+A project-specific exception class alone MUST NOT make an error boundary-facing.
+Global API infrastructure MAY render an unexpected stored-state integrity failure as a generic server-error response, but endpoint handlers MUST NOT assign it a stable application error code or present it as a condition the caller can correct.
+
+### CLI boundary
+
+The CLI boundary MUST map fatal project errors to non-zero exit behavior.
+The CLI boundary MUST handle stderr reporting for errors and warnings.
+Only the CLI boundary MAY assign exit codes to Feeds Fun commands.
+
+### Worker boundary
+
+The worker boundary MUST map expected processing failures to logs, retries, or persisted processing states.
+The worker boundary MUST decide how to report errors and warnings through logs or persisted processing states.
