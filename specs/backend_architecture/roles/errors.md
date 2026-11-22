@@ -2,7 +2,7 @@
 
 ## Goal of the document
 
-This document describes how the Feeds Fun backend defines errors and organizes exception classes.
+This document describes requirements for Python code with the Errors role (`errors.py`) and for error definitions elsewhere in the Feeds Fun backend.
 
 ## Scope
 

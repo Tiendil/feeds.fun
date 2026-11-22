@@ -194,7 +194,8 @@ This index lists the available specifications and their goals.
 - `specs/backend_architecture/modules/resources.md` — the responsibility and observable accounting behavior of the `ffun.resources` backend module.
 - `specs/backend_architecture/modules/subscriptions.md` — the responsibility and observable subscription behavior of the `ffun.subscriptions` backend module.
 - `specs/backend_architecture/modules_and_roles.md` — the Feeds Fun backend layout by module and role.
-- `specs/backend_architecture/roles/errors.md` — how the Feeds Fun backend defines errors and organizes exception classes.
+- `specs/backend_architecture/roles/errors.md` — requirements for Python code with the Errors role (`errors.py`) and for error definitions elsewhere in the Feeds Fun backend.
+- `specs/backend_architecture/roles/operations.md` — requirements for Python code with the Operations role (`operations.py`) in the Feeds Fun backend.
 - `specs/behavior/cli.md` — the stable shared behavior of the Feeds Fun backend command-line interface.
 - `specs/behavior/cli/benefits.md` — the Feeds Fun CLI command family for applying administrator-authorized benefit transactions and refreshing subscription entitlements from current benefit configuration.
 - `specs/behavior/cli/entitlements.md` — the Feeds Fun CLI command family for inspecting user entitlements.

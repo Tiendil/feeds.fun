@@ -343,6 +343,17 @@ input = { type = "any", items = [
 ] }
 output = { type = "files", pattern = "@/ffun/ffun/**/*.py" }
 
+# The Operations role spec applies to operations.py files in declared backend modules.
+[[rules]]
+relation = "governed_by"
+input = { type = "glob", pattern = "@/ffun/ffun/**/operations.py" }
+output = { type = "list", artifacts = ["@/specs/backend_architecture/roles/operations.md"] }
+
+[[rules]]
+relation = "governs"
+input = { type = "one_of", artifacts = ["@/specs/backend_architecture/roles/operations.md"] }
+output = { type = "files", pattern = "@/ffun/ffun/**/operations.py" }
+
 # Backend CLI Python files are additionally governed by shared CLI behavior.
 [[rules]]
 relation = "governed_by"

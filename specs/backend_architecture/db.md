@@ -59,6 +59,8 @@ This exception MUST NOT introduce cross-module references in production schemas,
 Python modules in the Domain role MUST own transaction boundaries for new or significantly changed business workflows.
 When such a workflow must atomically change multiple database records owned by the same top-level backend module, the Python module in the Domain role MUST pass the transaction execute callable to helpers in the operation module.
 
+The [Operations role specification](roles/operations.md#postgresql-transaction-ownership) defines when operation modules can own a transaction.
+
 By default, a transaction owned by one top-level backend module MUST NOT execute database operations owned by another top-level backend module or pass its execute callable through another top-level module's domain boundary.
 The following cross-cutting technical modules are approved transaction participants for every workflow:
 
@@ -79,15 +81,11 @@ If no approved exception is documented for a workflow, developers and agents MUS
 An exception MUST NOT be inferred from a general atomicity requirement, a generic cross-module domain API, the ability of a function to accept an execute callable, or any other undocumented circumstance.
 Such an exception permits only the specified transaction sharing; cross-module calls MUST still use the participating module's public domain boundary and MUST NOT import its operation module.
 
-New code SHOULD NOT add transaction ownership to operation modules unless the operation module function is intentionally a low-level atomic primitive and no domain workflow boundary exists.
-
 ### Operation Results and Row Mapping
 
-Operation modules SHOULD return domain entities, typed ids, primitives, or dictionaries with clear ownership. They SHOULD NOT leak raw persistence details into API handlers when a domain entity or a type defined at Python module scope can express the result.
+See the [Operations role specification](roles/operations.md#postgresql-operation-results-and-row-mapping) for result types and row mapper functions.
 
 When an operation uses `RETURNING` to determine whether a change happened, the empty result path MUST be handled explicitly.
-
-Operation modules SHOULD provide small row mapper functions when database rows are converted into entities in more than one place.
 
 Python code SHOULD expose stored integer identifiers for closed sets of categorical values as enums with the stable integer identifiers as their member values.
 Enum member names SHOULD provide readable code and interface vocabulary, while enum integer values SHOULD be used for persistence and internal identifiers.

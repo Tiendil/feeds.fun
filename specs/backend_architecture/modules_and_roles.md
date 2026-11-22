@@ -21,7 +21,9 @@ A declared nested module MUST use the subdirectory of its parent module that mat
 A top-level module MAY have a dedicated specification at `specs/backend_architecture/modules/<module>.md`, where `<module>` is its package name without the `ffun.` prefix.
 A role MAY have a dedicated specification at `specs/backend_architecture/roles/<role>.md`, where `<role>` is its lowercase name.
 
-Each dedicated specification MUST identify its module or role and state which code it governs.
+The goal of a dedicated specification MUST name the module or role it governs.
+If a role has a source filename or path pattern, the goal SHOULD mention it.
+The scope MUST state which code the specification governs.
 Its requirements apply alongside the layout rules in this specification.
 
 ## Modules
@@ -127,26 +129,7 @@ See the [database migration rules](db.md#schema-migrations) for migration owners
 
 Files with the Operations role implement the technical details of their module's communication with storage and other external systems.
 
-Operation functions SHOULD provide individual actions that code with the Domain role in the same module can compose into workflows.
-
-See the [backend database architecture](db.md) for PostgreSQL-specific rules.
-
-#### Function names
-
-Operation function names MUST describe caller-visible semantics rather than SQL statements or other implementation mechanisms.
-
-- `load_<object>` MUST be used to retrieve or materialize data from storage or an external system.
-  The object name SHOULD use singular or plural form according to the result cardinality.
-  Selection qualifiers SHOULD follow the object as `_by_<key>` or `_for_<scope>`, while state qualifiers SHOULD precede it, as in `load_active_intervals`.
-- `save_<object>` MUST be used to make a complete logical value durable when the operation may:
-  - create the value.
-  - replace the value.
-  - reuse existing data.
-  - perform an idempotent no-op.
-- `update_<object-or-aspect>` MUST be used to mutate existing logical state.
-  When only part of an object is changed, the name SHOULD identify that aspect, as in `update_feed_info`.
-
-An operation that uses an upsert internally SHOULD still use `save_` or `update_` according to its caller-visible contract and SHOULD NOT expose the storage mechanism in its name.
+See the [Operations role specification](roles/operations.md).
 
 ### Settings
 
