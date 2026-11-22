@@ -1,6 +1,6 @@
-# Backend boundary problems
+# Module boundary problems
 
-This inventory tracks known violations and open questions about the [backend module and role rules](../specs/backend_architecture/modules_and_roles.md).
+This inventory tracks known violations and open questions about module and role rules. [Backend rules](../specs/backend_architecture/modules_and_roles.md) · [Frontend rules](../specs/frontend_architecture/modules_and_roles.md)
 
 ## Core migration dependencies
 
@@ -153,3 +153,6 @@ The [Tach configuration](../ffun/tach.toml) permits `ffun.core.migrations` to de
   def parse_opml(data: str) -> list[FeedInfo]:
       return opml.extract_feeds(data)
   ```
+
+- Break the frontend `components` and `components/tags` module dependency cycle.
+  `RuleForList.vue` in `components` renders `<rule-tag>` from `components/tags`, and `TagsFilter.vue` in `components/tags` renders `<rule-constructor>` from `components`. [Rule list item](../site/src/components/RuleForList.vue) · [Tags filter](../site/src/components/tags/TagsFilter.vue)

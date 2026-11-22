@@ -35,7 +35,7 @@ Application source code MUST live under `site/src`.
 - `site/src/integrations` owns integration-specific frontend views or widgets.
 - `site/src/layouts` owns top-level page layout components.
 - `site/src/logic` owns shared frontend logic, API clients, constants, settings, and utilities.
-  See the [frontend logic module specification](modules/logic.md).
+  See `specs/frontend_architecture/modules/logic.md`.
 - `site/src/plugins` owns Vue plugins.
 - `site/src/router` owns Vue Router configuration.
 - `site/src/stores` owns Pinia stores.
@@ -47,7 +47,7 @@ Application source code MUST live under `site/src`.
 Files that match no specific role placement rule have the Public or Private role permitted by their owning module.
 
 - **Tests** — Source files under directories named `tests` at any depth contain their module's tests and test support code.
-  Files with the Tests role MUST follow the [frontend Tests role specification](roles/tests.md).
+  Files with the Tests role MUST follow `specs/frontend_architecture/roles/tests.md`.
 - **Public** — Files with this role contain public interfaces specific to their module.
 - **Private** — Files with this role contain implementation code specific to their module.
 
@@ -69,7 +69,7 @@ The target of a template reference is the file that defines the registered compo
 
 Files with the Public role are public import interfaces for their modules.
 Registered Vue components defined in files with the Public role are public template interfaces for their modules.
-Vue component imports and template references MUST follow the [frontend component architecture](components.md).
+Vue component imports and template references MUST follow `specs/frontend_architecture/components.md`.
 
 ### Role dependencies
 

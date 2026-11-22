@@ -35,6 +35,7 @@ embedded_specs = [
   "specs/meta/language.md",
   "specs/programming/code.md",
   "specs/backend_architecture/modules_and_roles.md",
+  "specs/frontend_architecture/modules_and_roles.md",
 ]
 
 index_goal_prefixes_to_remove = [
