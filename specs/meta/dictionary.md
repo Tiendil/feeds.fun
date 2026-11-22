@@ -20,10 +20,8 @@ When present, the project-level dictionary MUST be located at `./specs/dictionar
 
 ## Definition placement
 
-When a repository maintains a project-level dictionary, project-specific terms used by multiple project-maintained specifications SHOULD be defined there.
+When a repository maintains a project-level dictionary, it SHOULD define a project-specific term used by multiple project-maintained specifications if readers cannot reliably infer its meaning from context and need that meaning to interpret or apply a requirement.
 A project-maintained specification's local `Dictionary` section SHOULD contain only terms specific to that specification.
-
-The project-level dictionary SHOULD contain project-specific terms whose definitions clarify the project's requirements or shared vocabulary.
 
 ## Abbreviation entries
 
