@@ -119,8 +119,6 @@ Python files matching `migrations/*.py` have the Migrations role.
 
 Files with the Migrations role implement changes to the database schema and stored data.
 
-Dedicated tests MAY be omitted for Yoyo migrations with the Migrations role.
-
 See the [database migration rules](db.md#schema-migrations) for migration ownership and behavior.
 
 ### Operations

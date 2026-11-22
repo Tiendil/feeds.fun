@@ -7,6 +7,7 @@ This document describes requirements for Python code with the Tests role (`tests
 ## Scope
 
 This specification applies to Python files with the Tests role under `ffun/ffun`.
+It also applies to decisions about which backend code requires dedicated tests.
 
 ## Factories and helpers
 
@@ -42,3 +43,7 @@ Tests SHOULD assert structured database-visible state when behavior depends on p
 Tests SHOULD use small explicit fixtures and helper functions owned by the relevant module.
 
 Tests SHOULD NOT mock PostgreSQL for ordinary operation and domain tests when the behavior being tested is persistence behavior.
+
+### Migrations
+
+Dedicated tests MAY be omitted for Yoyo migrations with the Migrations role.
