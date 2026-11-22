@@ -10,6 +10,8 @@ This specification applies to frontend source files under `site/src`.
 
 ## File and package layout
 
+The frontend layout follows `specs/programming/modules_and_roles.md`.
+
 The frontend MUST be implemented as a Vue 3 project under `site`.
 
 Application source code MUST live under `site/src`.
@@ -24,7 +26,7 @@ Application source code MUST live under `site/src`.
 - `site/src/components/notifications` owns notification components.
 - `site/src/components/page_footer` owns footer components.
 - `site/src/components/page_header` owns header components.
-- `site/src/components/side_pannel` owns side-panel controls. The existing directory spelling is part of the current project layout.
+- `site/src/components/side_pannel` owns side-panel controls.
 - `site/src/components/tags` owns tag display and tag-filter components.
 - `site/src/components/toolbar` owns reusable actions displayed in top content toolbars.
 - `site/src/css` owns Tailwind-backed shared CSS.
@@ -32,6 +34,7 @@ Application source code MUST live under `site/src`.
 - `site/src/integrations` owns integration-specific frontend views or widgets.
 - `site/src/layouts` owns top-level page layout components.
 - `site/src/logic` owns shared frontend logic, API clients, constants, settings, and utilities.
+  See the [frontend logic module specification](modules/logic.md).
 - `site/src/plugins` owns Vue plugins.
 - `site/src/router` owns Vue Router configuration.
 - `site/src/stores` owns Pinia stores.
