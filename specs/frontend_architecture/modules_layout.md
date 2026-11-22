@@ -24,14 +24,6 @@ The following topics are out of scope:
 - `frontend submodule` - a directory inside a frontend module that owns a narrower part of its parent module's functionality.
 - `test submodule` - a directory or file containing tests for a corresponding frontend module or submodule.
 
-## Project layout
-
-The frontend MUST be implemented as a Vue 3 project under `site`.
-
-Application source code MUST live under `site/src`.
-
-Frontend tests SHOULD live near the logic they verify when the existing Vitest layout supports it.
-
 ## Modules
 
 - `site/src/assets` owns static assets such as icons, images, and similar frontend media.

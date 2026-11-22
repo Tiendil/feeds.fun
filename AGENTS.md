@@ -211,6 +211,7 @@ This index lists the available specifications and their goals.
 - `specs/documentation/changelog.md` — requirements for changelog documentation.
 - `specs/documentation/readme.md` — the expected content, structure, and tone of the Feeds Fun `README.md`.
 - `specs/frontend_architecture/components.md` — the architecture, registration, naming, and composition conventions for Feeds Fun frontend components.
+- `specs/frontend_architecture/modules_and_roles.md` — the Feeds Fun frontend layout by module and role.
 - `specs/frontend_architecture/modules_layout.md` — the frontend module structure of Feeds Fun.
 - `specs/frontend_architecture/tests.md` — the architecture of Feeds Fun frontend tests, including where tests live, how they relate to frontend modules, and how they cover user-facing logic.
 - `specs/meta/backend_modules.md` — requirements for the structure, abstraction level, and content of specifications for individual Feeds Fun backend modules.

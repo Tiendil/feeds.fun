@@ -27,6 +27,8 @@ The following topics are out of scope:
 
 ## Test module layout
 
+Frontend tests SHOULD live near the logic they verify when the existing Vitest layout supports it.
+
 Cross-cutting frontend architecture tests MUST live under `./site/src/tests`.
 
 View-level integration tests SHOULD live under the `views` module or the feature module that owns the tested page behavior when view tests are added.
