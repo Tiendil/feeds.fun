@@ -18,6 +18,8 @@ A declared nested module MUST use the subdirectory of its parent module that mat
 
 ## Dedicated specifications
 
+A module or role with requirements beyond its list entry SHOULD have a dedicated specification for those requirements.
+
 A top-level module MAY have a dedicated specification at `specs/backend_architecture/modules/<module>.md`, where `<module>` is its package name without the `ffun.` prefix.
 A role MAY have a dedicated specification at `specs/backend_architecture/roles/<role>.md`, where `<role>` is its lowercase name.
 
