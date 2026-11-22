@@ -31,7 +31,13 @@ Appropriate reasons include an open-ended value set, compatibility with an exter
 
 PostgreSQL-specific types, operators, and clauses MAY be used when their behavior is intentional and no portable spelling provides the required semantics.
 The SQL and schema definitions SHOULD make intentional PostgreSQL-specific behavior explicit.
-Examples include `JSONB`, array and range types, `ON CONFLICT`, and `FOR UPDATE SKIP LOCKED`.
+Examples include the following.
+
+- `JSONB`.
+- array types.
+- range types.
+- `ON CONFLICT`.
+- `FOR UPDATE SKIP LOCKED`.
 
 ## Schema Naming
 
@@ -70,7 +76,14 @@ The convention applies when introducing a table or making a substantive lifecycl
 ## Schema Constraints
 
 Schema constraints MUST be limited to structural storage integrity.
-Examples include nullability, primary keys, foreign keys, uniqueness, and ownership keys.
+Examples include the following.
+
+- nullability.
+- primary keys.
+- foreign keys.
+- uniqueness.
+- ownership keys.
+
 Row-local cross-column constraints MAY enforce structural combinations such as paired nullability and exactly-one or at-most-one ownership keys.
 
 ## Query Style
@@ -89,16 +102,16 @@ Add or change an index when a query used in normal operation needs it for perfor
 
 Inserts SHOULD use `ON CONFLICT` when repeated execution is expected to be harmless.
 
-Use `ON CONFLICT DO NOTHING` when duplicate work is acceptable and the result does not need to indicate whether the row was new.
+Inserts SHOULD use `ON CONFLICT DO NOTHING` when duplicate work is acceptable and the result does not need to indicate whether the row was new.
 
-Use `ON CONFLICT DO UPDATE` when an existing row must be refreshed and the update is safe under repeated execution.
+Inserts SHOULD use `ON CONFLICT DO UPDATE` when an existing row must be refreshed and the update is safe under repeated execution.
 
-Use a fallback `SELECT` after conflict handling when the result must include the existing row's identifier or other column values.
+Operations SHOULD use a fallback `SELECT` after conflict handling when the result must include the existing row's identifier or other column values.
 
 ## Concurrency
 
 Counter, quota, and reservation updates SHOULD use an `UPDATE` with a `WHERE` condition when the invariant can be checked atomically in the database.
-Use `UPDATE ... WHERE ... RETURNING` when the database must atomically decide whether a state transition is allowed and report the change.
+Operations SHOULD use `UPDATE ... WHERE ... RETURNING` when the database must atomically decide whether a state transition is allowed and report the change.
 
 When multiple workers can claim the same work concurrently, the claims SHOULD be coordinated in the database.
 A claim query SHOULD use `FOR UPDATE SKIP LOCKED` when workers can safely skip rows locked by other workers.
@@ -114,4 +127,4 @@ The absence or presence of an expected schema object is a correctness check for 
 
 ## Migration Lifecycle
 
-Project-specific specifications MUST govern the migration lifecycle.
+Project-maintained specifications MUST govern the migration lifecycle.

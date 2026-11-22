@@ -75,7 +75,12 @@ Untyped mappings MUST NOT be used for those values unless the data is already be
 Where the language supports distinct types, primitive values with a distinct domain meaning MUST use a type specific to that meaning before crossing a module boundary.
 Data model fields and public function signatures MUST use the corresponding semantic types for these values.
 
-Raw primitive types MAY be used at parsing, rendering, storage, and serialization boundaries where external data is converted into or out of project types.
+Raw primitive types MAY be used at the following boundaries where external data is converted into or out of project types.
+
+- parsing.
+- rendering.
+- storage.
+- serialization.
 
 Raw primitive types MAY be used inside local helper code when the value has already been validated or when adding a semantic type would not improve module-boundary clarity.
 
@@ -84,11 +89,25 @@ Raw primitive types MAY be used inside local helper code when the value has alre
 Functions called through project-controlled typed interfaces SHOULD treat declared parameter types as caller contracts.
 They SHOULD NOT perform runtime checks solely to verify that arguments match their declared types.
 
-Runtime validation remains appropriate at untyped or external boundaries, including HTTP input, CLI input, configuration, deserialized database rows, third-party responses, and plugin data.
+Runtime validation remains appropriate at untyped or external boundaries, including the following examples.
+
+- HTTP input.
+- CLI input.
+- configuration.
+- deserialized database rows.
+- third-party responses.
+- plugin data.
 
 Code that parses external input SHOULD validate it during parsing, before constructing typed application values.
 
-Code MUST still validate semantic constraints that are not guaranteed by the contracts of the declared types, such as non-empty identifiers, timezone awareness, numeric ranges, configured values, and valid cross-field combinations.
+Code MUST still validate semantic constraints that are not guaranteed by the contracts of the declared types.
+Such constraints include the following.
+
+- non-empty identifiers.
+- timezone awareness.
+- numeric ranges.
+- configured values.
+- valid cross-field combinations.
 
 Code that constructs a semantically specific typed value from raw or untyped data MUST validate the semantic invariants of that type at the construction boundary.
 Functions and methods that receive the constructed typed value MUST assume those invariants hold and MUST NOT repeat their validation.
@@ -103,7 +122,13 @@ Independent concerns SHOULD use separate validators.
 A single validator MAY examine multiple values when they jointly define one invariant.
 Separating independent validation concerns keeps invariants locally understandable, independently testable, and easier to diagnose.
 
-Validation functions and methods MUST NOT return information merely retrieved, resolved, transformed, or extracted as a by-product of validation.
+Validation functions and methods MUST NOT return information obtained merely as a by-product of validation through any of the following operations.
+
+- retrieval.
+- resolution.
+- transformation.
+- extraction.
+
 They MAY perform such operations internally when required to verify invariants.
 Callers that need the resulting information MUST obtain it separately, unless the operation explicitly acts as a validating constructor.
 

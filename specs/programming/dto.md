@@ -28,7 +28,8 @@ The [programming code conventions](code.md) cover boundary typing, validation at
 Module-specific DTOs MUST belong to the module that owns the corresponding responsibility.
 
 External-boundary transfer DTOs MUST belong to the module that owns the external boundary.
-For example, provider-specific request and response DTOs belong to the module that owns the provider boundary.
+
+**Example:** Provider-specific request and response DTOs belong to the module that owns the provider boundary.
 
 Domain DTOs MUST model domain concepts independently from the concrete interface that creates or renders them.
 Domain DTOs MUST NOT depend on API route names, CLI option parsing, database table shapes, or concrete configuration file syntax.

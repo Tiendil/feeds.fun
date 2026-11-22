@@ -19,7 +19,13 @@ Tests SHOULD be deterministic for the same repository state and filesystem state
 Deterministic tests let developers reproduce failures.
 
 Tests SHOULD prefer a real current-time value as the baseline for time-related cases when the exact calendar date is not part of the behavior under test.
-Hard-coded calendar datetimes SHOULD be used only when the specific date, month, year, weekday, or timezone boundary is itself relevant to the tested behavior.
+Tests SHOULD use hard-coded calendar datetimes only when at least one of the following is relevant to the behavior under test.
+
+- a specific date.
+- a specific month.
+- a specific year.
+- a specific weekday.
+- a timezone boundary.
 
 A shared baseline lets relative-time assertions use the same reference as their inputs.
 Specific calendar dates let tests exercise the boundaries that matter to the behavior.
@@ -61,7 +67,14 @@ Ordinary unit tests SHOULD NOT inspect runtime representations solely to restate
 
 Tests SHOULD use mocks, stubs, and spies as little as possible.
 
-Tests SHOULD prefer real project code, temporary files, local test services, explicit fixtures, test constructors, and small fakes over mocked collaborators.
+Tests SHOULD prefer the following over mocked collaborators.
+
+- real project code.
+- temporary files.
+- local test services.
+- explicit fixtures.
+- test constructors.
+- small fakes.
 
 Real collaborators reduce the risk that a test passes against behavior that differs from production.
 
@@ -231,7 +244,13 @@ Command helper tests SHOULD cover:
 - command-adjacent workflows that are callable without invoking the CLI runner.
 - warnings or errors produced by those narrow helpers.
 
-Full CLI execution is assumed to be covered by manual testing, including argument parsing, option validation, command wiring, exit behavior, and error output.
+Full CLI execution is assumed to be covered by manual testing, including the following.
+
+- argument parsing.
+- option validation.
+- command wiring.
+- exit behavior.
+- error output.
 
 ### Background processing
 
@@ -278,7 +297,13 @@ Tests that can exercise a mutable in-memory component in isolation SHOULD use a 
 
 Tests MUST prepare and mutate application-owned state through the production code that owns the corresponding state transition and invariants.
 
-Tests MUST NOT bypass production logic by writing directly to databases, files, queues, caches, or other application-owned state unless the developer explicitly approves the exception.
+Tests MUST NOT bypass production logic by writing directly to application-owned state unless the developer explicitly approves the exception.
+Examples include state stored in the following.
+
+- databases.
+- files.
+- queues.
+- caches.
 
 An approved exception MUST be documented next to the bypass and MUST explain why the required state cannot be produced through production code.
 
