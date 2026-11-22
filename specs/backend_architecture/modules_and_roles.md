@@ -136,16 +136,8 @@ See the [Operations role specification](roles/operations.md).
 `settings.py` has the Settings role.
 
 Files with the Settings role define how a module produces validated, typed settings from configuration inputs and defaults.
-Files with the Settings role MUST NOT perform business operations, database queries, provider calls, or other runtime side effects.
 
-The following rules apply to configuration entities and settings objects throughout `ffun/ffun`.
-
-Configuration entities SHOULD use Pydantic to reject malformed data before it reaches code that consumes the configuration.
-
-Settings classes that load configuration from environment variables or `.env` files SHOULD inherit from `ffun.core.settings.BaseSettings` to keep environment loading consistent across modules.
-
-A settings object acting as the configuration-loading boundary MAY read configuration files from explicitly configured or declared paths.
-It MUST limit its filesystem access to reading those files.
+See the [Settings role specification](roles/settings.md).
 
 ### Tests
 
