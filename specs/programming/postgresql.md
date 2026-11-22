@@ -118,7 +118,12 @@ A claim query SHOULD use `FOR UPDATE SKIP LOCKED` when workers can safely skip r
 
 Concurrent operations that may touch the same rows SHOULD access them in a deterministic order where practical to reduce deadlock risk.
 
-Cleanup operations SHOULD tolerate concurrent inserts or links through transactions, foreign key checks, conflict handling, or SQL that can safely be retried or have no effect.
+Cleanup operations SHOULD tolerate concurrent inserts or links by using one or more of the following approaches.
+
+- transactions.
+- foreign key checks.
+- conflict handling.
+- SQL that can safely be retried or have no effect.
 
 ## Schema Changes
 

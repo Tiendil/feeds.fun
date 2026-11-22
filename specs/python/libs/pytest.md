@@ -32,7 +32,12 @@ Tests MAY use specialized test tools for their own domain boundaries, for exampl
 
 This section applies to projects that use `pytest-mock`.
 
-When a test must replace a Python collaborator, setting, method, or attribute, it SHOULD use the `pytest-mock` `MockerFixture`.
+A test SHOULD use the `pytest-mock` `MockerFixture` when it must replace any of the following.
+
+- a Python collaborator.
+- a setting.
+- a method.
+- an attribute.
 
 Use `mocker.patch("<import.path>", ...)` for imported module-level collaborators and settings.
 

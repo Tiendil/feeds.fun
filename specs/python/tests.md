@@ -24,11 +24,9 @@ Tests for a class MUST group method tests inside the class's test class.
 
 Test classes MUST use `Test<SubjectName>` naming, where `<SubjectName>` is the tested function or class name converted to PascalCase.
 
-Examples:
-
-- function `normalize_url` -> `class TestNormalizeUrl`.
-- class `FeedLoader` -> `class TestFeedLoader`.
-- class `Resource` -> `class TestResource`.
+**Example:** Tests for the function `normalize_url` belong in `class TestNormalizeUrl`.
+Tests for the class `FeedLoader` belong in `class TestFeedLoader`.
+Tests for the class `Resource` belong in `class TestResource`.
 
 Tests for a class method MUST use this method name format:
 
@@ -40,11 +38,7 @@ test_<method_name>__<test_name>
 
 `<test_name>` MUST describe the execution path or behavior being verified in snake case.
 
-Examples:
-
-- `test_normalize__empty_value`.
-- `test_process__provider_returns_error`.
-- `test_replace_tags__circular_replacement`.
+**Example:** Test method names include `test_normalize__empty_value`, `test_process__provider_returns_error`, and `test_replace_tags__circular_replacement`.
 
 When a test class tests one module-level function, test methods MAY omit the function name and use this format:
 
@@ -52,11 +46,7 @@ When a test class tests one module-level function, test methods MAY omit the fun
 test_<test_name>
 ```
 
-Examples:
-
-- `TestNormalizeUrl.test_success`.
-- `TestNormalizeUrl.test_invalid_scheme`.
-- `TestNormalizeUrl.test_trailing_slash`.
+**Example:** `TestNormalizeUrl.test_success`, `TestNormalizeUrl.test_invalid_scheme`, and `TestNormalizeUrl.test_trailing_slash` use this format.
 
 ## Test support modules
 

@@ -32,7 +32,12 @@ External-boundary transfer DTOs MUST belong to the module that owns the external
 **Example:** Provider-specific request and response DTOs belong to the module that owns the provider boundary.
 
 Domain DTOs MUST model domain concepts independently from the concrete interface that creates or renders them.
-Domain DTOs MUST NOT depend on API route names, CLI option parsing, database table shapes, or concrete configuration file syntax.
+Domain DTOs MUST NOT depend on any of the following.
+
+- API route names.
+- CLI option parsing.
+- database table shapes.
+- concrete configuration file syntax.
 
 ## Configuration DTOs
 

@@ -21,7 +21,7 @@ Tests written in TypeScript also follow the [TypeScript test conventions](../tes
 
 Tests for one exported function, component, or store SHOULD be grouped in one `describe` block.
 
-Grouping tests by subject keeps their cases and shared setup together.
+**Rationale:** Grouping tests by subject keeps their cases and shared setup together.
 
 ## Browser environment
 
@@ -29,4 +29,4 @@ Tests SHOULD prefer the configured `jsdom` environment over mocked collaborators
 
 Logic tests that inspect HTML or browser APIs MUST use the configured `jsdom` environment.
 
-The configured environment gives tests a consistent DOM and browser APIs.
+**Rationale:** The configured environment gives tests a consistent DOM and browser APIs.
