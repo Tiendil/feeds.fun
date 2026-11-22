@@ -33,6 +33,7 @@ Its requirements apply alongside the layout rules in this specification.
 A top-level module MUST own the definitions and behavior that directly implement its responsibilities.
 
 - `ffun.api` owns the backend's HTTP entry points.
+- The `ffun.api.spa` nested module owns the HTTP endpoints used by the frontend.
 - `ffun.application` owns application construction and application-wide settings.
 - `ffun.audit` owns the audit records produced by backend workflows.
 - `ffun.auth` owns authentication and authorization logic.
@@ -69,10 +70,6 @@ A top-level module MUST own the definitions and behavior that directly implement
 - `ffun.tags` owns tag normalization and validation logic that is not ontology storage.
 - `ffun.user_settings` owns user-specific settings storage and behavior.
 - `ffun.users` owns user storage and management.
-
-### `ffun.api`
-
-The `ffun.api.spa` nested module owns the HTTP endpoints used by the frontend.
 
 ## Roles
 
