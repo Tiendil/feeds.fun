@@ -213,7 +213,6 @@ This index lists the available specifications and their goals.
 - `specs/frontend_architecture/components.md` — the architecture, registration, naming, and composition conventions for Feeds Fun frontend components.
 - `specs/frontend_architecture/modules/logic.md` — requirements for the Feeds Fun frontend logic module.
 - `specs/frontend_architecture/modules_and_roles.md` — the Feeds Fun frontend layout by module and role.
-- `specs/frontend_architecture/modules_layout.md` — the frontend module structure of Feeds Fun.
 - `specs/frontend_architecture/roles/tests.md` — requirements for the Tests role in the Feeds Fun frontend.
 - `specs/meta/backend_modules.md` — requirements for the structure, abstraction level, and content of specifications for individual Feeds Fun backend modules.
 - `specs/meta/content.md` — requirements for the level of detail in specification contracts.
