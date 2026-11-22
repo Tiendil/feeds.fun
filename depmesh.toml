@@ -234,7 +234,7 @@ output = { type = "union", items = [
   { type = "list", artifacts = ["@/specs/frontend_architecture/tests.md"] },
 ] }
 
-# Shared test conventions govern both test suites, backend test setup, the backend layout, and the frontend test architecture.
+# Shared test conventions govern both test suites, backend test setup, and test architecture specifications.
 [[rules]]
 relation = "governed_by"
 input = { type = "any", items = [
@@ -244,6 +244,7 @@ input = { type = "any", items = [
     "@/ffun/ffun/conftest.py",
     "@/ffun/ffun/pytest_plugin.py",
     "@/specs/backend_architecture/modules_and_roles.md",
+    "@/specs/backend_architecture/roles/tests.md",
     "@/specs/frontend_architecture/tests.md",
   ] },
 ] }
@@ -259,6 +260,7 @@ output = { type = "union", items = [
     "@/ffun/ffun/conftest.py",
     "@/ffun/ffun/pytest_plugin.py",
     "@/specs/backend_architecture/modules_and_roles.md",
+    "@/specs/backend_architecture/roles/tests.md",
     "@/specs/frontend_architecture/tests.md",
   ] },
 ] }
@@ -355,6 +357,17 @@ output = { type = "list", artifacts = ["@/specs/backend_architecture/roles/opera
 relation = "governs"
 input = { type = "one_of", artifacts = ["@/specs/backend_architecture/roles/operations.md"] }
 output = { type = "files", pattern = "@/ffun/ffun/**/operations.py" }
+
+# The Tests role spec applies to Python files under backend tests directories.
+[[rules]]
+relation = "governed_by"
+input = { type = "glob", pattern = "@/ffun/ffun/**/tests/**/*.py" }
+output = { type = "list", artifacts = ["@/specs/backend_architecture/roles/tests.md"] }
+
+[[rules]]
+relation = "governs"
+input = { type = "one_of", artifacts = ["@/specs/backend_architecture/roles/tests.md"] }
+output = { type = "files", pattern = "@/ffun/ffun/**/tests/**/*.py" }
 
 # Backend CLI Python files are additionally governed by shared CLI behavior.
 [[rules]]

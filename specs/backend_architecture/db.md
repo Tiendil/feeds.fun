@@ -231,7 +231,7 @@ When upgrading across multiple versions with migration requirements, operators S
 
 ## Tests
 
-Tests for database-backed behavior SHOULD use the real test PostgreSQL service provided by the development environment.
+See the [Tests role specification](roles/tests.md#database-backed-tests) for tests of PostgreSQL-backed behavior.
 
 Tests MUST be run through backend development container commands.
 
@@ -248,16 +248,6 @@ mise run backend:poetry -- run pytest <path>
 ```
 
 Backend test setup SHOULD apply all migrations before database-backed tests run and roll them back after the test session.
-
-Operation tests SHOULD cover persistence-backed state changes, returned entities, idempotency, empty inputs, duplicate inputs, expected constraint failures, and important `RETURNING` empty-result paths.
-
-Transactional workflow tests SHOULD verify both successful multi-step behavior and failure paths that must leave the database unchanged.
-
-Tests SHOULD assert structured database-visible state when behavior depends on persistence.
-
-Tests SHOULD use small explicit fixtures and helper functions owned by the relevant module.
-
-Tests SHOULD NOT mock PostgreSQL for ordinary operation and domain tests when the behavior being tested is persistence behavior.
 
 ## When To Apply Each Pattern
 

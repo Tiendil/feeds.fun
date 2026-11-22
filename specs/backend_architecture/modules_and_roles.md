@@ -147,22 +147,7 @@ Files with the Tests role contain their module's colocated tests and test suppor
 
 The `make` Python submodule MAY appear only inside tests packages, as `<module>.tests.make`.
 
-Object constructors and pure fake data factories SHOULD live in `tests.make`.
-Helpers that perform actions or coordinate multiple calls SHOULD live in `tests.helpers`.
-These placement preferences apply even when only one test file uses the factory or helper.
-
-#### Direct public function re-exports
-
-A test of a direct public function re-export SHOULD only verify that the public name refers to the original function.
-Tests dedicated to the function’s behavior MUST live with the Python module that defines it.
-
-Example:
-
-```python
-class TestGetEntry:
-    def test_reexports_operation(self) -> None:
-        assert domain.get_entry is operations.get_entry
-```
+See the [Tests role specification](roles/tests.md).
 
 ### Utilities
 
