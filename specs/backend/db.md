@@ -75,7 +75,9 @@ No workflow-specific exception or approval documentation is required for an appr
 Transaction sharing with any other top-level backend module remains prohibited by default.
 Only a human developer MAY grant an exception to this rule, and the approval MUST be explicit.
 Every approved exception MUST be documented before implementation begins, either in the specification for the transaction-owning module or in a comment or docstring attached to the particular function that owns the cross-module transaction.
-These locations are required to keep the approval version-controlled and discoverable at either the module's architectural contract or the exact transaction boundary; a separate record would not reliably accompany reviews of the specification or transaction-owning function.
+
+**Rationale:** These locations keep the approval version-controlled and discoverable during reviews of the specification or transaction-owning function.
+
 The documentation MUST identify the particular workflow, name the other participating top-level modules, and explicitly require them to share one database transaction.
 If no approved exception is documented for a workflow, developers and agents MUST treat the default prohibition as unconditional for that workflow.
 An exception MUST NOT be inferred from a general atomicity requirement, a generic cross-module domain API, the ability of a function to accept an execute callable, or any other undocumented circumstance.
@@ -127,7 +129,9 @@ Code MUST NOT interpolate user-controlled values into SQL text.
 
 String interpolation in SQL text is acceptable only for trusted schema identifiers or static fragments selected by code, and the reason SHOULD be obvious from local context.
 
-Iterable parameters used with PostgreSQL array comparisons SHOULD be materialized before execution when the value may be a generator. The common form for membership checks is `column = ANY(%(ids)s)`.
+Iterable parameters used with PostgreSQL array comparisons SHOULD be materialized before execution when the value may be a generator.
+
+**Example:** The common form for membership checks is `column = ANY(%(ids)s)`.
 
 Dynamic SQL SHOULD use PyPika when conditions, inserts, or joins are assembled from code.
 
@@ -169,12 +173,18 @@ A table owned by one top-level backend module MUST NOT define foreign keys, casc
 ### Table Prefixes
 
 Table names SHOULD start with a short owner prefix when that keeps module ownership clear.
-Examples include `f_` for feeds, `l_` for library, `o_` for ontology, `u_` for users, and `q_` for queues.
+
+**Example:** The feeds module uses `f_` as its table prefix.
+The library module uses `l_`.
+The ontology module uses `o_`.
+The users module uses `u_`.
+The queues module uses `q_`.
 
 Table prefixes MUST NOT intersect between modules.
 
 When a new module's natural one-letter prefix is already used, the new module MUST use a longer but still short prefix that starts with the module name's first character.
-For example, `l_` is already used by `library`, so `librarian` uses `ln_` for tables such as `ln_processor_pointers`.
+
+**Example:** `l_` is already used by `library`, so `librarian` uses `ln_` for tables such as `ln_processor_pointers`.
 
 ## Schema Migrations
 
@@ -182,8 +192,10 @@ Schema changes and any conversions of stored data required by a code change MUST
 
 Before adding a migration on a development branch, developers and agents MUST check whether that branch already introduces an unreleased migration for the same feature or schema change.
 When it does, they SHOULD amend that branch migration instead of adding another incremental migration.
-Consolidating unreleased changes avoids unnecessary migration-chain noise and keeps one feature's apply and rollback behavior coherent; a separate migration MAY be used when it has a justified independent maintenance or review boundary.
+A separate migration MAY be used when it has a justified independent maintenance or review boundary.
 A new migration MUST be added when the earlier migration may already have been applied outside the development branch, or when the new change has an independent compatibility or ordering boundary.
+
+**Rationale:** Consolidating unreleased changes avoids unnecessary migration-chain noise and keeps one feature's apply and rollback behavior coherent.
 
 Cross-module schema changes SHOULD live in the module that owns the main business reason for the change. If there is no single owner, the `meta` module MAY own the migration.
 
@@ -223,7 +235,7 @@ The preferred command for creating a new backend migration is:
 mise run backend:yoyo -- new --message "what you want to do" ./ffun/<component>/migrations/
 ```
 
-The migration path in the command above intentionally uses the path layout visible inside the backend container.
+**Context:** The migration path in the command above intentionally uses the path layout visible inside the backend container.
 
 Production upgrades SHOULD apply migrations before starting the upgraded application version.
 

@@ -68,11 +68,9 @@ Warnings SHOULD be represented as structured log records, explicit result states
 
 Code that adds warnings SHOULD include enough context for API, CLI, worker, and operator output to be useful.
 
-Examples of warning-producing situations include:
-
-- a transient network problem while loading a feed.
-- an entry that cannot be processed by one tag processor but can still be handled later.
-- a feed source response that is malformed but can be represented as a source-specific feed error state.
+**Example:** A warning can report a transient network problem while loading a feed.
+It can report that one tag processor could not process an entry that can still be handled later.
+It can also be a source-specific feed error state for a malformed feed source response.
 
 ## Exception boundaries
 
