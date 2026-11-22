@@ -114,15 +114,10 @@ Dependency rules apply to direct Python imports between files with different rol
 
 For each definition it exposes at a boundary, a module SHOULD provide a single public import path.
 
-When importing a named Python definition, code MUST use its defining Python module or an import path explicitly documented as a public facade in a specification or code comment.
-A caller SHOULD import a definition from its defining Python module when that Python module exposes the definition to the caller as part of a public interface.
-
 **Rationale:** A single public path gives callers a consistent way to import a definition.
 
 **Example:** The Feeds module defines `Feed` in its public `entities.py` file.
 A caller with access to that interface uses `from ffun.feeds.entities import Feed`.
-
-When moving a definition makes an import path obsolete, the same change MUST update affected imports to a supported path and remove the obsolete path.
 
 When a public interface exposes a definition from a private Python module, it MUST re-export the definition directly unless it adds behavior that belongs to its role or owning module.
 

@@ -14,6 +14,15 @@ Project-specific architectural requirements are out of scope.
 - `project-controlled class` — a class whose instance layout is defined by project code rather than generated or prescribed by a framework, library, standard-library protocol, metaclass, or inherited implementation contract.
 - `test class` — a class defined only to organize or support automated tests.
 
+## Imports
+
+Python code MUST use absolute imports.
+
+When importing a named Python definition, code MUST use its defining Python module or an import path explicitly documented as a public facade in a specification or code comment.
+A caller SHOULD import a definition from its defining Python module when that Python module exposes the definition to the caller as part of a public interface.
+
+When moving a definition makes an import path obsolete, the same change MUST update affected imports to a supported path and remove the obsolete path.
+
 ## Enumeration types
 
 String-valued enums SHOULD use `enum.StrEnum`.
