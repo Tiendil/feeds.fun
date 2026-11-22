@@ -16,6 +16,14 @@ Each declared module is implemented as a Python package.
 A declared top-level module named `ffun.<name>` MUST use `./ffun/ffun/<name>/` as its source directory.
 A declared nested module MUST use the subdirectory of its parent module that matches the final component of its package name.
 
+## Dedicated specifications
+
+A top-level module MAY have a dedicated specification at `specs/backend_architecture/modules/<module>.md`, where `<module>` is its package name without the `ffun.` prefix.
+A role MAY have a dedicated specification at `specs/backend_architecture/roles/<role>.md`, where `<role>` is its lowercase name.
+
+Each dedicated specification MUST identify its module or role and state which code it governs.
+Its requirements apply alongside the layout rules in this specification.
+
 ## Modules
 
 A top-level module MUST own the definitions and behavior that directly implement its responsibilities.
@@ -100,12 +108,8 @@ Entities SHOULD omit storage implementation details unless storage metadata is i
 `errors.py` has the Errors role.
 
 Files with the Errors role define their module's exception types and error values.
-Errors SHOULD express failures in terms of the module's responsibilities so callers can decide how to respond.
 
-Production errors MUST be defined in production files.
-Test files MAY define test-only error classes when they need them to verify error handling.
-
-See the [backend error architecture](errors.md) for detailed error rules.
+See the [Errors role specification](roles/errors.md).
 
 ### Migrations
 

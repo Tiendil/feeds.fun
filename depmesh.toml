@@ -323,7 +323,11 @@ relation = "governed_by"
 input = { type = "glob", pattern = "@/ffun/ffun/**/*.py" }
 output = { type = "union", items = [
   { type = "files", pattern = "@/specs/backend_architecture/*.md" },
-  { type = "list", artifacts = ["@/specs/programming/dto.md", "@/specs/programming/postgresql.md"] },
+  { type = "list", artifacts = [
+    "@/specs/backend_architecture/roles/errors.md",
+    "@/specs/programming/dto.md",
+    "@/specs/programming/postgresql.md",
+  ] },
 ] }
 
 # Backend architecture and the shared programming rules it adopts govern backend Python files.
@@ -331,7 +335,11 @@ output = { type = "union", items = [
 relation = "governs"
 input = { type = "any", items = [
   { type = "glob", pattern = "@/specs/backend_architecture/*.md" },
-  { type = "one_of", artifacts = ["@/specs/programming/dto.md", "@/specs/programming/postgresql.md"] },
+  { type = "one_of", artifacts = [
+    "@/specs/backend_architecture/roles/errors.md",
+    "@/specs/programming/dto.md",
+    "@/specs/programming/postgresql.md",
+  ] },
 ] }
 output = { type = "files", pattern = "@/ffun/ffun/**/*.py" }
 

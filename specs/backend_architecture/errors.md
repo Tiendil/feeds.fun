@@ -22,9 +22,10 @@ The following topics are out of scope:
 - `fatal error` - a problem that prevents the requested backend operation from completing successfully.
 - `non-fatal problem` - a problem discovered while processing a backend operation that does not prevent the operation from producing useful output or continuing later.
 - `error code` - a stable machine-readable identifier for a fatal error when the error is rendered across an external boundary.
-- `module root error` - the `Error` exception class in a top-level module's `errors` Python module that serves as the root for fatal errors owned by that module and its nested modules.
 - `exception boundary` - a Python module boundary where expected low-level exceptions are converted into Feeds Fun exceptions, API errors, feed error states, or log records.
 - `stored-state integrity failure` - an unexpected failure to validate or reconstruct persisted application state according to its owning domain model.
+
+The [Errors role specification](roles/errors.md) defines module root errors and the exception hierarchy.
 
 ## General principles
 
@@ -39,29 +40,6 @@ Boundary-facing errors SHOULD expose stable error codes.
 Error codes MUST use lowercase ASCII letters, ASCII digits, and `_`.
 
 User-facing messages SHOULD be clear enough to diagnose the problem without exposing implementation stack details.
-
-## Error hierarchy
-
-The backend MUST define a single project root exception type for all expected fatal project errors.
-
-The project root exception MUST be named `Error`.
-
-The project root exception MUST inherit from `Exception`.
-
-The project root exception MUST be owned by `ffun.core.errors`.
-
-Each top-level module that owns fatal errors directly or through a nested module SHOULD define one module root error class.
-
-A module root error class MUST be named `Error`.
-
-The project root exception also serves as the `ffun.core` module root error.
-Every other module root error class MUST inherit from the project root exception.
-
-Concrete fatal error classes MUST inherit from the root error class of their top-level module.
-
-Module root error classes SHOULD be abstract classification classes and SHOULD NOT be raised directly when a more specific concrete error is available.
-
-Intermediate abstract error classes MAY exist under a module root when a top-level or nested module needs a narrower ownership boundary.
 
 ## Exception data
 
