@@ -32,6 +32,7 @@ enabled_mcp_servers = ["playwright"]
 [agents_md]
 embedded_specs = [
   "specs/dictionary.md",
+  "specs/meta/project_areas.md",
   "specs/meta/language.md",
   "specs/programming/code.md",
   "specs/backend/modules_and_roles.md",

@@ -34,6 +34,9 @@ New areas MUST be recorded in the catalog with descriptions of their subject mat
 - `typescript` — TypeScript language, testing, and library conventions.
 - `documentation` — Project documentation artifacts and conventions for maintaining them.
 
+A project MAY extend the shared area catalog in `./specs/meta/project_areas.md`.
+The project specification MUST list each additional area and describe its subject matter.
+
 ### Language areas
 
 Language-wide conventions MUST live in `language.md` in their language area.

@@ -220,6 +220,7 @@ This index lists the available specifications and their goals.
 - `specs/meta/directories.md` — conventions for organizing specification files into subject areas.
 - `specs/meta/format.md` — the structure and style conventions for specifications in this project.
 - `specs/meta/language.md` — language conventions for specifications and for written communication among agents and with the developer.
+- `specs/meta/project_areas.md` — the Feeds Fun additions to the shared specification area catalog.
 - `specs/programming/code.md` — conventions for program implementations.
 - `specs/programming/content.md` — content requirements for programming specifications.
 - `specs/programming/dto.md` — the responsibilities and ownership of data transfer objects in a DTO-centric architecture.
@@ -537,6 +538,25 @@ Terms defined in this section are stable project vocabulary. Project artifacts M
 - `architecture test` - a test that verifies cross-cutting structural rules or conventions defined by an architecture specification.
 
 <!-- END SPECIFICATION: specs/dictionary.md -->
+
+<!-- BEGIN SPECIFICATION: specs/meta/project_areas.md -->
+
+# Project specification areas
+
+## Goal of the document
+
+This document describes the Feeds Fun additions to the shared specification area catalog.
+
+## Scope
+
+This specification applies to the Feeds Fun additions to the area catalog defined in `./specs/meta/directories.md`.
+
+## Additional areas
+
+- `backend` — Architecture and behavior of the Feeds Fun backend and its modules.
+- `frontend` — Architecture and behavior of the Feeds Fun frontend, including its modules and components.
+
+<!-- END SPECIFICATION: specs/meta/project_areas.md -->
 
 <!-- BEGIN SPECIFICATION: specs/meta/language.md -->
 
