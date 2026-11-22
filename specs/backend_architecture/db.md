@@ -12,8 +12,8 @@ This specification applies to database-backed Python code under `ffun/ffun` and 
 
 - `database operation` - a function that directly reads from or writes to PostgreSQL.
 - `transactional operation` - a database operation or domain function whose multiple SQL statements MUST succeed or fail as one atomic unit.
-- `operation module` - a Python module in the Operations role that implements persistence-backed commands and queries for its owning module. [Operations role](modules_and_roles.md#operations)
-- `migration` - a Yoyo file that changes the database schema or stored data. [Migrations role](modules_and_roles.md#migrations)
+- `operation module` - a Python module in the Operations role that implements persistence-backed commands and queries for its owning module. [Operations role](modules_and_roles.md#roles)
+- `migration` - a Yoyo file that changes the database schema or stored data. [Migrations role](modules_and_roles.md#roles)
 - `execute callable` - an object with the same contract as `ffun.core.postgresql.ExecuteType`, used to run SQL inside either a single-statement helper or an explicit transaction.
 - `approved transaction participant` - a cross-cutting technical module whose public domain interface MAY participate in another top-level module's transaction without workflow-specific approval.
 

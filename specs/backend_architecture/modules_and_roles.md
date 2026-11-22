@@ -77,81 +77,17 @@ Paths in role placement rules are relative to the source directory of the file's
 
 An **orphaned file** is a Python file in a declared module whose path matches no placement rule for a role other than Public or Private.
 
-### Domain
-
-`domain.py` has the Domain role.
-
-Files with the Domain role implement the business logic owned by their module.
-
-See the [Domain role specification](roles/domain.md).
-
-### Entities
-
-`entities.py` has the Entities role.
-
-Files with the Entities role define types, semantic identifiers, enums, and entities that represent their module's concepts.
-
-See the [Entities role specification](roles/entities.md).
-
-### Errors
-
-`errors.py` has the Errors role.
-
-Files with the Errors role define their module's exception types and error values.
-
-See the [Errors role specification](roles/errors.md).
-
-### Migrations
-
-Python files matching `migrations/*.py` have the Migrations role.
-
-Files with the Migrations role implement changes to the database schema and stored data.
-
-See the [database migration rules](db.md#schema-migrations) for migration ownership and behavior.
-
-### Operations
-
-`operations.py` has the Operations role.
-
-Files with the Operations role implement the technical details of their module's communication with storage and other external systems.
-
-See the [Operations role specification](roles/operations.md).
-
-### Settings
-
-`settings.py` has the Settings role.
-
-Files with the Settings role define how a module produces validated, typed settings from configuration inputs and defaults.
-
-See the [Settings role specification](roles/settings.md).
-
-### Tests
-
-Python files under directories named `tests` at any depth have the Tests role.
-
-Files with the Tests role contain their module's colocated tests and test support code.
-
-The `make` Python submodule MAY appear only inside tests packages, as `<module>.tests.make`.
-
-See the [Tests role specification](roles/tests.md).
-
-### Utilities
-
-`utils.py` has the Utilities role.
-
-Files with the Utilities role provide technical helpers that support their module's implementation.
-
-### Public
-
-An orphaned file has the Public role when its module permits that role.
-
-Files with the Public role contain public interfaces specific to their module.
-
-### Private
-
-An orphaned file has the Private role when its module permits that role.
-
-Files with the Private role contain implementation code specific to their module.
+- **Domain** — `domain.py` implements the business logic owned by its module. [Domain role specification](roles/domain.md)
+- **Entities** — `entities.py` defines types, semantic identifiers, enums, and entities that represent its module's concepts. [Entities role specification](roles/entities.md)
+- **Errors** — `errors.py` defines its module's exception types and error values. [Errors role specification](roles/errors.md)
+- **Migrations** — Python files matching `migrations/*.py` implement changes to the database schema and stored data. [Database migration rules](db.md#schema-migrations)
+- **Operations** — `operations.py` implements the technical details of its module's communication with storage and other external systems. [Operations role specification](roles/operations.md)
+- **Settings** — `settings.py` defines how its module produces validated, typed settings from configuration inputs and defaults. [Settings role specification](roles/settings.md)
+- **Tests** — Python files under directories named `tests` at any depth contain their module's colocated tests and test support code. [Tests role specification](roles/tests.md)
+  The `make` Python submodule MAY appear only inside tests packages, as `<module>.tests.make`.
+- **Utilities** — `utils.py` provides technical helpers that support its module's implementation.
+- **Public** — Orphaned files in modules that permit this role contain public interfaces specific to their module.
+- **Private** — Orphaned files in modules that permit this role contain implementation code specific to their module.
 
 ## Permitted module and role pairs
 
