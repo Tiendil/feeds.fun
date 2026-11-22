@@ -101,8 +101,8 @@ See the [Domain role specification](roles/domain.md).
 `entities.py` has the Entities role.
 
 Files with the Entities role define types, semantic identifiers, enums, and entities that represent their module's concepts.
-Entities SHOULD describe domain data and boundary data.
-Entities SHOULD omit storage implementation details unless storage metadata is itself part of the domain concept.
+
+See the [Entities role specification](roles/entities.md).
 
 ### Errors
 
