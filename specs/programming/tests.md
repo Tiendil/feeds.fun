@@ -265,6 +265,8 @@ Tests MUST NOT reset a shared resource unless the reset is required to verify th
 
 Tests MUST NOT clean up shared state after themselves unless the developer explicitly requests cleanup behavior.
 
+**Rationale:** Cleanup in a shared resource can affect unrelated state, even when it targets only records created by the test.
+
 A test for reading one record can create that record through the application and leave the other records in the shared database in place.
 
 ## Fixtures and temporary data
