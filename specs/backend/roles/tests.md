@@ -20,7 +20,7 @@ These placement preferences apply even when only one test file uses the factory 
 A test of a direct public function re-export SHOULD only verify that the public name refers to the original function.
 Tests dedicated to the function’s behavior MUST live with the Python module that defines it.
 
-Example:
+**Example:** The test checks that `domain.get_entry` refers to the function defined in `operations`.
 
 ```python
 class TestGetEntry:

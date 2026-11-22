@@ -174,11 +174,11 @@ A table owned by one top-level backend module MUST NOT define foreign keys, casc
 
 Table names SHOULD start with a short owner prefix when that keeps module ownership clear.
 
-**Example:** The feeds module uses `f_` as its table prefix.
-The library module uses `l_`.
-The ontology module uses `o_`.
-The users module uses `u_`.
-The queues module uses `q_`.
+**Example:** In a hypothetical project, the `catalog` module could use `c_` as its table prefix.
+The `deliveries` module could use `d_`.
+The `invoices` module could use `i_`.
+The `notifications` module could use `n_`.
+The `warehouses` module could use `w_`.
 
 Table prefixes MUST NOT intersect between modules.
 

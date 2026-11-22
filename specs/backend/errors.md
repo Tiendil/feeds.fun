@@ -116,16 +116,21 @@ Code that handles expected user, provider, source, storage, or environment failu
 Invalid external input MUST be reported through the error architecture instead of by returning partially valid entities.
 
 For PostgreSQL operations, code SHOULD catch and convert specific database exceptions only when the exception represents an expected business or consistency condition.
-
-For example, a `ForeignKeyViolation` MAY be converted to an operation-specific stale-reference, concurrency, or integrity error when the operation is designed to race with deletion or accepts externally supplied entity ids.
+Code MAY convert a `ForeignKeyViolation` to an operation-specific stale-reference, concurrency, or integrity error when the operation is designed to race with deletion or accepts externally supplied entity ids.
 
 Code SHOULD NOT wrap unexpected PostgreSQL infrastructure failures such as connection errors, pool failures, timeouts, SQL syntax errors, or unexpected constraint violations unless the developer explicitly approves that handling.
 
 A failure to validate or reconstruct persisted application state according to its owning domain model MUST be treated as an unexpected stored-state integrity failure.
 
 For HTTP, feed-source, LLM provider, and other third-party service calls, code MUST convert expected service outcomes into module-specific errors or persisted states when those outcomes are part of normal operation.
+The following examples can meet that condition.
 
-Examples include unavailable feed sources, malformed feed responses, known protocol errors, provider-declared rate limits, authentication failures, and documented validation failures.
+- unavailable feed sources.
+- malformed feed responses.
+- known protocol errors.
+- provider-declared rate limits.
+- authentication failures.
+- documented validation failures.
 
 Unknown third-party failures SHOULD NOT be broadly normalized unless the Python module boundary intentionally treats all failures of that operation as a recoverable domain outcome.
 
