@@ -194,6 +194,7 @@ This index lists the available specifications and their goals.
 - `specs/backend_architecture/modules/resources.md` — the responsibility and observable accounting behavior of the `ffun.resources` backend module.
 - `specs/backend_architecture/modules/subscriptions.md` — the responsibility and observable subscription behavior of the `ffun.subscriptions` backend module.
 - `specs/backend_architecture/modules_and_roles.md` — the Feeds Fun backend layout by module and role.
+- `specs/backend_architecture/roles/domain.md` — requirements for Python code with the Domain role (`domain.py`) in the Feeds Fun backend.
 - `specs/backend_architecture/roles/errors.md` — requirements for Python code with the Errors role (`errors.py`) and for error definitions elsewhere in the Feeds Fun backend.
 - `specs/backend_architecture/roles/operations.md` — requirements for Python code with the Operations role (`operations.py`) in the Feeds Fun backend.
 - `specs/backend_architecture/roles/settings.md` — requirements for Python code with the Settings role (`settings.py`) and for configuration entities and settings objects elsewhere in the Feeds Fun backend.

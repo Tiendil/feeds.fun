@@ -94,8 +94,7 @@ An **orphaned file** is a Python file in a declared module whose path matches no
 
 Files with the Domain role implement the business logic owned by their module.
 
-Domain functions SHOULD hide low-level communication details from callers.
-Callers should not need to know whether a workflow uses PostgreSQL, HTTP, providers, local tools, or multiple operation calls.
+See the [Domain role specification](roles/domain.md).
 
 ### Entities
 
