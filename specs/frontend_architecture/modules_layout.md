@@ -20,8 +20,4 @@ The following topics are out of scope:
 
 ## Dependency direction
 
-Views SHOULD compose layouts, components, inputs, values, stores, and logic.
-
 Reusable components SHOULD avoid depending on page-level views.
-
-Shared logic SHOULD avoid depending on Vue components unless the dependency is explicitly UI-specific.

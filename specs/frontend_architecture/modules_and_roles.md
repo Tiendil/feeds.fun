@@ -44,8 +44,6 @@ Application source code MUST live under `site/src`.
 
 ## Roles
 
-Paths in role placement rules are relative to the source directory of the file's most specific declared module.
-
 Files that match no specific role placement rule have the Public or Private role permitted by their owning module.
 
 - **Tests** — Source files under directories named `tests` at any depth contain their module's tests and test support code.
@@ -59,3 +57,57 @@ Every declared module MAY contain files with the Tests role.
 
 The application module MAY contain files with the Private role.
 Every other declared frontend module MAY contain files with the Public role.
+
+## Dependencies and public interfaces
+
+Dependency rules govern direct imports and named references to registered Vue components in templates.
+They apply between governed frontend source files when the files have different roles or owning modules.
+Direct imports include type-only imports, dynamic imports, and re-exports from another file.
+The target of a template reference is the file that defines the registered component.
+
+### Public interfaces
+
+Files with the Public role are public import interfaces for their modules.
+Registered Vue components defined in files with the Public role are public template interfaces for their modules.
+Vue component imports and template references MUST follow the [frontend component architecture](components.md).
+
+### Role dependencies
+
+Role dependency rules apply when files with different roles belong directly to the same module.
+Within that scope, the only permitted direction is from a file with the Tests role to a file with the Public or Private role.
+
+### Module kinds
+
+#### Definitions
+
+- **Foundational modules** provide shared styles and static assets.
+- **Shared-service modules** provide shared frontend logic, state, or Vue plugins.
+- **Presentation modules** provide reusable frontend components.
+- **View modules** compose the frontend content for individual pages.
+- **Edge modules** own application construction or route selection.
+
+#### Membership
+
+- Foundational — `site/src/assets` and `site/src/css`.
+- Shared-service — `site/src/logic`, `site/src/plugins`, and `site/src/stores`.
+- Presentation — `site/src/components` and its declared nested modules, `site/src/inputs`, `site/src/integrations`, `site/src/layouts`, and `site/src/values`.
+- View — `site/src/views`.
+- Edge — the application module at `site/src` and `site/src/router`.
+
+### Module dependencies
+
+A dependency between modules is allowed only when this specification permits its direction.
+
+- Foundational — Foundational.
+- Shared-service — Foundational and Shared-service.
+- Presentation — Foundational, Shared-service, and Presentation.
+- View — Foundational, Shared-service, and Presentation.
+- Edge — Foundational, Shared-service, Presentation, View, and Edge.
+
+The `site/src/logic` module MAY depend on Vue components defined in files with the Public role in Presentation modules.
+
+Views SHOULD compose layouts, components, inputs, values, stores, and logic.
+Composition lets views coordinate pages using shared presentation and logic.
+
+Shared logic SHOULD avoid depending on Vue components unless the dependency is explicitly UI-specific.
+Limiting component dependencies keeps shared logic usable outside component rendering.
