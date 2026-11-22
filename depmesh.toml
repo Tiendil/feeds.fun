@@ -221,7 +221,7 @@ relation = "governed_by"
 input = { type = "any", items = [
   { type = "glob", pattern = "@/site/src/**/*.ts" },
   { type = "glob", pattern = "@/site/*.ts" },
-  { type = "one_of", artifacts = ["@/specs/frontend_architecture/tests.md"] },
+  { type = "one_of", artifacts = ["@/specs/frontend_architecture/roles/tests.md"] },
 ] }
 output = { type = "files", pattern = "@/specs/typescript/**/*.md" }
 
@@ -231,7 +231,7 @@ input = { type = "glob", pattern = "@/specs/typescript/**/*.md" }
 output = { type = "union", items = [
   { type = "files", pattern = "@/site/src/**/*.ts" },
   { type = "files", pattern = "@/site/*.ts" },
-  { type = "list", artifacts = ["@/specs/frontend_architecture/tests.md"] },
+  { type = "list", artifacts = ["@/specs/frontend_architecture/roles/tests.md"] },
 ] }
 
 # Shared test conventions govern both test suites, backend test setup, and test architecture specifications.
@@ -245,7 +245,7 @@ input = { type = "any", items = [
     "@/ffun/ffun/pytest_plugin.py",
     "@/specs/backend_architecture/modules_and_roles.md",
     "@/specs/backend_architecture/roles/tests.md",
-    "@/specs/frontend_architecture/tests.md",
+    "@/specs/frontend_architecture/roles/tests.md",
   ] },
 ] }
 output = { type = "list", artifacts = ["@/specs/programming/tests.md"] }
@@ -261,7 +261,7 @@ output = { type = "union", items = [
     "@/ffun/ffun/pytest_plugin.py",
     "@/specs/backend_architecture/modules_and_roles.md",
     "@/specs/backend_architecture/roles/tests.md",
-    "@/specs/frontend_architecture/tests.md",
+    "@/specs/frontend_architecture/roles/tests.md",
   ] },
 ] }
 
@@ -479,6 +479,17 @@ output = { type = "list", artifacts = ["@/specs/frontend_architecture/modules/lo
 relation = "governs"
 input = { type = "one_of", artifacts = ["@/specs/frontend_architecture/modules/logic.md"] }
 output = { type = "files", pattern = "@/site/src/logic/**" }
+
+# Files in frontend tests directories follow the frontend Tests role specification.
+[[rules]]
+relation = "governed_by"
+input = { type = "glob", pattern = "@/site/src/**/tests/**" }
+output = { type = "list", artifacts = ["@/specs/frontend_architecture/roles/tests.md"] }
+
+[[rules]]
+relation = "governs"
+input = { type = "one_of", artifacts = ["@/specs/frontend_architecture/roles/tests.md"] }
+output = { type = "files", pattern = "@/site/src/**/tests/**" }
 
 # UI click tracking governs frontend interaction code and backend tracking contracts and tests.
 [[rules]]
