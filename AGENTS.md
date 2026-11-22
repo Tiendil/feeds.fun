@@ -184,24 +184,24 @@ You MUST NOT perform the following operations without explicit instructions to d
 
 This index lists the available specifications and their goals.
 
-- `specs/backend_architecture/db.md` — the Feeds Fun backend architecture for PostgreSQL-backed persistence.
-- `specs/backend_architecture/errors.md` — how the Feeds Fun backend represents fatal errors and warnings and passes those values to API, CLI, and worker boundaries.
-- `specs/backend_architecture/modules/audit.md` — the responsibility and observable audit behavior of the `ffun.audit` backend module.
-- `specs/backend_architecture/modules/benefits.md` — the responsibility and observable benefit-application behavior of the `ffun.benefits` backend module.
-- `specs/backend_architecture/modules/core.md` — requirements for the shared entity base in the `ffun.core` backend module.
-- `specs/backend_architecture/modules/domain.md` — requirements for shared semantic identifier ownership in the `ffun.domain` backend module.
-- `specs/backend_architecture/modules/entitlements.md` — the responsibility and observable entitlement behavior of the `ffun.entitlements` backend module.
-- `specs/backend_architecture/modules/locks.md` — the responsibility and observable coordination behavior of the `ffun.locks` backend module.
-- `specs/backend_architecture/modules/one_time_purchases.md` — the responsibility and observable one-time-purchase behavior of the `ffun.one_time_purchases` backend module.
-- `specs/backend_architecture/modules/resources.md` — the responsibility and observable accounting behavior of the `ffun.resources` backend module.
-- `specs/backend_architecture/modules/subscriptions.md` — the responsibility and observable subscription behavior of the `ffun.subscriptions` backend module.
-- `specs/backend_architecture/modules_and_roles.md` — the Feeds Fun backend layout by module and role.
-- `specs/backend_architecture/roles/domain.md` — requirements for Python code with the Domain role (`domain.py`) in the Feeds Fun backend.
-- `specs/backend_architecture/roles/entities.md` — requirements for Python code with the Entities role (`entities.py`) in the Feeds Fun backend.
-- `specs/backend_architecture/roles/errors.md` — requirements for Python code with the Errors role (`errors.py`) and for error definitions elsewhere in the Feeds Fun backend.
-- `specs/backend_architecture/roles/operations.md` — requirements for Python code with the Operations role (`operations.py`) in the Feeds Fun backend.
-- `specs/backend_architecture/roles/settings.md` — requirements for Python code with the Settings role (`settings.py`) and for configuration entities and settings objects elsewhere in the Feeds Fun backend.
-- `specs/backend_architecture/roles/tests.md` — requirements for Python code with the Tests role (`tests/`) in the Feeds Fun backend.
+- `specs/backend/db.md` — the Feeds Fun backend architecture for PostgreSQL-backed persistence.
+- `specs/backend/errors.md` — how the Feeds Fun backend represents fatal errors and warnings and passes those values to API, CLI, and worker boundaries.
+- `specs/backend/modules/audit.md` — the responsibility and observable audit behavior of the `ffun.audit` backend module.
+- `specs/backend/modules/benefits.md` — the responsibility and observable benefit-application behavior of the `ffun.benefits` backend module.
+- `specs/backend/modules/core.md` — requirements for the shared entity base in the `ffun.core` backend module.
+- `specs/backend/modules/domain.md` — requirements for shared semantic identifier ownership in the `ffun.domain` backend module.
+- `specs/backend/modules/entitlements.md` — the responsibility and observable entitlement behavior of the `ffun.entitlements` backend module.
+- `specs/backend/modules/locks.md` — the responsibility and observable coordination behavior of the `ffun.locks` backend module.
+- `specs/backend/modules/one_time_purchases.md` — the responsibility and observable one-time-purchase behavior of the `ffun.one_time_purchases` backend module.
+- `specs/backend/modules/resources.md` — the responsibility and observable accounting behavior of the `ffun.resources` backend module.
+- `specs/backend/modules/subscriptions.md` — the responsibility and observable subscription behavior of the `ffun.subscriptions` backend module.
+- `specs/backend/modules_and_roles.md` — the Feeds Fun backend layout by module and role.
+- `specs/backend/roles/domain.md` — requirements for Python code with the Domain role (`domain.py`) in the Feeds Fun backend.
+- `specs/backend/roles/entities.md` — requirements for Python code with the Entities role (`entities.py`) in the Feeds Fun backend.
+- `specs/backend/roles/errors.md` — requirements for Python code with the Errors role (`errors.py`) and for error definitions elsewhere in the Feeds Fun backend.
+- `specs/backend/roles/operations.md` — requirements for Python code with the Operations role (`operations.py`) in the Feeds Fun backend.
+- `specs/backend/roles/settings.md` — requirements for Python code with the Settings role (`settings.py`) and for configuration entities and settings objects elsewhere in the Feeds Fun backend.
+- `specs/backend/roles/tests.md` — requirements for Python code with the Tests role (`tests/`) in the Feeds Fun backend.
 - `specs/behavior/cli.md` — the stable shared behavior of the Feeds Fun backend command-line interface.
 - `specs/behavior/cli/benefits.md` — the Feeds Fun CLI command family for applying administrator-authorized benefit transactions and refreshing subscription entitlements from current benefit configuration.
 - `specs/behavior/cli/entitlements.md` — the Feeds Fun CLI command family for inspecting user entitlements.
@@ -210,10 +210,10 @@ This index lists the available specifications and their goals.
 - `specs/dictionary.md` — This document defines Feeds Fun terminology that is shared by multiple specifications and dependency metadata rules.
 - `specs/documentation/changelog.md` — requirements for changelog documentation.
 - `specs/documentation/readme.md` — the expected content, structure, and tone of the Feeds Fun `README.md`.
-- `specs/frontend_architecture/components.md` — the architecture, registration, naming, and composition conventions for Feeds Fun frontend components.
-- `specs/frontend_architecture/modules/logic.md` — requirements for the Feeds Fun frontend logic module.
-- `specs/frontend_architecture/modules_and_roles.md` — the Feeds Fun frontend layout by module and role.
-- `specs/frontend_architecture/roles/tests.md` — requirements for the Tests role in the Feeds Fun frontend.
+- `specs/frontend/components.md` — the architecture, registration, naming, and composition conventions for Feeds Fun frontend components.
+- `specs/frontend/modules/logic.md` — requirements for the Feeds Fun frontend logic module.
+- `specs/frontend/modules_and_roles.md` — the Feeds Fun frontend layout by module and role.
+- `specs/frontend/roles/tests.md` — requirements for the Tests role in the Feeds Fun frontend.
 - `specs/meta/backend_modules.md` — requirements for the structure, abstraction level, and content of specifications for individual Feeds Fun backend modules.
 - `specs/meta/content.md` — requirements for the level of detail in specification contracts.
 - `specs/meta/dictionary.md` — conventions for project-level dictionaries and shared project terminology.
@@ -748,7 +748,7 @@ The comment MUST be removed together with the temporary code.
 
 <!-- END SPECIFICATION: specs/programming/code.md -->
 
-<!-- BEGIN SPECIFICATION: specs/backend_architecture/modules_and_roles.md -->
+<!-- BEGIN SPECIFICATION: specs/backend/modules_and_roles.md -->
 
 # Backend modules and roles
 
@@ -772,8 +772,8 @@ A declared nested module MUST use the subdirectory of its parent module that mat
 
 A module or role with requirements beyond its list entry SHOULD have a dedicated specification for those requirements.
 
-A top-level module MAY have a dedicated specification at `specs/backend_architecture/modules/<module>.md`, where `<module>` is its package name without the `ffun.` prefix.
-A role MAY have a dedicated specification at `specs/backend_architecture/roles/<role>.md`, where `<role>` is its lowercase name.
+A top-level module MAY have a dedicated specification at `specs/backend/modules/<module>.md`, where `<module>` is its package name without the `ffun.` prefix.
+A role MAY have a dedicated specification at `specs/backend/roles/<role>.md`, where `<role>` is its lowercase name.
 
 The goal of a dedicated specification MUST name the module or role it governs.
 If a role has a source filename or path pattern, the goal SHOULD mention it.
@@ -791,10 +791,10 @@ A top-level module MUST own the definitions and behavior that directly implement
 - `ffun.auth` owns authentication and authorization logic.
 - `ffun.benefits` owns benefit package templates and the benefit transactions that coordinate changes to purchased state and its corresponding entitlements.
 - `ffun.cli` owns the command-line interface for managing the backend.
-- `ffun.core` owns the domain-neutral technical infrastructure shared by backend modules. See `specs/backend_architecture/modules/core.md`.
+- `ffun.core` owns the domain-neutral technical infrastructure shared by backend modules. See `specs/backend/modules/core.md`.
 - `ffun.data_protection` owns data protection and privacy-related behavior.
 - `ffun.dispatcher` owns dispatching entries to tag processor queues and tracking per-processor entry processing status.
-- `ffun.domain` owns the shared code that represents and supports foundational Feeds Fun domain concepts. See `specs/backend_architecture/modules/domain.md`.
+- `ffun.domain` owns the shared code that represents and supports foundational Feeds Fun domain concepts. See `specs/backend/modules/domain.md`.
 - `ffun.entitlements` owns source-specific user entitlement state and merged effective entitlements.
 - `ffun.feeds` owns feed storage and feed management.
 - `ffun.feeds_collections` owns curated feed collection configuration and behavior.
@@ -829,13 +829,13 @@ Paths in role placement rules are relative to the source directory of the file's
 
 An **orphaned file** is a Python file in a declared module whose path matches no placement rule for a role other than Public or Private.
 
-- **Domain** — `domain.py` implements the business logic owned by its module. See `specs/backend_architecture/roles/domain.md`.
-- **Entities** — `entities.py` defines types, semantic identifiers, enums, and entities that represent its module's concepts. See `specs/backend_architecture/roles/entities.md`.
-- **Errors** — `errors.py` defines its module's exception types and error values. See `specs/backend_architecture/roles/errors.md`.
-- **Migrations** — Python files matching `migrations/*.py` implement changes to the database schema and stored data. See `Schema Migrations` in `specs/backend_architecture/db.md`.
-- **Operations** — `operations.py` implements the technical details of its module's communication with storage and other external systems. See `specs/backend_architecture/roles/operations.md`.
-- **Settings** — `settings.py` defines how its module produces validated, typed settings from configuration inputs and defaults. See `specs/backend_architecture/roles/settings.md`.
-- **Tests** — Python files under directories named `tests` at any depth contain their module's colocated tests and test support code. See `specs/backend_architecture/roles/tests.md`.
+- **Domain** — `domain.py` implements the business logic owned by its module. See `specs/backend/roles/domain.md`.
+- **Entities** — `entities.py` defines types, semantic identifiers, enums, and entities that represent its module's concepts. See `specs/backend/roles/entities.md`.
+- **Errors** — `errors.py` defines its module's exception types and error values. See `specs/backend/roles/errors.md`.
+- **Migrations** — Python files matching `migrations/*.py` implement changes to the database schema and stored data. See `Schema Migrations` in `specs/backend/db.md`.
+- **Operations** — `operations.py` implements the technical details of its module's communication with storage and other external systems. See `specs/backend/roles/operations.md`.
+- **Settings** — `settings.py` defines how its module produces validated, typed settings from configuration inputs and defaults. See `specs/backend/roles/settings.md`.
+- **Tests** — Python files under directories named `tests` at any depth contain their module's colocated tests and test support code. See `specs/backend/roles/tests.md`.
   The `make` Python submodule MAY appear only inside tests packages, as `<module>.tests.make`.
 - **Utilities** — `utils.py` provides technical helpers that support its module's implementation.
 - **Public** — Orphaned files in modules that permit this role contain public interfaces specific to their module.
@@ -944,9 +944,9 @@ A dependency between modules is allowed only when this specification permits its
 
 Permissions to depend on `ffun.product` apply to the product-specific definitions and behavior the caller uses.
 
-<!-- END SPECIFICATION: specs/backend_architecture/modules_and_roles.md -->
+<!-- END SPECIFICATION: specs/backend/modules_and_roles.md -->
 
-<!-- BEGIN SPECIFICATION: specs/frontend_architecture/modules_and_roles.md -->
+<!-- BEGIN SPECIFICATION: specs/frontend/modules_and_roles.md -->
 
 # Frontend modules and roles
 
@@ -985,7 +985,7 @@ Application source code MUST live under `site/src`.
 - `site/src/integrations` owns integration-specific frontend views or widgets.
 - `site/src/layouts` owns top-level page layout components.
 - `site/src/logic` owns shared frontend logic, API clients, constants, settings, and utilities.
-  See `specs/frontend_architecture/modules/logic.md`.
+  See `specs/frontend/modules/logic.md`.
 - `site/src/plugins` owns Vue plugins.
 - `site/src/router` owns Vue Router configuration.
 - `site/src/stores` owns Pinia stores.
@@ -997,7 +997,7 @@ Application source code MUST live under `site/src`.
 Files that match no specific role placement rule have the Public or Private role permitted by their owning module.
 
 - **Tests** — Source files under directories named `tests` at any depth contain their module's tests and test support code.
-  Files with the Tests role MUST follow `specs/frontend_architecture/roles/tests.md`.
+  Files with the Tests role MUST follow `specs/frontend/roles/tests.md`.
 - **Public** — Files with this role contain public interfaces specific to their module.
 - **Private** — Files with this role contain implementation code specific to their module.
 
@@ -1019,7 +1019,7 @@ The target of a template reference is the file that defines the registered compo
 
 Files with the Public role are public import interfaces for their modules.
 Registered Vue components defined in files with the Public role are public template interfaces for their modules.
-Vue component imports and template references MUST follow `specs/frontend_architecture/components.md`.
+Vue component imports and template references MUST follow `specs/frontend/components.md`.
 
 ### Role dependencies
 
@@ -1062,4 +1062,4 @@ Composition lets views coordinate pages using shared presentation and logic.
 Shared logic SHOULD avoid depending on Vue components unless the dependency is explicitly UI-specific.
 Limiting component dependencies keeps shared logic usable outside component rendering.
 
-<!-- END SPECIFICATION: specs/frontend_architecture/modules_and_roles.md -->
+<!-- END SPECIFICATION: specs/frontend/modules_and_roles.md -->

@@ -1,6 +1,6 @@
 # Module boundary problems
 
-This inventory tracks known violations and open questions about module and role rules. [Backend rules](../specs/backend_architecture/modules_and_roles.md) · [Frontend rules](../specs/frontend_architecture/modules_and_roles.md)
+This inventory tracks known violations and open questions about module and role rules. [Backend rules](../specs/backend/modules_and_roles.md) · [Frontend rules](../specs/frontend/modules_and_roles.md)
 
 ## Core migration dependencies
 

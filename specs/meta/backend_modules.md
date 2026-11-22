@@ -30,7 +30,7 @@ Authors MUST perform a subtraction pass and remove a concept when removing it wo
 
 ## Location and identity
 
-Each module specification MUST be stored under `specs/backend_architecture/modules/` and MUST have a title that identifies the module.
+Each module specification MUST be stored under `specs/backend/modules/` and MUST have a title that identifies the module.
 There MUST be at most one specification for each top-level backend module.
 
 The specification MAY exist before the module is implemented.
