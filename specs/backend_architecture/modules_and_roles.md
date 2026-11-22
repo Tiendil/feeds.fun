@@ -10,7 +10,7 @@ This specification applies to Python source files under `ffun/ffun`.
 
 ## File and package layout
 
-The backend layout follows the [shared modules and roles specification](../programming/modules_and_roles.md).
+The backend layout follows `specs/programming/modules_and_roles.md`.
 Each declared module is implemented as a Python package.
 
 A declared top-level module named `ffun.<name>` MUST use `./ffun/ffun/<name>/` as its source directory.
@@ -39,10 +39,10 @@ A top-level module MUST own the definitions and behavior that directly implement
 - `ffun.auth` owns authentication and authorization logic.
 - `ffun.benefits` owns benefit package templates and the benefit transactions that coordinate changes to purchased state and its corresponding entitlements.
 - `ffun.cli` owns the command-line interface for managing the backend.
-- `ffun.core` owns the domain-neutral technical infrastructure shared by backend modules. [Core module specification](modules/core.md)
+- `ffun.core` owns the domain-neutral technical infrastructure shared by backend modules. See `specs/backend_architecture/modules/core.md`.
 - `ffun.data_protection` owns data protection and privacy-related behavior.
 - `ffun.dispatcher` owns dispatching entries to tag processor queues and tracking per-processor entry processing status.
-- `ffun.domain` owns the shared code that represents and supports foundational Feeds Fun domain concepts. [Domain module specification](modules/domain.md)
+- `ffun.domain` owns the shared code that represents and supports foundational Feeds Fun domain concepts. See `specs/backend_architecture/modules/domain.md`.
 - `ffun.entitlements` owns source-specific user entitlement state and merged effective entitlements.
 - `ffun.feeds` owns feed storage and feed management.
 - `ffun.feeds_collections` owns curated feed collection configuration and behavior.
@@ -77,13 +77,13 @@ Paths in role placement rules are relative to the source directory of the file's
 
 An **orphaned file** is a Python file in a declared module whose path matches no placement rule for a role other than Public or Private.
 
-- **Domain** — `domain.py` implements the business logic owned by its module. [Domain role specification](roles/domain.md)
-- **Entities** — `entities.py` defines types, semantic identifiers, enums, and entities that represent its module's concepts. [Entities role specification](roles/entities.md)
-- **Errors** — `errors.py` defines its module's exception types and error values. [Errors role specification](roles/errors.md)
-- **Migrations** — Python files matching `migrations/*.py` implement changes to the database schema and stored data. [Database migration rules](db.md#schema-migrations)
-- **Operations** — `operations.py` implements the technical details of its module's communication with storage and other external systems. [Operations role specification](roles/operations.md)
-- **Settings** — `settings.py` defines how its module produces validated, typed settings from configuration inputs and defaults. [Settings role specification](roles/settings.md)
-- **Tests** — Python files under directories named `tests` at any depth contain their module's colocated tests and test support code. [Tests role specification](roles/tests.md)
+- **Domain** — `domain.py` implements the business logic owned by its module. See `specs/backend_architecture/roles/domain.md`.
+- **Entities** — `entities.py` defines types, semantic identifiers, enums, and entities that represent its module's concepts. See `specs/backend_architecture/roles/entities.md`.
+- **Errors** — `errors.py` defines its module's exception types and error values. See `specs/backend_architecture/roles/errors.md`.
+- **Migrations** — Python files matching `migrations/*.py` implement changes to the database schema and stored data. See `Schema Migrations` in `specs/backend_architecture/db.md`.
+- **Operations** — `operations.py` implements the technical details of its module's communication with storage and other external systems. See `specs/backend_architecture/roles/operations.md`.
+- **Settings** — `settings.py` defines how its module produces validated, typed settings from configuration inputs and defaults. See `specs/backend_architecture/roles/settings.md`.
+- **Tests** — Python files under directories named `tests` at any depth contain their module's colocated tests and test support code. See `specs/backend_architecture/roles/tests.md`.
   The `make` Python submodule MAY appear only inside tests packages, as `<module>.tests.make`.
 - **Utilities** — `utils.py` provides technical helpers that support its module's implementation.
 - **Public** — Orphaned files in modules that permit this role contain public interfaces specific to their module.
