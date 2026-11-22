@@ -49,10 +49,6 @@ The module MUST NOT:
 
 Callers MUST respect the module's reservation decisions and MUST NOT independently change the accounting state it owns.
 
-## Special module rules
-
-This module has no special module rules.
-
 ## Domain model
 
 A resource record is the durable current accounting state for exactly one user, resource kind, and caller-defined interval start.

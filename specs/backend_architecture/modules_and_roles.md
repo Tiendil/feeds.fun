@@ -36,7 +36,7 @@ A top-level module MUST own the definitions and behavior that directly implement
 - `ffun.auth` owns authentication and authorization logic.
 - `ffun.benefits` owns benefit package templates and the benefit transactions that coordinate changes to purchased state and its corresponding entitlements.
 - `ffun.cli` owns the command-line interface for managing the backend.
-- `ffun.core` owns the domain-neutral technical infrastructure shared by backend modules.
+- `ffun.core` owns the domain-neutral technical infrastructure shared by backend modules. [Core module specification](modules/core.md)
 - `ffun.data_protection` owns data protection and privacy-related behavior.
 - `ffun.dispatcher` owns dispatching entries to tag processor queues and tracking per-processor entry processing status.
 - `ffun.domain` owns the shared code that represents and supports foundational Feeds Fun domain concepts.
@@ -71,10 +71,6 @@ A top-level module MUST own the definitions and behavior that directly implement
 ### `ffun.api`
 
 The `ffun.api.spa` nested module owns the HTTP endpoints used by the frontend.
-
-### `ffun.core`
-
-The shared `entities.py` file in `ffun.core` MUST define the common entity base used by higher-level modules.
 
 ### `ffun.domain`
 

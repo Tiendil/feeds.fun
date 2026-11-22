@@ -6,26 +6,23 @@ This document describes requirements for the structure, abstraction level, and c
 
 ## Scope
 
-This specification applies to specifications of high-level domain modules represented by `ffun.<name>`, where each module owns one cohesive project subdomain.
-The `ffun.<name>` notation identifies the architectural boundary covered here; nested packages and other implementation-level code organization are out of scope.
+This specification applies to specifications of top-level Feeds Fun backend modules represented by `ffun.<name>`.
 
-It governs how those specifications distinguish durable domain requirements from implementation choices.
 General specification style, backend-wide architecture, and policies owned by other specifications are out of scope.
 
 ## Dictionary
 
-- `module specification` - a specification dedicated to one such high-level domain module's responsibility and observable behavior.
+- `module specification` - a specification dedicated to one top-level backend module.
 - `entity kind` - a durable category of domain entity owned by a module, independent of its representation as a class, record, table, or other implementation construct.
 - `special module rule` - a module-specific architectural rule that differs from, or adds to, the rules that ordinarily apply to every backend module.
 - `observable correctness guarantee` - an atomicity, concurrency, idempotency, ordering, or temporal property whose violation would change a domain outcome visible outside the module.
 
 ## Core principle
 
-A module specification is a domain contract, not a map of the current code.
-It MUST establish what the module owns, which entity kinds belong to that ownership, how those entities relate and evolve, and which module-specific behaviors must remain true.
+A description of a module's observable behavior MUST establish what the module owns, which entity kinds belong to that ownership, how those entities relate and evolve, and which module-specific behaviors must remain true.
 It MUST remain accurate when internal APIs, persistence, data structures, and orchestration change without changing the domain behavior.
 
-Requirements MUST be stated at the highest semantic level that still distinguishes correct behavior from an incorrect domain outcome.
+Requirements for observable behavior MUST be stated at the highest semantic level that still distinguishes correct behavior from an incorrect domain outcome.
 They MUST describe invariants and effects rather than the mechanisms used to achieve them.
 
 Every module-specific requirement MUST serve a current behavior, ownership boundary, relationship, or observable correctness guarantee.
@@ -37,11 +34,11 @@ Each module specification MUST be stored under `specs/backend_architecture/modul
 There MUST be at most one specification for each top-level backend module.
 
 The specification MAY exist before the module is implemented.
-Its content MUST describe the intended domain contract rather than treating the absence or shape of the current implementation as a domain limitation.
+Requirements for observable behavior MUST describe the intended domain contract independently of the availability or shape of its implementation.
 
 ## Required structure
 
-After the opening sections required by `specs/meta/format.md`, every module specification MUST contain the following top-level sections, in this order:
+After the opening sections required by `specs/meta/format.md`, a module specification MUST use the following standard headings in order for the topics it covers.
 
 1. `Module responsibility`
 2. `Special module rules`
@@ -52,9 +49,7 @@ After the opening sections required by `specs/meta/format.md`, every module spec
 
 An additional top-level section SHOULD be used only when a substantial current concern does not fit the standard sections.
 
-Every required section MUST remain present when it has no module-specific requirements.
-Such a section MUST contain a direct statement of absence, such as `This module has no special module rules.`, `This module owns no domain entity kinds.`, or `This module produces no audit records.`
-It MUST NOT be filled by repeating backend-wide defaults.
+A standard section MUST state a module-specific requirement or an absence that is part of the module's contract.
 
 Caller-visible capabilities MUST be described under `Domain behavior` and MUST NOT be placed in a separate operation catalogue.
 
@@ -62,7 +57,7 @@ Caller-visible capabilities MUST be described under `Domain behavior` and MUST N
 
 ### `Scope`
 
-The `Scope` section MUST identify the module's stable domain boundary and the general responsibility to which the specification applies.
+The `Scope` section MUST identify the module's stable responsibility boundary and the code or behavior the specification governs.
 It SHOULD distinguish an adjacent responsibility when readers could reasonably assign it to the wrong module.
 It MUST NOT enumerate the module's current operations, implementation components, or an exhaustive collection of unrelated out-of-scope concerns.
 
@@ -82,6 +77,7 @@ The `Special module rules` section MUST contain only intentional differences fro
 A purchased-state or entitlement module may state that its state changes are intended to participate in an atomic workflow owned by `ffun.benefits`.
 
 A special rule MUST state the module-specific architectural requirement and the semantic boundary within which it applies.
+A special rule MAY identify a source file or package when its location is itself the architectural requirement.
 It MUST NOT prescribe:
 
 - the functions that implement the rule.
@@ -91,8 +87,6 @@ It MUST NOT prescribe:
 
 When one module owns a collaborative policy, that module MUST define the policy.
 Participating modules MUST state only their participation in and respect for the owning module's decision.
-
-When no special rule exists, the section MUST say so explicitly.
 
 ### `Domain model`
 
