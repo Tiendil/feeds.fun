@@ -28,12 +28,20 @@ The field name is part of the response contract.
 
 ## Implementation neutrality
 
-A specification MUST NOT require a particular method when multiple methods can satisfy the same required properties and constraints, unless the choice of method is itself part of the specification's subject matter or is necessary to satisfy an independently stated requirement.
-When a specification requires a particular method, it MUST state why the method matters or which required property an alternative would violate.
+A specification MAY require or prohibit a method only when at least one of the following applies.
+
+- The choice is part of the specification’s subject matter.
+- An independently stated requirement depends on the choice.
+- The choice establishes or enforces a common approach to a recurring problem within a defined scope.
+
+For a common approach, the default rationale is to reduce the number of conventions developers need to learn and maintain.
+The specification MAY add a more specific rationale.
+
+For other requirements or prohibitions about methods, the specification MUST explain why the choice matters or identify the required property it supports.
 
 **Example:** A search specification may require results in descending publication-date order while leaving the sorting algorithm unspecified.
 
-**Counterexample:** If result ordering is the only relevant requirement, mandating quicksort excludes other sorting methods without identifying a required property that depends on quicksort.
+**Counterexample:** Requiring quicksort solely to make a search requirement more concrete excludes other sorting methods that produce the required result order.
 
 **Example:** A publication procedure may require a reviewer other than the author to approve a report before release.
 Here the independent review decision is the release gate being defined, so the prescribed review step is part of the procedure's subject matter.
@@ -49,4 +57,4 @@ Specifications MUST NOT present a local, temporary, or purely stylistic preferen
 **Counterexample:** Requiring the current editor's checklist template solely because that editor prefers its layout excludes other processes that satisfy the same review criteria.
 
 Specifications MUST NOT resolve a choice of method merely to make a requirement or example more concrete.
-When a choice of method does not affect the required properties or constraints and is not a qualified recommended practice, the specification MUST omit that choice.
+When a choice of method does not affect the required properties or constraints, the specification MUST omit that choice unless it qualifies as a common approach or a recommended practice under this section.
