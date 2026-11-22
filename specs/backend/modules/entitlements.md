@@ -56,7 +56,10 @@ Ownerless grants MAY represent explicitly supported administrative or system ent
 A grant's meaning and purchased-state ownership MUST remain unchanged after establishment; correcting either requires a distinct grant.
 
 Every source-entitlement value MUST be a positive whole quantity no greater than `2**63 - 1`.
-This explicit upper bound is developer-approved because source and materialized effective values use a durable signed-64-bit contract; without it, a source change could establish source state whose required effective state cannot be represented atomically.
+
+**Rationale:** The developer approved this upper bound because source and materialized effective values use a durable signed-64-bit contract.
+Without the bound, a source change could establish source state whose required effective state cannot be represented atomically.
+
 A non-lifetime grant MUST have a finite effective period.
 A lifetime grant MUST use the project's stable lifetime interval-end marker and does not semantically expire.
 
