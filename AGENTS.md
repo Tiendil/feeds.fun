@@ -189,6 +189,7 @@ This index lists the available specifications and their goals.
 - `specs/backend_architecture/modules/audit.md` — the responsibility and observable audit behavior of the `ffun.audit` backend module.
 - `specs/backend_architecture/modules/benefits.md` — the responsibility and observable benefit-application behavior of the `ffun.benefits` backend module.
 - `specs/backend_architecture/modules/core.md` — requirements for the shared entity base in the `ffun.core` backend module.
+- `specs/backend_architecture/modules/domain.md` — requirements for shared semantic identifier ownership in the `ffun.domain` backend module.
 - `specs/backend_architecture/modules/entitlements.md` — the responsibility and observable entitlement behavior of the `ffun.entitlements` backend module.
 - `specs/backend_architecture/modules/locks.md` — the responsibility and observable coordination behavior of the `ffun.locks` backend module.
 - `specs/backend_architecture/modules/one_time_purchases.md` — the responsibility and observable one-time-purchase behavior of the `ffun.one_time_purchases` backend module.

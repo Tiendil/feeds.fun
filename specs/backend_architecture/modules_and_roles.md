@@ -39,7 +39,7 @@ A top-level module MUST own the definitions and behavior that directly implement
 - `ffun.core` owns the domain-neutral technical infrastructure shared by backend modules. [Core module specification](modules/core.md)
 - `ffun.data_protection` owns data protection and privacy-related behavior.
 - `ffun.dispatcher` owns dispatching entries to tag processor queues and tracking per-processor entry processing status.
-- `ffun.domain` owns the shared code that represents and supports foundational Feeds Fun domain concepts.
+- `ffun.domain` owns the shared code that represents and supports foundational Feeds Fun domain concepts. [Domain module specification](modules/domain.md)
 - `ffun.entitlements` owns source-specific user entitlement state and merged effective entitlements.
 - `ffun.feeds` owns feed storage and feed management.
 - `ffun.feeds_collections` owns curated feed collection configuration and behavior.
@@ -71,12 +71,6 @@ A top-level module MUST own the definitions and behavior that directly implement
 ### `ffun.api`
 
 The `ffun.api.spa` nested module owns the HTTP endpoints used by the frontend.
-
-### `ffun.domain`
-
-Semantic identifiers owned by `ffun.domain` MUST be dependency-neutral and shared across independent domain modules.
-
-A semantic identifier shared by independent domain-level modules SHOULD belong to `ffun.domain` when placing it in a narrower owning module would reverse the intended dependency direction or create a cycle.
 
 ## Roles
 
