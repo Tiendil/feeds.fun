@@ -20,7 +20,6 @@ The following topics are out of scope:
 
 ## Dictionary
 
-- `unit test` - a test focused on one frontend module or one small group of closely related functions, components, or stores.
 - `integration test` - a test that checks multiple frontend modules through a public boundary such as component rendering, store behavior, router behavior, or API client behavior.
 - `component test` - a test that mounts or renders a Vue component to verify its behavior.
 
@@ -36,8 +35,10 @@ View-level integration tests SHOULD live under the `views` module or the feature
 
 Component tests MUST NOT be added unless the developer explicitly requests component-level testing.
 Component behavior SHOULD be extracted into frontend logic and covered by logic tests when practical.
-Requiring explicit approval keeps the component-test surface intentional; extracting render-independent behavior produces smaller, faster tests that are less coupled to Vue mounting details.
 Architecture tests that inspect component source or registration without mounting or rendering components are not component tests under this restriction.
+
+**Rationale:** Requiring explicit approval keeps the component-test surface intentional.
+Extracting render-independent behavior produces smaller, faster tests that are less coupled to Vue mounting details.
 
 Logic tests MAY verify DOM transformations performed directly by the code under test.
 

@@ -20,6 +20,10 @@ The [Tach configuration](../ffun/tach.toml) permits `ffun.core.migrations` to de
   from ffun.queues.tests.entities import FakeQueueItem
   ```
 
+- Depmesh’s recursive `**/entities.py` glob maps Queues’ `tests/entities.py` to the Entities role specification in `governed_by` and maps the specification back to the file in `governs`.
+  The file defines the `FakeQueueItem` test type and belongs to the Tests role.
+  The deferred fix is to exclude files under `tests` directories from both Entities role rules. [Queue test support](../ffun/ffun/queues/tests/entities.py) · [Backend roles](../specs/backend/modules_and_roles.md#roles) · [Depmesh rules](../depmesh.toml#L367)
+
 - Feed Discovery’s `domain.py` imports Integrations’ private `settings.py` to look up a plugin for the source URL.
   Integrations tests import Feed Discovery’s `entities.py`, forming a module dependency cycle. [Feed Discovery Domain](../ffun/ffun/feeds_discoverer/domain.py) · [Integrations plugin test](../ffun/ffun/integrations/tests/test_plugin.py)
 
