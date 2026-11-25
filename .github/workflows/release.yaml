@@ -38,6 +38,12 @@ jobs:
           # Use personal access token to trigger other workflows on tag push
           token: ${{ secrets.TIENDIL_RELEASE_TOKEN }}
 
+      - name: Set up mise
+        uses: jdx/mise-action@v5
+        with:
+          version: '2026.11.8'
+          install: false
+
       - name: Setup git user
         run: |
           git config --global user.name "$(git --no-pager log --format=format:'%an' -n 1)"
@@ -59,4 +65,4 @@ jobs:
           cache: 'poetry'
 
       - name: Prepare release
-        run: ./bin/prepare-release.sh ${{ github.event.inputs.bump_version }}
+        run: mise run release:prepare "${{ github.event.inputs.bump_version }}"

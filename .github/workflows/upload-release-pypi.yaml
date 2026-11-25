@@ -27,6 +27,12 @@ jobs:
         with:
           ref: ${{ github.ref }}
 
+      - name: Set up mise
+        uses: jdx/mise-action@v5
+        with:
+          version: '2026.11.8'
+          install: false
+
       - name: Install poetry
         run: pip install poetry
 
@@ -37,8 +43,7 @@ jobs:
           cache: 'poetry'
 
       - name: build python package
-        working-directory: ffun
-        run: poetry build
+        run: mise run package:build:backend
 
       - name: Publish package distributions to PyPI
         uses: pypa/gh-action-pypi-publish@release/v1.13

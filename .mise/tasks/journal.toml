@@ -1,0 +1,15 @@
+["journal:task"]
+tags = ["agent"]
+description = "Run Taskwarrior with the project journal configuration"
+raw = true
+raw_args = true
+quiet = true
+run = "./bin/taskwarior.sh"
+
+["journal:tail"]
+tags = ["agent"]
+description = "Show or follow project journal records"
+raw = true
+raw_args = true
+quiet = true
+run = "python3 ./bin/journal-tail.py"

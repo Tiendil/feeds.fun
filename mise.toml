@@ -1,0 +1,9 @@
+[vars]
+harness_project_root = "{{ config_root | canonicalize }}"
+
+[bootstrap.repos.".vendor/shared-harness"]
+url = '{{ read_toml(path=".harness/config.toml")["repository"]["url"] }}'
+ref = '{{ read_toml(path=".harness/config.toml")["repository"]["ref"] }}'
+
+[task_config]
+includes = [".mise/tasks/*.toml"]

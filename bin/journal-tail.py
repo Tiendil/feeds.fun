@@ -11,7 +11,6 @@ from typing import Any
 
 
 ROOT_DIR = Path(__file__).resolve().parent.parent
-TASKWARIOR = ROOT_DIR / "bin" / "taskwarior.sh"
 COLUMN_PADDING = 2
 
 
@@ -25,7 +24,7 @@ def parse_args() -> argparse.Namespace:
 
 def load_records() -> list[dict[str, Any]]:
     result = subprocess.run(
-        [str(TASKWARIOR), "rc.verbose:nothing", "+journal", "export"],
+        ["mise", "--quiet", "run", "journal:task", "--", "rc.verbose:nothing", "+journal", "export"],
         cwd=ROOT_DIR,
         check=True,
         stdout=subprocess.PIPE,
@@ -70,7 +69,9 @@ def record_time(record: dict[str, Any]) -> str:
 
 
 def record_actor(record: dict[str, Any]) -> str:
-    return " ".join(str(tag) for tag in record.get("tags", []) if tag != "journal")
+    tags = record.get("tags", [])
+    agent_name = record.get("agent") or "agent"
+    return " ".join(str(agent_name if tag == "agent" else tag) for tag in tags if tag != "journal")
 
 
 def record_kind(record: dict[str, Any]) -> str:

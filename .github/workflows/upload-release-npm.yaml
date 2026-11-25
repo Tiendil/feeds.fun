@@ -27,6 +27,12 @@ jobs:
         with:
           ref: ${{ github.ref }}
 
+      - name: Set up mise
+        uses: jdx/mise-action@v5
+        with:
+          version: '2026.11.8'
+          install: false
+
       - name: Prepare Node
         uses: actions/setup-node@v6
         with:
@@ -37,5 +43,4 @@ jobs:
         run: npm install -g npm@latest
 
       - name: Publish package distributions to NPM
-        working-directory: site
-        run: npm publish
+        run: mise run package:publish:frontend

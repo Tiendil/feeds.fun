@@ -1,0 +1,193 @@
+skills = ["session"]
+
+[specifications]
+root = "specs"
+specs = [
+  "meta/format.md",
+  "meta/content.md",
+  "meta/directories.md",
+  "meta/dictionary.md",
+  "meta/language.md",
+  "programming/code.md",
+  "programming/content.md",
+  "programming/dto.md",
+  "programming/modules_and_roles.md",
+  "programming/tests.md",
+  "programming/postgresql.md",
+  "python/language.md",
+  "python/tests.md",
+  "python/libs/pytest.md",
+  "python/libs/pydantic.md",
+  "python/libs/pydantic.dto_foundation.md",
+  "typescript/tests.md",
+  "typescript/libs/vitest.md",
+  "documentation/changelog.md",
+]
+
+[workflows]
+root = ".harness/workflows"
+fragments = [
+  "polish/python/flake8.md",
+  "polish/python/mypy.md",
+]
+
+[repository]
+url = "git@github.com:Tiendil/harness.git"
+ref = "main"
+
+[codex]
+# Enable selected shared MCP servers when generating .codex/config.toml.
+# For Playwright, use ["playwright"]. An empty list keeps shared defaults disabled.
+enabled_mcp_servers = ["playwright"]
+
+[agents_md]
+embedded_specs = [
+  "specs/dictionary.md",
+  "specs/meta/project_areas.md",
+  "specs/meta/language.md",
+  "specs/programming/code.md",
+  "specs/backend/modules_and_roles.md",
+  "specs/frontend/modules_and_roles.md",
+]
+
+index_goal_prefixes_to_remove = [
+  "This document describes ",
+]
+
+fragments = [
+  ".vendor/shared-harness/agents.md.d/intro.md",
+  ".vendor/shared-harness/agents.md.d/primary.md",
+  ".vendor/shared-harness/agents.md.d/subagents.md",
+  ".harness/agents.md.d/environment.md",
+  ".vendor/shared-harness/agents.md.d/principles/intro.md",
+  ".vendor/shared-harness/agents.md.d/principles/fundamentals.md",
+  ".vendor/shared-harness/agents.md.d/principles/design.md",
+  ".vendor/shared-harness/agents.md.d/principles/implementation.md",
+  ".vendor/shared-harness/agents.md.d/behavior/intro.md",
+  ".vendor/shared-harness/agents.md.d/behavior/reaction_on_developer_commands.md",
+  ".harness/agents.md.d/behavior/communication.md",
+  ".vendor/shared-harness/agents.md.d/behavior/ask_developer_when.md",
+  ".vendor/shared-harness/agents.md.d/behavior/working_with_text_artifacts.md",
+  ".vendor/shared-harness/agents.md.d/behavior/introducing_changes.md",
+  ".harness/agents.md.d/behavior/introducing_changes.md",
+  ".vendor/shared-harness/agents.md.d/behavior/restrictions/intro.md",
+  ".vendor/shared-harness/agents.md.d/behavior/restrictions/project.md",
+  ".vendor/shared-harness/agents.md.d/behavior/restrictions/dependencies.md",
+  ".vendor/shared-harness/agents.md.d/behavior/restrictions/docker.md",
+  ".vendor/shared-harness/agents.md.d/behavior/restrictions/git.md",
+  ".vendor/shared-harness/agents.md.d/specifications.md",
+  ".vendor/shared-harness/agents.md.d/cli_tools/intro.md",
+  ".vendor/shared-harness/agents.md.d/cli_tools/mise.md",
+  ".vendor/shared-harness/agents.md.d/cli_tools/donna.md",
+  ".vendor/shared-harness/agents.md.d/cli_tools/depmesh.md",
+  ".vendor/shared-harness/agents.md.d/cli_tools/ast-grep.md",
+  ".vendor/shared-harness/agents.md.d/cli_tools/rg.md",
+  ".vendor/shared-harness/agents.md.d/cli_tools/difftastic.md",
+  ".harness/agents.md.d/cli_tools/taskwarrior.md",
+  ".harness/agents.md.d/cli_tools/inconsistency-check.md",
+]
+
+skipped_fragments = []
+
+# Codex roles. Description file and fragment paths are relative to the repository root.
+# Generate .codex/agents/ with mise run harness:codex:roles:generate.
+[[roles.role]]
+name = "default"
+description = { file = ".vendor/shared-harness/workers/descriptions/default.md" }
+fragments = [
+  ".vendor/shared-harness/workers/roles/default.md",
+  ".vendor/shared-harness/workers/behaviors/communication.md",
+  ".vendor/shared-harness/workers/behaviors/consent.md",
+  ".vendor/shared-harness/workers/behaviors/write_ownership.md",
+  ".vendor/shared-harness/workers/behaviors/writing_tests_prohibited.md",
+  ".vendor/shared-harness/workers/behaviors/complex_research_prohibited.md",
+  ".vendor/shared-harness/workers/behaviors/final_review_prohibited.md",
+]
+
+[[roles.role]]
+name = "qa_automation"
+description = { file = ".vendor/shared-harness/workers/descriptions/qa_automation.md" }
+fragments = [
+  ".vendor/shared-harness/workers/roles/qa_automation.md",
+  ".vendor/shared-harness/workers/behaviors/communication.md",
+  ".vendor/shared-harness/workers/behaviors/consent.md",
+  ".vendor/shared-harness/workers/behaviors/write_ownership.md",
+  ".vendor/shared-harness/workers/behaviors/writing_tests.md",
+  ".vendor/shared-harness/workers/behaviors/complex_research_prohibited.md",
+  ".vendor/shared-harness/workers/behaviors/final_review_prohibited.md",
+]
+
+[[roles.role]]
+name = "research_document_extractor"
+description = { file = ".vendor/shared-harness/workers/descriptions/research_document_extractor.md" }
+fragments = [
+  ".vendor/shared-harness/workers/roles/research_document_extractor.md",
+  ".vendor/shared-harness/workers/behaviors/communication.md",
+  ".vendor/shared-harness/workers/behaviors/consent.md",
+  ".vendor/shared-harness/workers/behaviors/write_ownership.md",
+  ".vendor/shared-harness/workers/behaviors/writing_tests_prohibited.md",
+  ".vendor/shared-harness/workers/behaviors/complex_research.md",
+  ".vendor/shared-harness/workers/behaviors/final_review_prohibited.md",
+]
+
+[[roles.role]]
+name = "research_analysis"
+description = { file = ".vendor/shared-harness/workers/descriptions/research_analysis.md" }
+fragments = [
+  ".vendor/shared-harness/workers/roles/research_analysis.md",
+  ".vendor/shared-harness/workers/behaviors/communication.md",
+  ".vendor/shared-harness/workers/behaviors/consent.md",
+  ".vendor/shared-harness/workers/behaviors/write_ownership.md",
+  ".vendor/shared-harness/workers/behaviors/writing_tests_prohibited.md",
+  ".vendor/shared-harness/workers/behaviors/complex_research.md",
+  ".vendor/shared-harness/workers/behaviors/final_review_prohibited.md",
+]
+
+[[roles.role]]
+name = "reviewer_business"
+description = { file = ".vendor/shared-harness/workers/descriptions/reviewer_business.md" }
+fragments = [
+  ".vendor/shared-harness/workers/roles/reviewer_business.md",
+  ".vendor/shared-harness/workers/behaviors/communication.md",
+  ".vendor/shared-harness/workers/behaviors/consent.md",
+  ".vendor/shared-harness/workers/behaviors/write_ownership.md",
+  ".vendor/shared-harness/workers/behaviors/writing_tests_prohibited.md",
+  ".vendor/shared-harness/workers/behaviors/complex_research_prohibited.md",
+  ".vendor/shared-harness/workers/behaviors/final_review.md",
+]
+
+[[roles.role]]
+name = "reviewer_technical"
+description = { file = ".vendor/shared-harness/workers/descriptions/reviewer_technical.md" }
+fragments = [
+  ".vendor/shared-harness/workers/roles/reviewer_technical.md",
+  ".vendor/shared-harness/workers/behaviors/communication.md",
+  ".vendor/shared-harness/workers/behaviors/consent.md",
+  ".vendor/shared-harness/workers/behaviors/write_ownership.md",
+  ".vendor/shared-harness/workers/behaviors/writing_tests_prohibited.md",
+  ".vendor/shared-harness/workers/behaviors/complex_research_prohibited.md",
+  ".vendor/shared-harness/workers/behaviors/final_review.md",
+]
+
+[[roles.role]]
+name = "reviewer_user_experience"
+description = { file = ".vendor/shared-harness/workers/descriptions/reviewer_user_experience.md" }
+fragments = [
+  ".vendor/shared-harness/workers/roles/reviewer_user_experience.md",
+  ".vendor/shared-harness/workers/behaviors/communication.md",
+  ".vendor/shared-harness/workers/behaviors/consent.md",
+  ".vendor/shared-harness/workers/behaviors/write_ownership.md",
+  ".vendor/shared-harness/workers/behaviors/writing_tests_prohibited.md",
+  ".vendor/shared-harness/workers/behaviors/complex_research_prohibited.md",
+  ".vendor/shared-harness/workers/behaviors/final_review.md",
+]
+
+[[roles.role]]
+name = "worker"
+description = { file = ".vendor/shared-harness/workers/descriptions/disabled.md" }
+fragments = [".vendor/shared-harness/workers/descriptions/disabled.md"]
+
+[[roles.role]]
+name = "explorer"
+description = { file = ".vendor/shared-harness/workers/descriptions/disabled.md" }
+fragments = [".vendor/shared-harness/workers/descriptions/disabled.md"]

@@ -1,6 +1,9 @@
 data.location=.session/taskwarrior
 confirmation=no
 
+uda.agent.type=string
+uda.agent.label=Agent
+
 uda.kind.type=string
 uda.kind.label=Kind
 uda.kind.values=goal,step,thought,assumption,change,event,

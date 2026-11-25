@@ -1,0 +1,112 @@
+["check:backend:isort"]
+tags = ["agent"]
+description = "Check Python import formatting"
+run = "mise run backend:poetry -- run isort --check-only ."
+
+["check:backend:black"]
+tags = ["agent"]
+description = "Check Python code formatting"
+run = "mise run backend:poetry -- run black --check ."
+
+["check:frontend:prettier"]
+tags = ["agent"]
+description = "Check frontend formatting"
+run = "mise run frontend:run -- npm run format-check"
+
+["check:format"]
+tags = ["agent"]
+description = "Check backend and frontend formatting"
+run = [
+  { task = "check:backend:isort" },
+  { task = "check:backend:black" },
+  { task = "check:frontend:prettier" },
+]
+
+["check:backend:tach"]
+tags = ["agent"]
+description = "Check backend module boundaries"
+run = "mise run backend:poetry -- run tach check"
+
+["check:backend:autoflake"]
+tags = ["agent"]
+description = "Check for unused Python imports and variables"
+run = "mise run backend:poetry -- run autoflake --check --quiet ."
+
+["check:backend:flake8"]
+tags = ["agent"]
+description = "Check Python code conventions"
+run = "mise run backend:poetry -- run flake8 ."
+
+["check:backend:mypy"]
+tags = ["agent"]
+description = "Check backend types"
+run = "mise run backend:poetry -- run mypy --show-traceback ."
+
+["check:backend:poetry"]
+tags = ["agent"]
+description = "Check backend package configuration"
+run = "mise run backend:poetry -- check"
+
+["check:frontend:vue-tsc"]
+tags = ["agent"]
+description = "Check frontend types"
+run = "mise run frontend:run -- npm run type-check"
+
+["check:semantics"]
+tags = ["agent"]
+description = "Check backend and frontend code semantics"
+run = [
+  { task = "check:backend:tach" },
+  { task = "check:backend:autoflake" },
+  { task = "check:backend:flake8" },
+  { task = "check:backend:mypy" },
+  { task = "check:backend:poetry" },
+  { task = "check:frontend:vue-tsc" },
+]
+
+["check:backend:spelling"]
+tags = ["agent"]
+description = "Check backend code spelling"
+run = "mise run backend:poetry -- run codespell --toml pyproject.toml ./ffun"
+
+["check:frontend:spelling"]
+tags = ["agent"]
+description = "Check frontend code spelling"
+run = "mise run frontend:run -- codespell --toml /repository/codespell.toml ./src"
+
+["check:spelling"]
+tags = ["agent"]
+description = "Check backend and frontend code spelling"
+run = [
+  { task = "check:backend:spelling" },
+  { task = "check:frontend:spelling" },
+]
+
+["check:backend:cli:help"]
+tags = ["agent"]
+description = "Check that the development CLI help works"
+run = "mise run backend:ffun -- --help"
+
+["check:backend:cli:configs"]
+tags = ["agent"]
+description = "Check that the development CLI prints configuration"
+run = "mise run backend:ffun -- print-configs"
+
+["check:runtime"]
+tags = ["agent"]
+description = "Build and check the production backend image"
+run = '''
+set -e
+runtime_image="ffun-backend:check-ffun-runnable-in-prod"
+docker build -t "$runtime_image" -f ./docker/prod/backend/Dockerfile .
+docker run --rm "$runtime_image" ffun --help
+docker run --rm "$runtime_image" ffun print-configs
+'''
+
+["check:consistency"]
+tags = ["agent"]
+description = "Manage the specification consistency queue"
+raw = true
+raw_args = true
+quiet = true
+run = "python3 ./bin/inconsistency-check.py"

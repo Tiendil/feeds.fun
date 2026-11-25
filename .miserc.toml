@@ -1,0 +1,7 @@
+override_config_filenames = [
+  ".vendor/shared-harness/.harness/mise.toml",
+  "mise.toml",
+  "mise.local.toml",
+]
+
+ignored_config_paths = [".vendor/shared-harness/mise.toml"]

@@ -2,7 +2,7 @@
 
 ## Goal of the document
 
-This document describes the expected tooling, source files, structure, and entry format for the Feeds Fun changelog.
+This document describes requirements for changelog documentation.
 
 ## Scope
 
@@ -23,7 +23,7 @@ The following topics are out of scope:
 
 ## Tooling
 
-Feeds Fun MUST use [Changy](https://github.com/Tiendil/changy/) to manage the changelog.
+The project MUST use [Changy](https://github.com/Tiendil/changy/) to manage the changelog.
 
 Changelog source files MUST live in `changes/`.
 
@@ -54,11 +54,11 @@ Additional `h3` sections MAY be used when a version needs a distinct category th
 
 Each bullet entry SHOULD be linked to a task, issue, or pull request when such a reference exists.
 
-When an entry references an internal issue, the reference SHOULD use the `ff-<short-id>` form.
+When an entry references an internal issue, the reference SHOULD use the `<prefix>-<short-id>` form, where `<prefix>` is the project's internal issue prefix.
 
 When an entry references a GitHub issue, the reference SHOULD use the `gh-<number>` form.
 
-If both references exist for the same item, the entry SHOULD include both references, using `ff` reference as the primary reference and the `gh` reference as a secondary reference in parentheses.
+If both references exist for the same item, the entry SHOULD include both references, using the internal issue reference as the primary reference and the `gh` reference as a secondary reference in parentheses.
 
 When an entry references a pull request or another task tracker, the reference SHOULD use the shortest stable project convention for that tracker.
 
@@ -73,18 +73,18 @@ Additional details MAY be added as nested bullet points under the main entry whe
 
 ### Migration
 
-- ff-aaa (gh-xxx) - <short migration instruction>
-- ff-bbb (gh-yyy) - <short migration instruction>
+- <prefix>-aaa (gh-xxx) - <short migration instruction>
+- <prefix>-bbb (gh-yyy) - <short migration instruction>
   - <additional details if needed>
   - <additional details if needed>
-- ff-ccc — <short migration instruction>
+- <prefix>-ccc — <short migration instruction>
 - gh-qqq — <short migration instruction>
 
 ### Changes
 
-- ff-ddd (gh-zzz) - <short description of the change>
+- <prefix>-ddd (gh-zzz) - <short description of the change>
 
 ### Deprecations
 
-- ff-eee (gh-www) - <short description of the deprecation>
+- <prefix>-eee (gh-www) - <short description of the deprecation>
 ```

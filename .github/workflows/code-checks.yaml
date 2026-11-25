@@ -16,6 +16,40 @@ concurrency:
 
 jobs:
 
+  check-harness:
+    timeout-minutes: 10
+    runs-on: ubuntu-22.04
+    permissions:
+      contents: read
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.branch_ref }}
+          persist-credentials: false
+
+      - name: Set up mise
+        uses: jdx/mise-action@v5
+        with:
+          version: '2026.11.8'
+          install: false
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.13'
+
+      - name: Fetch shared harness
+        env:
+          GIT_CONFIG_COUNT: '1'
+          GIT_CONFIG_KEY_0: 'url.https://github.com/.insteadOf'
+          GIT_CONFIG_VALUE_0: 'git@github.com:'
+        run: mise bootstrap repos apply --yes
+
+      - name: Check harness source lock
+        run: mise run harness:lock:check
+
   run-dev-checks:
     timeout-minutes: 20
     runs-on: ubuntu-22.04
@@ -26,27 +60,33 @@ jobs:
         with:
           ref: ${{ inputs.branch_ref }}
 
+      - name: Set up mise
+        uses: jdx/mise-action@v5
+        with:
+          version: '2026.11.8'
+          install: false
+
       - name: Pull containers
         # postgresql is dependency of backend-utils
-        run: docker compose pull postgresql
+        run: mise run docker:pull:postgresql
 
       - name: Build containers
-        run: ./bin/build-dev-containers.sh
+        run: mise run docker:build
 
       - name: Check code formatting
-        run: ./bin/dev-check-formatting.sh
+        run: mise run check:format
 
       - name: Check types
-        run: ./bin/dev-check-semantics.sh
+        run: mise run check:semantics
 
       - name: Check code spelling
-        run: ./bin/check-code-spelling.sh
+        run: mise run check:spelling
 
       - name: Run backend tests
-        run: ./bin/backend-tests.sh
+        run: mise run backend:test
 
       - name: Run frontend tests
-        run: ./bin/frontend-tests.sh
+        run: mise run frontend:test
 
   run-prod-checks:
     timeout-minutes: 20
@@ -58,5 +98,11 @@ jobs:
         with:
           ref: ${{ inputs.branch_ref }}
 
+      - name: Set up mise
+        uses: jdx/mise-action@v5
+        with:
+          version: '2026.11.8'
+          install: false
+
       - name: check ffun cli is runnable in prod
-        run: ./bin/dev-check-runtime.sh
+        run: mise run check:runtime

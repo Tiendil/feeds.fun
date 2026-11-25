@@ -81,36 +81,6 @@ output = { type = "union", items = [
   ] } },
 ] }
 
-#################################
-# Relation: imports / imported_by
-#################################
-
-[[relations]]
-id = "imports"
-description = "Backend Python files imported by the artifact."
-
-[[relations]]
-id = "imported_by"
-description = "Backend Python files that import the artifact."
-
-# Tach provides direct backend Python imports for project modules.
-[[rules]]
-relation = "imports"
-input = { type = "glob", pattern = "@/ffun/ffun/{**module_path}.py" }
-output = {
-  type = "command",
-  command = "python ./bin/tach-map-query.py --direction dependencies --artifact @/ffun/ffun/{module_path}.py",
-}
-
-# Tach provides reverse backend Python import lookups for project modules.
-[[rules]]
-relation = "imported_by"
-input = { type = "glob", pattern = "@/ffun/ffun/{**module_path}.py" }
-output = {
-  type = "command",
-  command = "python ./bin/tach-map-query.py --direction dependents --artifact @/ffun/ffun/{module_path}.py",
-}
-
 ################################
 # Relation: governed_by / governs
 ################################
@@ -123,24 +93,176 @@ description = "Specifications that apply to the artifact."
 id = "governs"
 description = "Artifacts governed by the specification."
 
-# Every specification document is governed by the general specification rules.
-# Note: general.md governs itself too.
+# Every specification, including copied specifications, is governed by the general meta specifications.
+[[rules]]
+relation = "governed_by"
+input = { type = "glob", pattern = "@/specs/**/*.md" }
+output = { type = "list", artifacts = [
+  "@/specs/meta/format.md",
+  "@/specs/meta/content.md",
+  "@/specs/meta/directories.md",
+  "@/specs/meta/dictionary.md",
+  "@/specs/meta/language.md",
+] }
+
+# General meta specifications govern every specification document.
+[[rules]]
+relation = "governs"
+input = { type = "one_of", artifacts = [
+  "@/specs/meta/format.md",
+  "@/specs/meta/content.md",
+  "@/specs/meta/directories.md",
+  "@/specs/meta/dictionary.md",
+  "@/specs/meta/language.md",
+] }
+output = { type = "files", pattern = "@/specs/**/*.md" }
+
+# Software specifications are additionally governed by programming content requirements.
 [[rules]]
 relation = "governed_by"
 input = { type = "any", items = [
-  { type = "glob", pattern = "@/specs/*.md" },
-  { type = "glob", pattern = "@/specs/**/*.md" },
+  { type = "glob", pattern = "@/specs/backend/**/*.md" },
+  { type = "glob", pattern = "@/specs/frontend/**/*.md" },
+  { type = "glob", pattern = "@/specs/behavior/**/*.md" },
+  { type = "glob", pattern = "@/specs/programming/**/*.md" },
+  { type = "glob", pattern = "@/specs/python/**/*.md" },
+  { type = "glob", pattern = "@/specs/typescript/**/*.md" },
+  { type = "one_of", artifacts = ["@/specs/meta/backend_modules.md"] },
 ] }
-output = { type = "list", artifacts = ["@/specs/meta/general.md"] }
+output = { type = "list", artifacts = ["@/specs/programming/content.md"] }
 
-# The general specification rules govern every specification document.
-# Note: general.md governs itself too.
+# Programming content requirements govern software specifications, including copied specifications.
 [[rules]]
 relation = "governs"
-input = { type = "one_of", artifacts = ["@/specs/meta/general.md"] }
+input = { type = "one_of", artifacts = ["@/specs/programming/content.md"] }
 output = { type = "union", items = [
-  { type = "files", pattern = "@/specs/*.md" },
-  { type = "files", pattern = "@/specs/**/*.md" },
+  { type = "files", pattern = "@/specs/backend/**/*.md" },
+  { type = "files", pattern = "@/specs/frontend/**/*.md" },
+  { type = "files", pattern = "@/specs/behavior/**/*.md" },
+  { type = "files", pattern = "@/specs/programming/**/*.md" },
+  { type = "files", pattern = "@/specs/python/**/*.md" },
+  { type = "files", pattern = "@/specs/typescript/**/*.md" },
+  { type = "list", artifacts = ["@/specs/meta/backend_modules.md"] },
+] }
+
+# The shared modules and roles spec governs all backend and frontend architecture specs.
+[[rules]]
+relation = "governed_by"
+input = { type = "any", items = [
+  { type = "glob", pattern = "@/specs/backend/**/*.md" },
+  { type = "glob", pattern = "@/specs/frontend/**/*.md" },
+] }
+output = { type = "list", artifacts = ["@/specs/programming/modules_and_roles.md"] }
+
+[[rules]]
+relation = "governs"
+input = { type = "one_of", artifacts = ["@/specs/programming/modules_and_roles.md"] }
+output = { type = "union", items = [
+  { type = "files", pattern = "@/specs/backend/**/*.md" },
+  { type = "files", pattern = "@/specs/frontend/**/*.md" },
+] }
+
+# Copied code conventions apply to backend, frontend, and repository utility source code.
+[[rules]]
+relation = "governed_by"
+input = { type = "any", items = [
+  { type = "glob", pattern = "@/ffun/**/*.py" },
+  { type = "glob", pattern = "@/site/src/**/*.ts" },
+  { type = "glob", pattern = "@/site/src/**/*.vue" },
+  { type = "glob", pattern = "@/site/*.ts" },
+  { type = "glob", pattern = "@/site/*.js" },
+  { type = "glob", pattern = "@/bin/**/*.py" },
+  { type = "glob", pattern = "@/bin/**/*.sh" },
+  { type = "one_of", artifacts = ["@/mise.toml"] },
+  { type = "glob", pattern = "@/.mise/tasks/*.toml" },
+] }
+output = { type = "list", artifacts = ["@/specs/programming/code.md"] }
+
+# Copied code conventions govern project source code in both runtime and tooling directories.
+[[rules]]
+relation = "governs"
+input = { type = "one_of", artifacts = ["@/specs/programming/code.md"] }
+output = { type = "union", items = [
+  { type = "files", pattern = "@/ffun/**/*.py" },
+  { type = "files", pattern = "@/site/src/**/*.ts" },
+  { type = "files", pattern = "@/site/src/**/*.vue" },
+  { type = "files", pattern = "@/site/*.ts" },
+  { type = "files", pattern = "@/site/*.js" },
+  { type = "files", pattern = "@/bin/**/*.py" },
+  { type = "files", pattern = "@/bin/**/*.sh" },
+  { type = "list", artifacts = ["@/mise.toml"] },
+  { type = "files", pattern = "@/.mise/tasks/*.toml" },
+] }
+
+# Python specifications govern project Python files and the backend layout.
+[[rules]]
+relation = "governed_by"
+input = { type = "any", items = [
+  { type = "glob", pattern = "@/ffun/ffun/**/*.py" },
+  { type = "glob", pattern = "@/bin/**/*.py" },
+  { type = "glob", pattern = "@/feeds_collections/**/*.py" },
+  { type = "one_of", artifacts = ["@/specs/backend/modules_and_roles.md"] },
+] }
+output = { type = "files", pattern = "@/specs/python/**/*.md" }
+
+[[rules]]
+relation = "governs"
+input = { type = "glob", pattern = "@/specs/python/**/*.md" }
+output = { type = "union", items = [
+  { type = "files", pattern = "@/ffun/ffun/**/*.py" },
+  { type = "files", pattern = "@/bin/**/*.py" },
+  { type = "files", pattern = "@/feeds_collections/**/*.py" },
+  { type = "list", artifacts = ["@/specs/backend/modules_and_roles.md"] },
+] }
+
+# TypeScript specifications govern project TypeScript files and the frontend test architecture.
+[[rules]]
+relation = "governed_by"
+input = { type = "any", items = [
+  { type = "glob", pattern = "@/site/src/**/*.ts" },
+  { type = "glob", pattern = "@/site/*.ts" },
+  { type = "one_of", artifacts = ["@/specs/frontend/roles/tests.md"] },
+] }
+output = { type = "files", pattern = "@/specs/typescript/**/*.md" }
+
+[[rules]]
+relation = "governs"
+input = { type = "glob", pattern = "@/specs/typescript/**/*.md" }
+output = { type = "union", items = [
+  { type = "files", pattern = "@/site/src/**/*.ts" },
+  { type = "files", pattern = "@/site/*.ts" },
+  { type = "list", artifacts = ["@/specs/frontend/roles/tests.md"] },
+] }
+
+# Shared test conventions govern both test suites, backend test setup, and test architecture specifications.
+[[rules]]
+relation = "governed_by"
+input = { type = "any", items = [
+  { type = "glob", pattern = "@/ffun/ffun/**/tests/**/*.py" },
+  { type = "glob", pattern = "@/site/src/**/*.test.ts" },
+  { type = "one_of", artifacts = [
+    "@/ffun/ffun/conftest.py",
+    "@/ffun/ffun/pytest_plugin.py",
+    "@/specs/backend/modules_and_roles.md",
+    "@/specs/backend/roles/tests.md",
+    "@/specs/frontend/roles/tests.md",
+  ] },
+] }
+output = { type = "list", artifacts = ["@/specs/programming/tests.md"] }
+
+[[rules]]
+relation = "governs"
+input = { type = "one_of", artifacts = ["@/specs/programming/tests.md"] }
+output = { type = "union", items = [
+  { type = "files", pattern = "@/ffun/ffun/**/tests/**/*.py" },
+  { type = "files", pattern = "@/site/src/**/*.test.ts" },
+  { type = "list", artifacts = [
+    "@/ffun/ffun/conftest.py",
+    "@/ffun/ffun/pytest_plugin.py",
+    "@/specs/backend/modules_and_roles.md",
+    "@/specs/backend/roles/tests.md",
+    "@/specs/frontend/roles/tests.md",
+  ] },
 ] }
 
 # CLI command-family specifications are governed by shared CLI behavior.
@@ -159,49 +281,121 @@ output = { type = "files", pattern = "@/specs/behavior/cli/*.md" }
 [[rules]]
 relation = "governed_by"
 input = { type = "glob", pattern = "@/specs/behavior/cli/{*module}.md" }
-output = { type = "files", pattern = "@/specs/backend_architecture/modules/{module}.md" }
+output = { type = "files", pattern = "@/specs/backend/modules/{module}.md" }
 
 # Backend module specifications govern matching CLI command-family specifications when they exist.
 [[rules]]
 relation = "governs"
-input = { type = "glob", pattern = "@/specs/backend_architecture/modules/{*module}.md" }
+input = { type = "glob", pattern = "@/specs/backend/modules/{*module}.md" }
 output = { type = "files", pattern = "@/specs/behavior/cli/{module}.md" }
 
 # Backend module specifications are additionally governed by their common structure requirements.
 [[rules]]
 relation = "governed_by"
-input = { type = "glob", pattern = "@/specs/backend_architecture/modules/*.md" }
+input = { type = "glob", pattern = "@/specs/backend/modules/*.md" }
 output = { type = "list", artifacts = ["@/specs/meta/backend_modules.md"] }
 
 # The backend module specification requirements govern every backend module specification.
 [[rules]]
 relation = "governs"
 input = { type = "one_of", artifacts = ["@/specs/meta/backend_modules.md"] }
-output = { type = "files", pattern = "@/specs/backend_architecture/modules/*.md" }
+output = { type = "files", pattern = "@/specs/backend/modules/*.md" }
 
-# Backend module specifications are additionally governed by the backend database architecture.
+# Backend module specifications are governed by backend database architecture and PostgreSQL conventions.
 [[rules]]
 relation = "governed_by"
-input = { type = "glob", pattern = "@/specs/backend_architecture/modules/*.md" }
-output = { type = "list", artifacts = ["@/specs/backend_architecture/db.md"] }
+input = { type = "glob", pattern = "@/specs/backend/modules/*.md" }
+output = { type = "list", artifacts = [
+  "@/specs/backend/db.md",
+  "@/specs/programming/postgresql.md",
+] }
 
-# The backend database architecture governs every backend module specification.
+# Backend database architecture and PostgreSQL conventions govern backend module specifications.
 [[rules]]
 relation = "governs"
-input = { type = "one_of", artifacts = ["@/specs/backend_architecture/db.md"] }
-output = { type = "files", pattern = "@/specs/backend_architecture/modules/*.md" }
+input = { type = "one_of", artifacts = [
+  "@/specs/backend/db.md",
+  "@/specs/programming/postgresql.md",
+] }
+output = { type = "files", pattern = "@/specs/backend/modules/*.md" }
 
-# Backend Python files are governed by all backend architecture specs.
+# Backend Python files are governed by backend architecture and the shared programming rules the backend adopts.
 [[rules]]
 relation = "governed_by"
 input = { type = "glob", pattern = "@/ffun/ffun/**/*.py" }
-output = { type = "files", pattern = "@/specs/backend_architecture/*.md" }
+output = { type = "union", items = [
+  { type = "files", pattern = "@/specs/backend/*.md" },
+  { type = "list", artifacts = [
+    "@/specs/backend/roles/errors.md",
+    "@/specs/backend/roles/settings.md",
+    "@/specs/programming/dto.md",
+    "@/specs/programming/postgresql.md",
+  ] },
+] }
 
-# Backend architecture specs govern all backend Python files.
+# Backend architecture and the shared programming rules it adopts govern backend Python files.
 [[rules]]
 relation = "governs"
-input = { type = "glob", pattern = "@/specs/backend_architecture/*.md" }
+input = { type = "any", items = [
+  { type = "glob", pattern = "@/specs/backend/*.md" },
+  { type = "one_of", artifacts = [
+    "@/specs/backend/roles/errors.md",
+    "@/specs/backend/roles/settings.md",
+    "@/specs/programming/dto.md",
+    "@/specs/programming/postgresql.md",
+  ] },
+] }
 output = { type = "files", pattern = "@/ffun/ffun/**/*.py" }
+
+# The Domain role spec applies to domain.py directly inside declared backend modules.
+[[rules]]
+relation = "governed_by"
+input = { type = "any", items = [
+  { type = "glob", pattern = "@/ffun/ffun/*/domain.py" },
+  { type = "one_of", artifacts = ["@/ffun/ffun/api/spa/domain.py"] },
+] }
+output = { type = "list", artifacts = ["@/specs/backend/roles/domain.md"] }
+
+[[rules]]
+relation = "governs"
+input = { type = "one_of", artifacts = ["@/specs/backend/roles/domain.md"] }
+output = { type = "union", items = [
+  { type = "files", pattern = "@/ffun/ffun/*/domain.py" },
+  { type = "files", pattern = "@/ffun/ffun/api/spa/domain.py" },
+] }
+
+# Link backend entities.py files to the Entities role spec.
+[[rules]]
+relation = "governed_by"
+input = { type = "glob", pattern = "@/ffun/ffun/**/entities.py" }
+output = { type = "list", artifacts = ["@/specs/backend/roles/entities.md"] }
+
+[[rules]]
+relation = "governs"
+input = { type = "one_of", artifacts = ["@/specs/backend/roles/entities.md"] }
+output = { type = "files", pattern = "@/ffun/ffun/**/entities.py" }
+
+# The Operations role spec applies to operations.py files in declared backend modules.
+[[rules]]
+relation = "governed_by"
+input = { type = "glob", pattern = "@/ffun/ffun/**/operations.py" }
+output = { type = "list", artifacts = ["@/specs/backend/roles/operations.md"] }
+
+[[rules]]
+relation = "governs"
+input = { type = "one_of", artifacts = ["@/specs/backend/roles/operations.md"] }
+output = { type = "files", pattern = "@/ffun/ffun/**/operations.py" }
+
+# The Tests role spec applies to Python files under backend tests directories.
+[[rules]]
+relation = "governed_by"
+input = { type = "glob", pattern = "@/ffun/ffun/**/tests/**/*.py" }
+output = { type = "list", artifacts = ["@/specs/backend/roles/tests.md"] }
+
+[[rules]]
+relation = "governs"
+input = { type = "one_of", artifacts = ["@/specs/backend/roles/tests.md"] }
+output = { type = "files", pattern = "@/ffun/ffun/**/tests/**/*.py" }
 
 # Backend CLI Python files are additionally governed by shared CLI behavior.
 [[rules]]
@@ -243,12 +437,12 @@ output = { type = "files", pattern = "@/ffun/ffun/cli/commands/tests/test_{comma
 [[rules]]
 relation = "governed_by"
 input = { type = "glob", pattern = "@/ffun/ffun/{*module}/**/*.py" }
-output = { type = "files", pattern = "@/specs/backend_architecture/modules/{module}.md" }
+output = { type = "files", pattern = "@/specs/backend/modules/{module}.md" }
 
 # A backend module spec governs all Python files in the matching module.
 [[rules]]
 relation = "governs"
-input = { type = "glob", pattern = "@/specs/backend_architecture/modules/{*module}.md" }
+input = { type = "glob", pattern = "@/specs/backend/modules/{*module}.md" }
 output = { type = "files", pattern = "@/ffun/ffun/{module}/**/*.py" }
 
 # Frontend source files are governed by all frontend architecture specs.
@@ -261,12 +455,12 @@ input = { type = "any", items = [
   { type = "glob", pattern = "@/site/src/**/*.png" },
   { type = "glob", pattern = "@/site/src/**/*.ico" },
 ] }
-output = { type = "files", pattern = "@/specs/frontend_architecture/*.md" }
+output = { type = "files", pattern = "@/specs/frontend/*.md" }
 
 # Frontend architecture specs govern all frontend source files.
 [[rules]]
 relation = "governs"
-input = { type = "glob", pattern = "@/specs/frontend_architecture/*.md" }
+input = { type = "glob", pattern = "@/specs/frontend/*.md" }
 output = { type = "union", items = [
   { type = "files", pattern = "@/site/src/**/*.ts" },
   { type = "files", pattern = "@/site/src/**/*.vue" },
@@ -274,6 +468,28 @@ output = { type = "union", items = [
   { type = "files", pattern = "@/site/src/**/*.png" },
   { type = "files", pattern = "@/site/src/**/*.ico" },
 ] }
+
+# The frontend logic module specification governs its source files and tests.
+[[rules]]
+relation = "governed_by"
+input = { type = "glob", pattern = "@/site/src/logic/**" }
+output = { type = "list", artifacts = ["@/specs/frontend/modules/logic.md"] }
+
+[[rules]]
+relation = "governs"
+input = { type = "one_of", artifacts = ["@/specs/frontend/modules/logic.md"] }
+output = { type = "files", pattern = "@/site/src/logic/**" }
+
+# Files in frontend tests directories follow the frontend Tests role specification.
+[[rules]]
+relation = "governed_by"
+input = { type = "glob", pattern = "@/site/src/**/tests/**" }
+output = { type = "list", artifacts = ["@/specs/frontend/roles/tests.md"] }
+
+[[rules]]
+relation = "governs"
+input = { type = "one_of", artifacts = ["@/specs/frontend/roles/tests.md"] }
+output = { type = "files", pattern = "@/site/src/**/tests/**" }
 
 # UI click tracking governs frontend interaction code and backend tracking contracts and tests.
 [[rules]]
@@ -305,28 +521,24 @@ output = { type = "union", items = [
   { type = "files", pattern = "@/ffun/ffun/api/spa/tests/**/*.py" },
 ] }
 
-# Dependency mesh tooling is governed by the backend module layout spec.
+# The generated spec index and dependency configuration depend on the backend layout.
 [[rules]]
 relation = "governed_by"
 input = { type = "one_of", artifacts = [
   "@/AGENTS.md",
   "@/depmesh.toml",
   "@/ffun/tach.toml",
-  "@/bin/tach-map-query.py",
-  "@/ffun/tach_map_query.py",
 ] }
-output = { type = "list", artifacts = ["@/specs/backend_architecture/modules_layout.md"] }
+output = { type = "list", artifacts = ["@/specs/backend/modules_and_roles.md"] }
 
-# The backend module layout spec governs depmesh/tach configuration and helpers.
+# The backend layout governs the generated spec index and dependency configuration.
 [[rules]]
 relation = "governs"
-input = { type = "one_of", artifacts = ["@/specs/backend_architecture/modules_layout.md"] }
+input = { type = "one_of", artifacts = ["@/specs/backend/modules_and_roles.md"] }
 output = { type = "list", artifacts = [
   "@/AGENTS.md",
   "@/depmesh.toml",
   "@/ffun/tach.toml",
-  "@/bin/tach-map-query.py",
-  "@/ffun/tach_map_query.py",
 ] }
 
 # README.md is governed by its documentation spec.
@@ -359,96 +571,3 @@ output = { type = "union", items = [
   { type = "files", pattern = "@/changes/*.md" },
 ] }
 
-############################################
-# Relation: terms_defined_by / defines_terms_for
-############################################
-
-[[relations]]
-id = "terms_defined_by"
-description = "Dictionaries that define terms used by the artifact."
-
-[[relations]]
-id = "defines_terms_for"
-description = "Artifacts that use terms from the dictionary."
-
-# Specs, code, documentation, and dependency metadata use terms defined in the project dictionary.
-# Note: dictionary.md can define terms for itself too.
-[[rules]]
-relation = "terms_defined_by"
-input = { type = "any", items = [
-  { type = "glob", pattern = "@/specs/*.md" },
-  { type = "glob", pattern = "@/specs/**/*.md" },
-  { type = "glob", pattern = "@/ffun/ffun/**/*.py" },
-  { type = "glob", pattern = "@/site/src/**/*.ts" },
-  { type = "glob", pattern = "@/site/src/**/*.vue" },
-  { type = "glob", pattern = "@/site/src/**/*.css" },
-  { type = "glob", pattern = "@/site/src/**/*.png" },
-  { type = "glob", pattern = "@/site/src/**/*.ico" },
-  { type = "one_of", artifacts = [
-    "@/AGENTS.md",
-    "@/CHANGELOG.md",
-    "@/README.md",
-    "@/bin/tach-map-query.py",
-    "@/depmesh.toml",
-    "@/ffun/tach.toml",
-    "@/ffun/tach_map_query.py",
-  ] },
-] }
-output = { type = "list", artifacts = ["@/specs/dictionary.md"] }
-
-# The dictionary defines terms used by specs, code, documentation, and dependency metadata.
-# Note: dictionary.md can define terms for itself too.
-[[rules]]
-relation = "defines_terms_for"
-input = { type = "one_of", artifacts = ["@/specs/dictionary.md"] }
-output = { type = "union", items = [
-  { type = "files", pattern = "@/specs/*.md" },
-  { type = "files", pattern = "@/specs/**/*.md" },
-  { type = "files", pattern = "@/ffun/ffun/**/*.py" },
-  { type = "files", pattern = "@/site/src/**/*.ts" },
-  { type = "files", pattern = "@/site/src/**/*.vue" },
-  { type = "files", pattern = "@/site/src/**/*.css" },
-  { type = "files", pattern = "@/site/src/**/*.png" },
-  { type = "files", pattern = "@/site/src/**/*.ico" },
-  { type = "list", artifacts = [
-    "@/AGENTS.md",
-    "@/CHANGELOG.md",
-    "@/README.md",
-    "@/bin/tach-map-query.py",
-    "@/depmesh.toml",
-    "@/ffun/tach.toml",
-    "@/ffun/tach_map_query.py",
-  ] },
-] }
-
-#############################
-# Relation: indexed_by / indexes
-#############################
-
-[[relations]]
-id = "indexed_by"
-description = "Indexes that list the specification."
-
-[[relations]]
-id = "indexes"
-description = "Specifications listed by the index."
-
-# Every specification document is listed by the spec index.
-# Note: intro.md indexes itself too.
-[[rules]]
-relation = "indexed_by"
-input = { type = "any", items = [
-  { type = "glob", pattern = "@/specs/*.md" },
-  { type = "glob", pattern = "@/specs/**/*.md" },
-] }
-output = { type = "list", artifacts = ["@/specs/intro.md"] }
-
-# intro.md indexes every specification document.
-# Note: intro.md indexes itself too.
-[[rules]]
-relation = "indexes"
-input = { type = "one_of", artifacts = ["@/specs/intro.md"] }
-output = { type = "union", items = [
-  { type = "files", pattern = "@/specs/*.md" },
-  { type = "files", pattern = "@/specs/**/*.md" },
-] }

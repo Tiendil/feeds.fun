@@ -61,6 +61,7 @@ The first paragraphs after the h1 heading SHOULD explain the core value proposit
 - `Development` - local development workflow.
   - `Preparations`.
   - `Run`.
+  - `Shared harness`.
   - `Utils`.
   - `DB migrations`.
   - `Upgrade to new versions`.
@@ -141,7 +142,11 @@ Additional sections MAY be added when they help readers evaluate, run, operate, 
 3. start Docker Compose services.
 4. start backend workers.
 
-`README.md` MUST explain how to run backend utility commands through `./bin/backend-utils.sh`.
+`README.md` MUST include a brief description of the shared harness and a link to its repository.
+The description MUST explain which maintenance operations require its checkout and how to prepare and update it.
+The shared harness MUST NOT be presented as a prerequisite for ordinary application development commands.
+
+`README.md` MUST explain how to run backend utility commands through the most specific available backend mise shortcuts.
 
 `README.md` MUST explain how to apply and create database migrations.
 
