@@ -1,86 +1,13 @@
-# Polish Workflow
+# Backend Polish Workflow
 
 ```toml donna
 kind = "donna.lib.workflow"
 start_operation_id = "run_backend_format_autoflake"
 ```
 
-Polish backend and frontend code by formatting it, running semantic and spelling checks, checking the development CLI, and running backend and frontend tests in the required order.
+Format backend code, run semantic and spelling checks, check the development CLI, and run backend tests.
+The workflow covers backend application code and tests, along with the dependencies, configuration, environments, tasks, scripts, and workflow logic that affect these checks.
 Successful completion means these checks pass against the final repository state.
-
-This workflow covers:
-
-- Backend and frontend application code and tests.
-- Dependencies, configuration, and execution environments used by these checks.
-- Task definitions, scripts, and workflow execution logic that determine how these checks run.
-
-Prose-only documentation and specification changes, workflow descriptions, agent instructions and their generation, and independent tooling are outside this workflow's scope when they do not affect the code or checks above.
-
-## Run backend tests
-
-```toml donna
-id = "run_backend_tests"
-kind = "donna.lib.run_script"
-save_stdout_to = "backend_tests_output"
-goto_on_success = "run_frontend_tests"
-goto_on_failure = "fix_broken_test"
-timeout = 300
-```
-
-```bash donna script
-#!/usr/bin/env bash
-
-set -e
-
-mise run backend:test -- --maxfail=1
-```
-
-## Fix broken test
-
-```toml donna
-id = "fix_broken_test"
-kind = "donna.lib.request_action"
-```
-
-```
-{{ donna.lib.task_variable("backend_tests_output") }}
-```
-
-1. If the test is broken because of `FFUN_LIBRARIAN_TAG_PROCESSORS_CONFIG` or `FFUN_FEEDS_COLLECTIONS_COLLECTION_CONFIGS`, tell the developer about the problem and wait for it to be fixed; do not complete this action request.
-2. Fix the broken backend test reported above.
-3. `{{ donna.lib.goto("run_backend_format_autoflake") }}`
-
-## Run frontend tests
-
-```toml donna
-id = "run_frontend_tests"
-kind = "donna.lib.run_script"
-save_stdout_to = "frontend_tests_output"
-goto_on_success = "finish"
-goto_on_failure = "fix_frontend_tests"
-```
-
-```bash donna script
-#!/usr/bin/env bash
-
-set -e
-
-mise run frontend:test -- --bail=1
-```
-
-## Fix frontend tests
-
-```toml donna
-id = "fix_frontend_tests"
-kind = "donna.lib.request_action"
-```
-
-```
-{{ donna.lib.task_variable("frontend_tests_output") }}
-```
-
-1. Fix frontend test issues reported above.
-2. `{{ donna.lib.goto("run_backend_format_autoflake") }}`
 
 ## Run backend formatting: autoflake
 
@@ -153,7 +80,7 @@ kind = "donna.lib.request_action"
 id = "run_backend_format_black"
 kind = "donna.lib.run_script"
 save_stdout_to = "backend_format_black_output"
-goto_on_success = "run_frontend_format"
+goto_on_success = "run_backend_semantics_tach"
 goto_on_failure = "fix_backend_format_black"
 ```
 
@@ -177,38 +104,6 @@ kind = "donna.lib.request_action"
 ```
 
 1. Fix backend black formatting issues reported above.
-2. `{{ donna.lib.goto("run_backend_format_autoflake") }}`
-
-## Run frontend formatting
-
-```toml donna
-id = "run_frontend_format"
-kind = "donna.lib.run_script"
-save_stdout_to = "frontend_format_output"
-goto_on_success = "run_backend_semantics_tach"
-goto_on_failure = "fix_frontend_format"
-```
-
-```bash donna script
-#!/usr/bin/env bash
-
-set -e
-
-mise run format:frontend:prettier
-```
-
-## Fix frontend formatting
-
-```toml donna
-id = "fix_frontend_format"
-kind = "donna.lib.request_action"
-```
-
-```
-{{ donna.lib.task_variable("frontend_format_output") }}
-```
-
-1. Fix frontend formatting issues reported above.
 2. `{{ donna.lib.goto("run_backend_format_autoflake") }}`
 
 ## Run backend semantic checks: tach
@@ -308,6 +203,7 @@ kind = "donna.lib.request_action"
 2. `{{ donna.lib.goto("run_backend_format_autoflake") }}`
 
 {{ donna.lib.include("@/.harness/workflows/polish/python/flake8.md") }}
+
 ## Run backend semantic checks: mypy
 
 ```toml donna
@@ -341,13 +237,14 @@ kind = "donna.lib.request_action"
 2. `{{ donna.lib.goto("run_backend_format_autoflake") }}`
 
 {{ donna.lib.include("@/.harness/workflows/polish/python/mypy.md") }}
+
 ## Run backend semantic checks: poetry check
 
 ```toml donna
 id = "run_backend_semantics_poetry_check"
 kind = "donna.lib.run_script"
 save_stdout_to = "backend_semantics_poetry_check_output"
-goto_on_success = "run_frontend_semantics"
+goto_on_success = "run_backend_spellcheck"
 goto_on_failure = "fix_backend_semantics_poetry_check"
 ```
 
@@ -373,45 +270,13 @@ kind = "donna.lib.request_action"
 1. Fix backend poetry-check issues reported above.
 2. `{{ donna.lib.goto("run_backend_format_autoflake") }}`
 
-## Run frontend semantic checks
-
-```toml donna
-id = "run_frontend_semantics"
-kind = "donna.lib.run_script"
-save_stdout_to = "frontend_semantics_output"
-goto_on_success = "run_backend_spellcheck"
-goto_on_failure = "fix_frontend_semantics"
-```
-
-```bash donna script
-#!/usr/bin/env bash
-
-set -e
-
-mise run check:frontend:vue-tsc
-```
-
-## Fix frontend semantic checks
-
-```toml donna
-id = "fix_frontend_semantics"
-kind = "donna.lib.request_action"
-```
-
-```
-{{ donna.lib.task_variable("frontend_semantics_output") }}
-```
-
-1. Fix frontend semantic issues reported above.
-2. `{{ donna.lib.goto("run_backend_format_autoflake") }}`
-
 ## Run backend spellcheck
 
 ```toml donna
 id = "run_backend_spellcheck"
 kind = "donna.lib.run_script"
 save_stdout_to = "backend_spellcheck_output"
-goto_on_success = "run_frontend_spellcheck"
+goto_on_success = "run_runtime_checks_help"
 goto_on_failure = "fix_backend_spellcheck"
 ```
 
@@ -435,38 +300,6 @@ kind = "donna.lib.request_action"
 ```
 
 1. Fix backend spellcheck issues reported above.
-2. `{{ donna.lib.goto("run_backend_format_autoflake") }}`
-
-## Run frontend spellcheck
-
-```toml donna
-id = "run_frontend_spellcheck"
-kind = "donna.lib.run_script"
-save_stdout_to = "frontend_spellcheck_output"
-goto_on_success = "run_runtime_checks_help"
-goto_on_failure = "fix_frontend_spellcheck"
-```
-
-```bash donna script
-#!/usr/bin/env bash
-
-set -e
-
-mise run check:frontend:spelling
-```
-
-## Fix frontend spellcheck
-
-```toml donna
-id = "fix_frontend_spellcheck"
-kind = "donna.lib.request_action"
-```
-
-```
-{{ donna.lib.task_variable("frontend_spellcheck_output") }}
-```
-
-1. Fix frontend spellcheck issues reported above.
 2. `{{ donna.lib.goto("run_backend_format_autoflake") }}`
 
 ## Run runtime checks: help
@@ -533,6 +366,40 @@ kind = "donna.lib.request_action"
 1. Fix runtime print-configs issues reported above.
 2. `{{ donna.lib.goto("run_backend_format_autoflake") }}`
 
+## Run backend tests
+
+```toml donna
+id = "run_backend_tests"
+kind = "donna.lib.run_script"
+save_stdout_to = "backend_tests_output"
+goto_on_success = "finish"
+goto_on_failure = "fix_broken_test"
+timeout = 300
+```
+
+```bash donna script
+#!/usr/bin/env bash
+
+set -e
+
+mise run backend:test -- --maxfail=1
+```
+
+## Fix broken test
+
+```toml donna
+id = "fix_broken_test"
+kind = "donna.lib.request_action"
+```
+
+```
+{{ donna.lib.task_variable("backend_tests_output") }}
+```
+
+1. If the test is broken because of `FFUN_LIBRARIAN_TAG_PROCESSORS_CONFIG` or `FFUN_FEEDS_COLLECTIONS_COLLECTION_CONFIGS`, tell the developer about the problem and wait for it to be fixed; do not complete this action request.
+2. Fix the broken backend test reported above.
+3. `{{ donna.lib.goto("run_backend_format_autoflake") }}`
+
 ## Finish
 
 ```toml donna
@@ -540,4 +407,4 @@ id = "finish"
 kind = "donna.lib.finish"
 ```
 
-Polish workflow completed.
+Backend Polish workflow completed.

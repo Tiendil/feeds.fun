@@ -176,18 +176,21 @@ You MUST NOT report work as complete while required validation has failed or rem
 
 During implementation, you MAY run focused tests through permitted mise tasks.
 
-During implementation, you MUST NOT run linters, formatters, full test suites, or the Polish workflow unless the developer or an active workflow explicitly requires them at that stage.
+During implementation, you MUST NOT run linters, formatters, full test suites, or Polish workflows unless the developer or an active workflow explicitly requires them at that stage.
 
-When the planned changes are complete and ready for final validation, assess whether any changes can affect behavior or checks within the scope declared in `workflows/polish.donna.md`:
+When the planned changes are ready for final validation, assess each Polish workflow.
+If the changes can affect the application code, tests, or checks that a Polish workflow covers, you MUST run that workflow to successful completion against the final repository state.
 
-- If they can, you MUST run `donna -p llm run @/workflows/polish.donna.md` to successful completion.
-- If they cannot, you MUST NOT run the Polish workflow.
+- Backend — `donna -p llm run @/workflows/polish-backend.donna.md`
+- Frontend — `donna -p llm run @/workflows/polish-frontend.donna.md`
 
-The developer or an active workflow MAY explicitly override this choice for the current changes.
+When both workflows apply, you MUST run the backend workflow first.
+You MUST limit Polish validation to the applicable Donna workflows.
+The developer or an active workflow MAY explicitly override these choices for the current changes.
 
-When the Polish workflow applies, you MUST use it during final validation instead of running its linters, formatters, or full test suites separately, unless the developer or an active workflow explicitly requires separate execution at that stage.
+When a Polish workflow applies, you MUST use its Donna command for final validation in place of separate runs of its linters, formatters, or full test suites, unless the developer or an active workflow explicitly requires separate execution at that stage.
 
-Validate changes outside the Polish workflow's scope as follows:
+Validate changes outside the Polish workflows' scope as follows:
 
 - Agent instructions or their Cog generation: run `mise run harness:agents.md:generate` and inspect the generated `AGENTS.md`.
 - Donna workflow definitions: run `donna -p llm validate @/path/to/workflow.donna.md` for each changed workflow and inspect its rendered instructions.
@@ -365,20 +368,21 @@ Validate project consistency for artifacts affected by the current work, fixing 
 checked artifact is consistent. Continue automatically while no action is required, and pause when an unresolved
 consistency issue or checker failure needs agent judgment.
 
-#### Polish Workflow
+#### Backend Polish Workflow
 
-Run `donna -p llm run @/workflows/polish.donna.md` to execute the workflow.
+Run `donna -p llm run @/workflows/polish-backend.donna.md` to execute the workflow.
 
-Polish backend and frontend code by formatting it, running semantic and spelling checks, checking the development CLI, and running backend and frontend tests in the required order.
+Format backend code, run semantic and spelling checks, check the development CLI, and run backend tests.
+The workflow covers backend application code and tests, along with the dependencies, configuration, environments, tasks, scripts, and workflow logic that affect these checks.
 Successful completion means these checks pass against the final repository state.
 
-This workflow covers:
+#### Frontend Polish Workflow
 
-- Backend and frontend application code and tests.
-- Dependencies, configuration, and execution environments used by these checks.
-- Task definitions, scripts, and workflow execution logic that determine how these checks run.
+Run `donna -p llm run @/workflows/polish-frontend.donna.md` to execute the workflow.
 
-Prose-only documentation and specification changes, workflow descriptions, agent instructions and their generation, and independent tooling are outside this workflow's scope when they do not affect the code or checks above.
+Format frontend code, run type and spelling checks, and run frontend tests.
+The workflow covers frontend application code and tests, along with the dependencies, configuration, environments, tasks, scripts, and workflow logic that affect these checks.
+Successful completion means these checks pass against the final repository state.
 
 
 ### `depmesh`

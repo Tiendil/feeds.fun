@@ -3,18 +3,21 @@
 
 During implementation, you MAY run focused tests through permitted mise tasks.
 
-During implementation, you MUST NOT run linters, formatters, full test suites, or the Polish workflow unless the developer or an active workflow explicitly requires them at that stage.
+During implementation, you MUST NOT run linters, formatters, full test suites, or Polish workflows unless the developer or an active workflow explicitly requires them at that stage.
 
-When the planned changes are complete and ready for final validation, assess whether any changes can affect behavior or checks within the scope declared in `workflows/polish.donna.md`:
+When the planned changes are ready for final validation, assess each Polish workflow.
+If the changes can affect the application code, tests, or checks that a Polish workflow covers, you MUST run that workflow to successful completion against the final repository state.
 
-- If they can, you MUST run `donna -p llm run @/workflows/polish.donna.md` to successful completion.
-- If they cannot, you MUST NOT run the Polish workflow.
+- Backend — `donna -p llm run @/workflows/polish-backend.donna.md`
+- Frontend — `donna -p llm run @/workflows/polish-frontend.donna.md`
 
-The developer or an active workflow MAY explicitly override this choice for the current changes.
+When both workflows apply, you MUST run the backend workflow first.
+You MUST limit Polish validation to the applicable Donna workflows.
+The developer or an active workflow MAY explicitly override these choices for the current changes.
 
-When the Polish workflow applies, you MUST use it during final validation instead of running its linters, formatters, or full test suites separately, unless the developer or an active workflow explicitly requires separate execution at that stage.
+When a Polish workflow applies, you MUST use its Donna command for final validation in place of separate runs of its linters, formatters, or full test suites, unless the developer or an active workflow explicitly requires separate execution at that stage.
 
-Validate changes outside the Polish workflow's scope as follows:
+Validate changes outside the Polish workflows' scope as follows:
 
 - Agent instructions or their Cog generation: run `mise run harness:agents.md:generate` and inspect the generated `AGENTS.md`.
 - Donna workflow definitions: run `donna -p llm validate @/path/to/workflow.donna.md` for each changed workflow and inspect its rendered instructions.
