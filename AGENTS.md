@@ -336,6 +336,7 @@ The following tasks are available to agents. This list includes task definitions
 - `mise run harness:agents.md:generate` — Regenerate AGENTS.md
 - `mise run harness:generate` — Regenerate harness
 - `mise run harness:load` — Update shared harness
+- `mise run harness:lock:check` — Check for unapplied harness source changes
 - `mise run harness:skills:install` — Install shared harness skills
 - `mise run harness:specs:install` — Install selected shared harness specifications
 - `mise run journal:tail` — Show or follow project journal records
