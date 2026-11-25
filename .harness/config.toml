@@ -87,11 +87,11 @@ fragments = [
 
 skipped_fragments = []
 
-# Codex roles. Fragment paths are relative to the repository root.
+# Codex roles. Description file and fragment paths are relative to the repository root.
 # Generate .codex/agents/ with mise run harness:codex:roles:generate.
 [[roles.role]]
 name = "default"
-description = "Primary agent responsible for task completion, agent coordination, and communication with the developer."
+description = { file = ".vendor/shared-harness/workers/descriptions/default.md" }
 fragments = [
   ".vendor/shared-harness/workers/roles/primary.md",
   ".vendor/shared-harness/workers/behaviors/communication.md",
@@ -104,7 +104,7 @@ fragments = [
 
 [[roles.role]]
 name = "qa_automation"
-description = "The only agent allowed to change QA automation code and tests. Other agents must delegate that work to this agent."
+description = { file = ".vendor/shared-harness/workers/descriptions/qa_automation.md" }
 fragments = [
   ".vendor/shared-harness/workers/roles/qa_automation.md",
   ".vendor/shared-harness/workers/behaviors/communication.md",
@@ -117,7 +117,7 @@ fragments = [
 
 [[roles.role]]
 name = "research_document_extractor"
-description = "The only role for source collection in research that requires delegation. Searches internal and external sources and returns grouped, sorted links or verbatim excerpts."
+description = { file = ".vendor/shared-harness/workers/descriptions/research_document_extractor.md" }
 fragments = [
   ".vendor/shared-harness/workers/roles/research_document_extractor.md",
   ".vendor/shared-harness/workers/behaviors/communication.md",
@@ -130,7 +130,7 @@ fragments = [
 
 [[roles.role]]
 name = "research_analysis"
-description = "The only role for analysis in research that requires delegation. Analyzes supplied material and asks other agents to find additional sources when needed."
+description = { file = ".vendor/shared-harness/workers/descriptions/research_analysis.md" }
 fragments = [
   ".vendor/shared-harness/workers/roles/research_analist.md",
   ".vendor/shared-harness/workers/behaviors/communication.md",
@@ -143,7 +143,7 @@ fragments = [
 
 [[roles.role]]
 name = "reviewer_business"
-description = "The only role for a dedicated final business review of a completed task. Checks business requirements, rules, and intended outcomes."
+description = { file = ".vendor/shared-harness/workers/descriptions/reviewer_business.md" }
 fragments = [
   ".vendor/shared-harness/workers/roles/reviewer_business.md",
   ".vendor/shared-harness/workers/behaviors/communication.md",
@@ -156,7 +156,7 @@ fragments = [
 
 [[roles.role]]
 name = "reviewer_technical"
-description = "The only role for a dedicated final technical review of a completed task. Checks technical requirements, architecture, and compatibility."
+description = { file = ".vendor/shared-harness/workers/descriptions/reviewer_technical.md" }
 fragments = [
   ".vendor/shared-harness/workers/roles/reviewer_technical.md",
   ".vendor/shared-harness/workers/behaviors/communication.md",
@@ -169,7 +169,7 @@ fragments = [
 
 [[roles.role]]
 name = "reviewer_user_experience"
-description = "The only role for a dedicated final user experience review of a completed task. Checks usability, accessibility, and consistency across affected workflows."
+description = { file = ".vendor/shared-harness/workers/descriptions/reviewer_user_experience.md" }
 fragments = [
   ".vendor/shared-harness/workers/roles/reviewer_user_experience.md",
   ".vendor/shared-harness/workers/behaviors/communication.md",
