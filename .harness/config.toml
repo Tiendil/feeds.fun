@@ -99,6 +99,7 @@ fragments = [
   ".vendor/shared-harness/workers/behaviors/write_ownership.md",
   ".vendor/shared-harness/workers/behaviors/writing_tests_prohibited.md",
   ".vendor/shared-harness/workers/behaviors/complex_research_prohibited.md",
+  ".vendor/shared-harness/workers/behaviors/final_review_prohibited.md",
 ]
 
 [[roles.role]]
@@ -111,6 +112,7 @@ fragments = [
   ".vendor/shared-harness/workers/behaviors/write_ownership.md",
   ".vendor/shared-harness/workers/behaviors/writing_tests.md",
   ".vendor/shared-harness/workers/behaviors/complex_research_prohibited.md",
+  ".vendor/shared-harness/workers/behaviors/final_review_prohibited.md",
 ]
 
 [[roles.role]]
@@ -123,6 +125,7 @@ fragments = [
   ".vendor/shared-harness/workers/behaviors/write_ownership.md",
   ".vendor/shared-harness/workers/behaviors/writing_tests_prohibited.md",
   ".vendor/shared-harness/workers/behaviors/complex_research.md",
+  ".vendor/shared-harness/workers/behaviors/final_review_prohibited.md",
 ]
 
 [[roles.role]]
@@ -135,4 +138,44 @@ fragments = [
   ".vendor/shared-harness/workers/behaviors/write_ownership.md",
   ".vendor/shared-harness/workers/behaviors/writing_tests_prohibited.md",
   ".vendor/shared-harness/workers/behaviors/complex_research.md",
+  ".vendor/shared-harness/workers/behaviors/final_review_prohibited.md",
+]
+
+[[roles.role]]
+name = "reviewer_business"
+description = "The only role for a dedicated final business review of a completed task. Checks business requirements, rules, and intended outcomes."
+fragments = [
+  ".vendor/shared-harness/workers/roles/reviewer_business.md",
+  ".vendor/shared-harness/workers/behaviors/communication.md",
+  ".vendor/shared-harness/workers/behaviors/consent.md",
+  ".vendor/shared-harness/workers/behaviors/write_ownership.md",
+  ".vendor/shared-harness/workers/behaviors/writing_tests_prohibited.md",
+  ".vendor/shared-harness/workers/behaviors/complex_research_prohibited.md",
+  ".vendor/shared-harness/workers/behaviors/final_review.md",
+]
+
+[[roles.role]]
+name = "reviewer_technical"
+description = "The only role for a dedicated final technical review of a completed task. Checks technical requirements, architecture, and compatibility."
+fragments = [
+  ".vendor/shared-harness/workers/roles/reviewer_technical.md",
+  ".vendor/shared-harness/workers/behaviors/communication.md",
+  ".vendor/shared-harness/workers/behaviors/consent.md",
+  ".vendor/shared-harness/workers/behaviors/write_ownership.md",
+  ".vendor/shared-harness/workers/behaviors/writing_tests_prohibited.md",
+  ".vendor/shared-harness/workers/behaviors/complex_research_prohibited.md",
+  ".vendor/shared-harness/workers/behaviors/final_review.md",
+]
+
+[[roles.role]]
+name = "reviewer_user_experience"
+description = "The only role for a dedicated final user experience review of a completed task. Checks usability, accessibility, and consistency across affected workflows."
+fragments = [
+  ".vendor/shared-harness/workers/roles/reviewer_user_experience.md",
+  ".vendor/shared-harness/workers/behaviors/communication.md",
+  ".vendor/shared-harness/workers/behaviors/consent.md",
+  ".vendor/shared-harness/workers/behaviors/write_ownership.md",
+  ".vendor/shared-harness/workers/behaviors/writing_tests_prohibited.md",
+  ".vendor/shared-harness/workers/behaviors/complex_research_prohibited.md",
+  ".vendor/shared-harness/workers/behaviors/final_review.md",
 ]
