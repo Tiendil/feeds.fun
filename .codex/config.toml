@@ -3,4 +3,5 @@
 # Select shared MCP servers in .harness/config.toml.
 "project_doc_max_bytes" = 1048576
 "tool_output_token_limit" = 32000
+"features" = { "multi_agent_v2" = { "enabled" = true, "multi_agent_mode_hint_text" = "" } }
 "mcp_servers" = { "playwright" = { "command" = "mise", "args" = ["run", "--quiet", "harness:mcp:playwright"], "enabled" = true, "startup_timeout_sec" = 90, "tool_timeout_sec" = 120, "default_tools_approval_mode" = "approve" } }

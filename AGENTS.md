@@ -15,7 +15,7 @@ The primary agent is responsible for completing the overall task.
 The primary agent MUST coordinate the work of all other agents on the task.
 The primary agent MUST handle communication with the developer.
 
-The primary agent MAY delegate parts of the task to agents better suited to the work and spawn new agents as needed for that delegation.
+The primary agent MUST use sub-agents for independent work when delegation would improve speed or quality.
 
 The primary agent SHOULD make project changes directly unless one of the following applies.
 
