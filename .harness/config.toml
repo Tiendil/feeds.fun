@@ -57,6 +57,7 @@ index_goal_prefixes_to_remove = [
 fragments = [
   ".vendor/shared-harness/agents.md.d/intro.md",
   ".vendor/shared-harness/agents.md.d/primary.md",
+  ".vendor/shared-harness/agents.md.d/subagents.md",
   ".harness/agents.md.d/environment.md",
   ".vendor/shared-harness/agents.md.d/principles/intro.md",
   ".vendor/shared-harness/agents.md.d/principles/fundamentals.md",
@@ -180,3 +181,13 @@ fragments = [
   ".vendor/shared-harness/workers/behaviors/complex_research_prohibited.md",
   ".vendor/shared-harness/workers/behaviors/final_review.md",
 ]
+
+[[roles.role]]
+name = "worker"
+description = { file = ".vendor/shared-harness/workers/descriptions/disabled.md" }
+fragments = [".vendor/shared-harness/workers/descriptions/disabled.md"]
+
+[[roles.role]]
+name = "explorer"
+description = { file = ".vendor/shared-harness/workers/descriptions/disabled.md" }
+fragments = [".vendor/shared-harness/workers/descriptions/disabled.md"]
