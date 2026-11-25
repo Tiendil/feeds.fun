@@ -86,3 +86,53 @@ fragments = [
 ]
 
 skipped_fragments = []
+
+# Codex roles. Fragment paths are relative to the repository root.
+# Generate .codex/agents/ with mise run harness:codex:roles:generate.
+[[roles.role]]
+name = "default"
+description = "Primary agent responsible for task completion, agent coordination, and communication with the developer."
+fragments = [
+  ".vendor/shared-harness/workers/roles/primary.md",
+  ".vendor/shared-harness/workers/behaviors/communication.md",
+  ".vendor/shared-harness/workers/behaviors/consent.md",
+  ".vendor/shared-harness/workers/behaviors/write_ownership.md",
+  ".vendor/shared-harness/workers/behaviors/writing_tests_prohibited.md",
+  ".vendor/shared-harness/workers/behaviors/complex_research_prohibited.md",
+]
+
+[[roles.role]]
+name = "qa_automation"
+description = "The only agent allowed to change QA automation code and tests. Other agents must delegate that work to this agent."
+fragments = [
+  ".vendor/shared-harness/workers/roles/qa_automation.md",
+  ".vendor/shared-harness/workers/behaviors/communication.md",
+  ".vendor/shared-harness/workers/behaviors/consent.md",
+  ".vendor/shared-harness/workers/behaviors/write_ownership.md",
+  ".vendor/shared-harness/workers/behaviors/writing_tests.md",
+  ".vendor/shared-harness/workers/behaviors/complex_research_prohibited.md",
+]
+
+[[roles.role]]
+name = "research_document_extractor"
+description = "The only role for source collection in research that requires delegation. Searches internal and external sources and returns grouped, sorted links or verbatim excerpts."
+fragments = [
+  ".vendor/shared-harness/workers/roles/research_document_extractor.md",
+  ".vendor/shared-harness/workers/behaviors/communication.md",
+  ".vendor/shared-harness/workers/behaviors/consent.md",
+  ".vendor/shared-harness/workers/behaviors/write_ownership.md",
+  ".vendor/shared-harness/workers/behaviors/writing_tests_prohibited.md",
+  ".vendor/shared-harness/workers/behaviors/complex_research.md",
+]
+
+[[roles.role]]
+name = "research_analysis"
+description = "The only role for analysis in research that requires delegation. Analyzes supplied material and asks other agents to find additional sources when needed."
+fragments = [
+  ".vendor/shared-harness/workers/roles/research_analist.md",
+  ".vendor/shared-harness/workers/behaviors/communication.md",
+  ".vendor/shared-harness/workers/behaviors/consent.md",
+  ".vendor/shared-harness/workers/behaviors/write_ownership.md",
+  ".vendor/shared-harness/workers/behaviors/writing_tests_prohibited.md",
+  ".vendor/shared-harness/workers/behaviors/complex_research.md",
+]
