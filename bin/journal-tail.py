@@ -69,7 +69,9 @@ def record_time(record: dict[str, Any]) -> str:
 
 
 def record_actor(record: dict[str, Any]) -> str:
-    return " ".join(str(tag) for tag in record.get("tags", []) if tag != "journal")
+    tags = record.get("tags", [])
+    agent_name = record.get("agent") or "agent"
+    return " ".join(str(agent_name if tag == "agent" else tag) for tag in tags if tag != "journal")
 
 
 def record_kind(record: dict[str, Any]) -> str:

@@ -3,14 +3,17 @@
 
 `task` — Taskwarrior — is the project journal for significant agent-side work.
 
-You MUST use it to write journal records with these exact command templates from the project root:
+Use these command templates from the project root.
+You MUST set `agent:` to your runtime name in each record you write.
+In Codex, use `/root` for the primary agent and the full name returned by the spawn tool for a subagent, such as `/root/session__qa_automation` or `/root/subtask__reviewer_technical__subscription_cli`.
+If the spawn tool supplies only an ID for addressing, use the runtime name from your initial assignment.
 
 ```bash
-mise run journal:task -- log +journal +agent kind:goal "<goal description>"
-mise run journal:task -- log +journal +agent kind:step "<phase progress or completion handoff>"
-mise run journal:task -- log +journal +agent kind:thought "<important thought>"
-mise run journal:task -- log +journal +agent kind:assumption "<important assumption>"
-mise run journal:task -- log +journal +agent kind:change "<what changed and where>"
+mise run journal:task -- log +journal +agent agent:"<agent-name>" kind:goal "<goal description>"
+mise run journal:task -- log +journal +agent agent:"<agent-name>" kind:step "<phase progress or completion handoff>"
+mise run journal:task -- log +journal +agent agent:"<agent-name>" kind:thought "<important thought>"
+mise run journal:task -- log +journal +agent agent:"<agent-name>" kind:assumption "<important assumption>"
+mise run journal:task -- log +journal +agent agent:"<agent-name>" kind:change "<what changed and where>"
 ```
 
 Journal messages MUST be single-line strings.
@@ -23,10 +26,10 @@ You MUST log:
 - Significant assumptions during long-running operations with `kind:assumption`.
 - Changes in project source code or project structure with `kind:change`.
 
-You MAY add extra tags after `+agent` and before the message:
+You MAY add extra tags before the message.
 
 ```bash
-mise run journal:task -- log +journal +agent kind:<message-kind> +<extra-tag>... "<single-line journal message>"
+mise run journal:task -- log +journal +agent agent:"<agent-name>" kind:"<message-kind>" +<extra-tag>... "<single-line journal message>"
 ```
 
 For each non-trivial Donna action request or long-running agent task:
@@ -49,7 +52,8 @@ You MUST NOT log:
 - CLI commands you execute.
 - Elementary or trivial steps.
 
-You can read the logged journal with:
+Use `journal:tail` to read recent records.
+The actor column shows the runtime name in place of the `agent` tag when `agent:` is set.
 
 ```bash
 mise run journal:tail -- --lines 20
