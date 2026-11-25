@@ -33,7 +33,7 @@ fragments = [
 
 [repository]
 url = "git@github.com:Tiendil/harness.git"
-ref = "feature/agents-md-construction"
+ref = "main"
 
 [codex]
 # Enable selected shared MCP servers when generating .codex/config.toml.
