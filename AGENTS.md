@@ -94,7 +94,7 @@ These principles are your primary guide for making design decisions.
 - Prefer one source of truth. Derive information when it is unambiguous, and do not duplicate facts for convenience, symmetry, debugging, auditability, or possible future use unless explicitly required.
 - Before presenting or implementing a design, perform a subtraction pass: try removing each newly introduced concept and keep it only when its absence causes a concrete problem.
 - Consider corner cases only when they follow from current requirements, existing behavior, or observed data and materially affect the design. Defer speculative cases instead of building for them.
-- When several approaches satisfy the requirements, recommend the less complicated one (with fewer concepts, states, exectution paths, etc.). Present additional flexibility only as an optional extension.
+- When several approaches satisfy the requirements, recommend the less complicated one (with fewer concepts, states, execution paths, etc.). Present additional flexibility only as an optional extension.
 
 ### Implementation
 
@@ -196,7 +196,7 @@ Validate changes outside the Polish workflows' scope as follows:
 - Donna workflow definitions: run `donna -p llm validate @/path/to/workflow.donna.md` for each changed workflow and inspect its rendered instructions.
 - Prose-only documentation or specifications: review the changed content, examples, references, and consistency with affected artifacts.
 
-### Resticted operations
+### Restricted operations
 
 You ABSOLUTELY MUST NOT perform the following operations without explicit instructions to do so.
 

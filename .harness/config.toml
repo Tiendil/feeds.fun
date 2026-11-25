@@ -134,7 +134,7 @@ fragments = [
 name = "research_analysis"
 description = { file = ".vendor/shared-harness/workers/descriptions/research_analysis.md" }
 fragments = [
-  ".vendor/shared-harness/workers/roles/research_analist.md",
+  ".vendor/shared-harness/workers/roles/research_analysis.md",
   ".vendor/shared-harness/workers/behaviors/communication.md",
   ".vendor/shared-harness/workers/behaviors/consent.md",
   ".vendor/shared-harness/workers/behaviors/write_ownership.md",
