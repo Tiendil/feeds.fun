@@ -1,13 +1,32 @@
 import asyncio
+import enum
 
 import typer
 
 from ffun.application.application import with_app
 from ffun.core import logging
+from ffun.core.errors import Error
 from ffun.core.postgresql import execute
 from ffun.domain.entities import AbsoluteUrl, UnknownUrl
-from ffun.domain.urls import normalize_classic_unknown_url, url_to_source_uid, url_to_uid
+from ffun.domain.urls import normalize_classic_unknown_url, to_resource_url, url_to_source_uid, url_to_uid
+from ffun.extractors.domain import (
+    AddToFeed,
+    ExtractEntryBody,
+    ExtractEntryPublishedAt,
+    ExtractEntryTitle,
+    ExtractFeedDescription,
+    ExtractFeedSiteUrl,
+    ExtractFeedTitle,
+    ExtractHtml,
+    Extractor,
+    ExtractUrls,
+    LoadUrl,
+    ParseHtml,
+    RemoveHtml,
+)
+from ffun.extractors.entities import UrlPiece
 from ffun.library.operations import all_entries_iterator, count_total_entries
+from ffun.parsers.entities import FeedInfo
 
 logger = logging.get_module_logger()
 
@@ -133,3 +152,83 @@ async def run_experiment() -> None:
 @cli_app.command()  # type: ignore
 def experiment() -> None:
     asyncio.run(run_experiment())
+
+
+class _TiendilStage(enum.StrEnum):
+    index_page = "index"
+    listing = "listing"
+    article = "article"
+    clean_article = "clean_article"
+    feed = "feed"
+
+
+async def run_extract_tiendil() -> FeedInfo:
+    url = AbsoluteUrl("https://tiendil.org/en")
+    index = frozenset({_TiendilStage.index_page})
+    listing = frozenset({_TiendilStage.listing})
+    article = frozenset({_TiendilStage.article})
+    clean_article = frozenset({_TiendilStage.clean_article})
+    feed = frozenset({_TiendilStage.feed})
+    article_xpath = "//article[@class='brigid-article']"
+    canonical_url_xpath = "/html/head/link[@rel='canonical']/@href"
+
+    extractor = Extractor(
+        rules=[
+            LoadUrl(required_tags=index, output_tags=index),
+            ParseHtml(required_tags=index, output_tags=index),
+            ExtractFeedTitle(required_tags=index, output_tags=feed, xpath="/html/head/title"),
+            ExtractFeedDescription(
+                required_tags=index,
+                output_tags=feed,
+                xpath="/html/head/meta[@name='description']/@content",
+            ),
+            ExtractFeedSiteUrl(required_tags=index, output_tags=feed, xpath=canonical_url_xpath),
+            ExtractHtml(required_tags=index, output_tags=listing, xpath="//div[@class='brigid-index-posts']"),
+            ExtractUrls(
+                required_tags=listing,
+                output_tags=article,
+                xpath="./div[@class='brigid-article']/h1/a/@href",
+            ),
+            LoadUrl(required_tags=article, output_tags=article),
+            ParseHtml(required_tags=article, output_tags=article),
+            ExtractEntryTitle(
+                required_tags=article,
+                output_tags=feed,
+                xpath="//meta[@property='og:title']/@content",
+                url_xpath=canonical_url_xpath,
+            ),
+            ExtractEntryPublishedAt(
+                required_tags=article,
+                output_tags=feed,
+                xpath="//meta[@property='article:published_time']/@content",
+                url_xpath=canonical_url_xpath,
+            ),
+            RemoveHtml(
+                required_tags=article,
+                output_tags=clean_article,
+                xpath=f"{article_xpath}/h1 | {article_xpath}/div[@class='brigid-article-footer']",
+            ),
+            ExtractEntryBody(
+                required_tags=clean_article,
+                output_tags=feed,
+                xpath=article_xpath,
+                url_xpath=canonical_url_xpath,
+            ),
+            AddToFeed(required_tags=feed),
+        ]
+    )
+
+    async with with_app():
+        return await extractor.extract(to_resource_url(url), [UrlPiece(url=url, tags=index, remaining_loads=2)])
+
+
+@cli_app.command()  # type: ignore
+def extract_tiendil() -> None:
+    """Extract the latest English posts from tiendil.org and print them as JSON."""
+    try:
+        result = asyncio.run(run_extract_tiendil())
+    except Error as error:
+        typer.echo(str(error), err=True)
+        raise typer.Exit(1) from error
+
+    typer.echo(result.model_dump_json(indent=2))

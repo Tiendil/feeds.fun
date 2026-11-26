@@ -3,7 +3,7 @@ import pytest
 from furl import furl
 
 from ffun.domain import errors, urls
-from ffun.domain.entities import AbsoluteUrl, FeedUrl, SourceUid, UnknownUrl, UrlUid
+from ffun.domain.entities import AbsoluteUrl, ResourceUrl, SourceUid, UnknownUrl, UrlUid
 
 
 class TestAdjustClassicUrl:
@@ -127,6 +127,14 @@ class TestAdjustExternalUrl:
         assert original_url is not None
 
         assert urls.adjust_external_url(url, original_url=original_url) == adjusted_url
+
+    def test_keeps_the_base_query_for_a_fragment_reference(self) -> None:
+        original_url = AbsoluteUrl("https://example.com/articles?edition=weekly#previous")
+
+        assert (
+            urls.adjust_external_url(UnknownUrl("#latest"), original_url)
+            == "https://example.com/articles?edition=weekly#latest"
+        )
 
 
 class TestUrlToUid:
@@ -258,6 +266,21 @@ class TestCheckFurlError:
             with urls.check_furl_error():
                 furl("https://visit%20borkensite.com%20for%20test%20or%not%21/")
 
+    @pytest.mark.parametrize(
+        "url",
+        [
+            "https://[broken",
+            "https://[broken]/",
+            "https://[127.0.0.1]/",
+            "https://[vxyz.foo]/",
+            "https://exam／ple.com/",
+        ],
+    )
+    def test_invalid_authority(self, url: str) -> None:
+        with pytest.raises(errors.ExpectedFUrlError):
+            with urls.check_furl_error():
+                furl(url)
+
     def test_domain_label_too_long(self) -> None:
         with pytest.raises(errors.ExpectedFUrlError, match="label too long") as exc_info:
             with urls.check_furl_error():
@@ -270,6 +293,15 @@ class TestCheckFurlError:
         with pytest.raises(UnicodeEncodeError, match=reason):
             with urls.check_furl_error():
                 raise UnicodeEncodeError(encoding, "x", 0, 1, reason)
+
+    def test_propagates_an_unrelated_value_error(self) -> None:
+        error = ValueError("unrelated value error")
+
+        with pytest.raises(ValueError) as raised:
+            with urls.check_furl_error():
+                raise error
+
+        assert raised.value is error
 
     def test_another_error(self) -> None:
         with pytest.raises(ZeroDivisionError):
@@ -399,14 +431,23 @@ class TestStrToAbsoluteUrl:
             assert urls.str_to_absolute_url("example_com")
 
 
-class TestStrToFeedUrl:
+class TestStrToResourceUrl:
 
     def test_ok(self) -> None:
-        assert urls.str_to_feed_url("http://example.com?") == "http://example.com"
+        assert urls.str_to_resource_url("http://example.com?") == "http://example.com"
+
+    def test_normalizes_the_root_path(self) -> None:
+        assert urls.str_to_resource_url("http://example.com/") == "http://example.com"
+
+    def test_keeps_the_query(self) -> None:
+        assert urls.str_to_resource_url("http://example.com?edition=weekly") == "http://example.com?edition=weekly"
+
+    def test_removes_the_fragment(self) -> None:
+        assert urls.str_to_resource_url("http://example.com/articles#latest") == "http://example.com/articles"
 
     def test_not_ok(self) -> None:
         with pytest.raises(errors.UrlIsNotAbsolute):
-            assert urls.str_to_feed_url("example_com")
+            assert urls.str_to_resource_url("example_com")
 
 
 class TestIsAbsoluteUrl:
@@ -416,6 +457,34 @@ class TestIsAbsoluteUrl:
 
     def test_not_ok(self) -> None:
         assert not urls.is_absolute_url("http://example.com?")
+
+
+class TestJoinUrlReference:
+    def test_preserves_an_explicit_root_path(self) -> None:
+        base_url = AbsoluteUrl("https://example.com/articles/index.html")
+
+        assert urls._join_url_reference("/", base_url) == "https://example.com/"
+
+    def test_clears_the_base_query_for_an_explicit_empty_query(self) -> None:
+        base_url = AbsoluteUrl("https://example.com/articles?edition=weekly")
+
+        assert urls._join_url_reference("?", base_url) == "https://example.com/articles"
+
+    def test_clears_the_base_query_for_a_blank_reference(self) -> None:
+        base_url = AbsoluteUrl("https://example.com/articles?edition=weekly")
+
+        assert urls._join_url_reference("", base_url) == "https://example.com/articles"
+
+    def test_clears_the_base_fragment_for_a_blank_reference(self) -> None:
+        base_url = AbsoluteUrl("https://example.com/articles#latest")
+
+        assert urls._join_url_reference("", base_url) == "https://example.com/articles"
+
+    def test_rejects_an_overlong_hostname_label(self) -> None:
+        base_url = AbsoluteUrl("https://example.com/articles/index.html")
+        reference = f"https://{'x' * 64}.example/posts"
+
+        assert urls._join_url_reference(reference, base_url) is None
 
 
 class TestAdjustClassicFullUrl:
@@ -470,6 +539,16 @@ class TestAdjustClassicRelativeUrl:
             urls.adjust_classic_relative_url(UnknownUrl("a/b"), urls.str_to_absolute_url("https://example.com?x=y#z"))
             == "https://example.com/a/b"
         )
+
+    def test_clears_the_base_query_for_an_explicit_empty_query(self) -> None:
+        original_url = AbsoluteUrl("https://example.com/articles?edition=weekly")
+
+        assert urls.adjust_classic_relative_url(UnknownUrl("?"), original_url) == "https://example.com/articles"
+
+    def test_clears_the_base_query_for_a_blank_reference(self) -> None:
+        original_url = AbsoluteUrl("https://example.com/articles?edition=weekly")
+
+        assert urls.adjust_classic_relative_url(UnknownUrl(""), original_url) == "https://example.com/articles"
 
     def test_same_level(self) -> None:
         assert (
@@ -584,18 +663,52 @@ class TestGetParentUrl:
         )
 
 
-class TestToFeedUrl:
+class TestConstructResourceFUrl:
+    def test_keeps_the_query(self) -> None:
+        url = AbsoluteUrl("https://example.com/articles?edition=weekly")
+
+        assert str(urls.construct_resource_f_url(url)) == url
+
+    def test_removes_the_fragment(self) -> None:
+        url = AbsoluteUrl("https://example.com/articles#latest")
+
+        assert str(urls.construct_resource_f_url(url)) == "https://example.com/articles"
+
+    @pytest.mark.parametrize("port", ["", ":80"])
+    def test_keeps_the_port_when_switching_schemes(self, port: str) -> None:
+        url = AbsoluteUrl(f"http://example.com{port}/articles")
+
+        resource = urls.construct_resource_f_url(url)
+        resource.scheme = "https"
+
+        assert str(resource) == f"https://example.com{port}/articles"
+
+    def test_raises_for_an_invalid_port(self) -> None:
+        url = AbsoluteUrl("https://example.com:65536/articles")
+
+        with pytest.raises(errors.UrlIsNotAbsolute) as raised:
+            urls.construct_resource_f_url(url)
+
+        assert url in str(raised.value)
+
+
+class TestToResourceUrl:
 
     @pytest.mark.parametrize(
-        "url, feed_url",
+        "url, resource_url",
         [
             ("https://example.com/feed", "https://example.com/feed"),
             ("https://example.com/feed/", "https://example.com/feed/"),
             ("https://example.com/feed#fragment", "https://example.com/feed"),
         ],
     )
-    def test(self, url: AbsoluteUrl, feed_url: FeedUrl) -> None:
-        assert urls.to_feed_url(url) == feed_url
+    def test(self, url: AbsoluteUrl, resource_url: ResourceUrl) -> None:
+        assert urls.to_resource_url(url) == resource_url
+
+    def test_keeps_the_query(self) -> None:
+        url = AbsoluteUrl("https://example.com/feed?edition=weekly")
+
+        assert urls.to_resource_url(url) == url
 
 
 class TestUrlToHost:

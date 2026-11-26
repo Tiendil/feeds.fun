@@ -5,7 +5,7 @@ import typer
 from rich import print as rich_print
 
 from ffun.application.application import with_app
-from ffun.domain.urls import str_to_feed_url, url_to_source_uid
+from ffun.domain.urls import str_to_resource_url, url_to_source_uid
 from ffun.loader import domain as l_domain
 from ffun.parsers.feed import parse_into_feedparser
 
@@ -15,7 +15,7 @@ cli_app = typer.Typer()
 async def run_load_feed_internal(feed_url: str) -> None:
     async with with_app():
         try:
-            normalized_feed_url = str_to_feed_url(feed_url)
+            normalized_feed_url = str_to_resource_url(feed_url)
             content = await l_domain.load_decoded_content(normalized_feed_url, none_on_error=False)
             assert content is not None
             feed_info = await l_domain.parse_content(
@@ -43,7 +43,7 @@ def load_feed_internal(feed_url: str) -> None:
 async def run_load_feed_feedparser(feed_url: str) -> None:
     async with with_app():
         try:
-            normalized_feed_url = str_to_feed_url(feed_url)
+            normalized_feed_url = str_to_resource_url(feed_url)
             content = await l_domain.load_decoded_content(normalized_feed_url, none_on_error=False)
             assert content is not None
             channel = parse_into_feedparser(content)
@@ -67,7 +67,7 @@ def load_feed_feedparser(feed_url: str) -> None:
 async def run_load_feed_raw(feed_url: str) -> None:
     async with with_app():
         try:
-            normalized_feed_url = str_to_feed_url(feed_url)
+            normalized_feed_url = str_to_resource_url(feed_url)
             content = await l_domain.load_decoded_content(normalized_feed_url, none_on_error=False)
             assert content is not None
         except Exception as e:

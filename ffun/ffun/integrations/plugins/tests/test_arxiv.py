@@ -1,7 +1,7 @@
 import pytest
 from pytest_mock import MockerFixture
 
-from ffun.domain.urls import str_to_absolute_url, str_to_feed_url
+from ffun.domain.urls import str_to_absolute_url, str_to_resource_url
 from ffun.feeds_discoverer.tests import make as fd_make
 from ffun.integrations.plugins import arxiv
 from ffun.library.entities import Reference, ReferenceKind
@@ -170,16 +170,16 @@ class TestBuildFeedUrls:
 
 class TestExtractSectionsFromFeedUrl:
     def test_extracts_sections_from_union_feed_url(self) -> None:
-        assert arxiv._extract_sections_from_feed_url(str_to_feed_url("https://rss.arxiv.org/rss/cs.AI+cs.LG")) == {
+        assert arxiv._extract_sections_from_feed_url(str_to_resource_url("https://rss.arxiv.org/rss/cs.AI+cs.LG")) == {
             "cs.AI",
             "cs.LG",
         }
 
     def test_returns_empty_set_for_non_arxiv_feed_url(self) -> None:
-        assert arxiv._extract_sections_from_feed_url(str_to_feed_url("https://example.com/rss/cs.AI")) == set()
+        assert arxiv._extract_sections_from_feed_url(str_to_resource_url("https://example.com/rss/cs.AI")) == set()
 
     def test_returns_empty_set_for_unexpected_arxiv_feed_path(self) -> None:
-        assert arxiv._extract_sections_from_feed_url(str_to_feed_url("https://rss.arxiv.org/list/cs.AI")) == set()
+        assert arxiv._extract_sections_from_feed_url(str_to_resource_url("https://rss.arxiv.org/list/cs.AI")) == set()
 
 
 class TestExtractSectionsFromPageContent:

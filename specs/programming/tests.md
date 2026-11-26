@@ -38,9 +38,7 @@ Tests MUST NOT modify the development environment's configuration or runtime par
 
 Tests MUST NOT depend on user-specific files outside test-created temporary directories.
 
-Tests SHOULD prefer coverage through public module boundaries when that is practical for the behavior under test.
-
-Tests SHOULD prefer end-to-end coverage through public boundaries when that is practical for the behavior under test.
+Tests of workflows that span code elements SHOULD exercise the workflow through a public boundary when practical.
 
 Tests SHOULD exercise behavior of other top-level modules through their public boundaries.
 
@@ -103,13 +101,20 @@ Standalone tests SHOULD be used only for module-level invariants or file-level c
 
 Test names MUST describe the execution path or behavior being verified.
 
-Tests SHOULD prefer separate tests for orthogonal execution paths or validation cases instead of one combined test that verifies all cases at once.
+Each test case MUST verify a single behavior.
+Tests MUST cover independent execution paths and validation cases separately.
 
 **Example:** `test_a` and `test_b` are better than `test_a_or_b` when `a` and `b` describe independent behavior.
 
 **Rationale:** Focused tests help readers identify which behavior failed.
 
 ## Test coverage
+
+Every production code element that defines behavior MUST have dedicated tests that exercise its contract directly, regardless of visibility.
+A more specific specification MAY define an explicit exception to this requirement.
+The exception MUST state which code it covers and what coverage is required for that code.
+
+Code constructed during an operation, such as a closure, MAY be covered through tests of that operation.
 
 Every execution path required by the behavior’s contract MUST have a corresponding test or parametrized test case.
 

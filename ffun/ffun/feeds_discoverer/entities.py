@@ -6,7 +6,7 @@ import pydantic
 from bs4 import BeautifulSoup
 
 from ffun.core.entities import BaseEntity
-from ffun.domain.entities import AbsoluteUrl, FeedUrl, UnknownUrl
+from ffun.domain.entities import AbsoluteUrl, ResourceUrl, UnknownUrl
 from ffun.parsers import entities as p_entities
 
 DiscoverResult = tuple["Context", Union[None, "Result"]]
@@ -28,7 +28,7 @@ class Status(enum.StrEnum):
 
 class Context(BaseEntity):
     raw_url: UnknownUrl
-    url: FeedUrl | None = None
+    url: ResourceUrl | None = None
     host: str | None = None
     content: str | None = None
     soup: BeautifulSoup | None = None

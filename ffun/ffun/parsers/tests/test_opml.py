@@ -1,7 +1,8 @@
 import pytest
 
 from ffun.core.tests.helpers import assert_compare_xml
-from ffun.domain.urls import str_to_absolute_url, str_to_feed_url, url_to_uid
+from ffun.domain.entities import FeedUrl
+from ffun.domain.urls import str_to_resource_url, url_to_uid
 from ffun.feeds.entities import Feed
 from ffun.parsers import errors
 from ffun.parsers.entities import FeedInfo
@@ -63,7 +64,7 @@ class TestExtractFeeds:
 
         infos = extract_feeds(content)
 
-        expected_url = str_to_feed_url("https://example.com/feed")
+        expected_url = FeedUrl(str_to_resource_url("https://example.com/feed"))
 
         assert len(infos) == 1
         assert infos[0] == FeedInfo(
@@ -90,7 +91,7 @@ class TestExtractFeeds:
 
         infos = extract_feeds(content)
 
-        expected_url = str_to_feed_url("https://example.com/feed")
+        expected_url = FeedUrl(str_to_resource_url("https://example.com/feed"))
 
         assert len(infos) == 1
         assert infos[0] == FeedInfo(
@@ -101,28 +102,46 @@ class TestExtractFeeds:
             uid=url_to_uid(expected_url),
         )
 
-    def test_opml_with_html_url(self) -> None:
+    def test_opml_deduplicates_feed_urls_with_different_fragments(self) -> None:
         content = """
 <opml version="2.0">
 <body>
-  <outline type="rss" xmlUrl='https://example.com/feed' htmlUrl='https://example.com' />
+  <outline type="rss" xmlUrl="https://example.com/feed#latest" title="Latest" />
+  <outline type="rss" xmlUrl="https://example.com/feed#archive" title="Archive" />
 </body>
 </opml>
         """
 
         infos = extract_feeds(content)
 
-        expected_url = str_to_feed_url("https://example.com/feed")
+        assert [info.title for info in infos] == ["Latest"]
 
-        assert len(infos) == 1
-        assert infos[0] == FeedInfo(
-            url=expected_url,
-            site_url=str_to_absolute_url("https://example.com"),
-            title="",
-            description="",
-            entries=[],
-            uid=url_to_uid(expected_url),
-        )
+    def test_opml_removes_the_feed_url_fragment(self) -> None:
+        content = '<opml><body><outline type="rss" xmlUrl="https://example.com/feed#latest" /></body></opml>'
+
+        (info,) = extract_feeds(content)
+
+        assert info.url == "https://example.com/feed"
+
+    def test_opml_keeps_the_feed_url_query(self) -> None:
+        content = '<opml><body><outline type="rss" xmlUrl="https://example.com/feed?lang=en" /></body></opml>'
+
+        (info,) = extract_feeds(content)
+
+        assert info.url == "https://example.com/feed?lang=en"
+
+    def test_opml_keeps_the_site_url_fragment(self) -> None:
+        content = """
+<opml version="2.0">
+<body>
+  <outline type="rss" xmlUrl="https://example.com/feed" htmlUrl="https://example.com/posts#weekly" />
+</body>
+</opml>
+        """
+
+        (info,) = extract_feeds(content)
+
+        assert info.site_url == "https://example.com/posts#weekly"
 
     def test_opml_with_wrong_type_case(self) -> None:
         content = """
@@ -140,7 +159,7 @@ class TestExtractFeeds:
 
         infos = extract_feeds(content)
 
-        expected_url = str_to_feed_url("https://example.com/feed")
+        expected_url = FeedUrl(str_to_resource_url("https://example.com/feed"))
 
         assert len(infos) == 1
         assert infos[0] == FeedInfo(

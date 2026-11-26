@@ -1,6 +1,6 @@
 import pytest
 
-from ffun.domain.entities import FeedUrl
+from ffun.domain.entities import ResourceUrl
 from ffun.domain.urls import str_to_absolute_url
 from ffun.feeds_discoverer.tests import make as fd_make
 from ffun.integrations.plugins import reddit
@@ -56,7 +56,7 @@ class TestDiscoverFeedUrls:
         ],
     )
     @pytest.mark.asyncio
-    async def test_new_reddit(self, plugin: reddit.Plugin, url: str, expected_url: FeedUrl) -> None:
+    async def test_new_reddit(self, plugin: reddit.Plugin, url: str, expected_url: ResourceUrl) -> None:
         context = context = fd_make.context(url)
 
         new_context, result = await plugin.discover_feed_urls(context)

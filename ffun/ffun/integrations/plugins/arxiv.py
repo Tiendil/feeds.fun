@@ -2,7 +2,7 @@ import re
 
 from bs4 import BeautifulSoup
 
-from ffun.domain.entities import AbsoluteUrl, FeedUrl, UnknownUrl
+from ffun.domain.entities import AbsoluteUrl, UnknownUrl
 from ffun.domain.urls import construct_f_url, normalize_classic_unknown_url
 from ffun.feeds_discoverer import entities as fd_entities
 from ffun.integrations.plugin import Plugin as BasePlugin
@@ -65,7 +65,7 @@ def _build_feed_urls(sections: set[str]) -> set[AbsoluteUrl]:
     return feed_urls
 
 
-def _extract_sections_from_feed_url(url: FeedUrl) -> set[str]:
+def _extract_sections_from_feed_url(url: AbsoluteUrl) -> set[str]:
     f_url = construct_f_url(url)
 
     if f_url is None or f_url.host != _ARXIV_RSS_HOST:

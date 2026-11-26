@@ -2,8 +2,8 @@ import datetime
 import uuid
 
 from ffun.core.entities import BaseEntity
-from ffun.domain.entities import AbsoluteUrl, FeedId
-from ffun.domain.urls import str_to_absolute_url, str_to_feed_url, url_to_source_uid
+from ffun.domain.entities import AbsoluteUrl, FeedId, FeedUrl
+from ffun.domain.urls import str_to_absolute_url, str_to_resource_url, url_to_source_uid
 from ffun.feeds.entities import Feed, FeedError, FeedState
 from ffun.feeds.operations import get_feeds, get_source_ids, save_feed
 
@@ -48,7 +48,7 @@ async def fake_feed(  # noqa: CFQ002
     return Feed(
         id=FeedId(uuid.uuid4() if id is None else id),
         source_id=source_ids[source_uid],
-        url=str_to_feed_url(feed_url),
+        url=FeedUrl(str_to_resource_url(feed_url)),
         site_url=site_url,
         state=state,
         last_error=loading.last_error,

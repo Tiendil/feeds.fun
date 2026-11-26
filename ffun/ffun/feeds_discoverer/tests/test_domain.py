@@ -3,7 +3,8 @@ import pytest
 from pytest_mock import MockerFixture
 from respx.router import MockRouter
 
-from ffun.domain.entities import AbsoluteUrl, FeedUrl, UnknownUrl
+from ffun.domain.entities import AbsoluteUrl, UnknownUrl
+from ffun.domain.urls import str_to_resource_url
 from ffun.feeds_discoverer import domain as fd_domain
 from ffun.feeds_discoverer.domain import (
     _VISITED_URLS,
@@ -53,8 +54,24 @@ class TestDiscoverAdjustUrl:
 
         new_context, result = await _discover_adjust_url(context)
 
-        assert new_context == context.replace(url=AbsoluteUrl("https://example.com"), host="example.com")
+        assert new_context == context.replace(url=str_to_resource_url("https://example.com"), host="example.com")
         assert result is None
+
+    @pytest.mark.asyncio
+    async def test_removes_the_fragment_from_the_resource_url(self) -> None:
+        context = Context(raw_url=UnknownUrl("https://example.com/articles#latest"))
+
+        adjusted, _ = await _discover_adjust_url(context)
+
+        assert adjusted.url == "https://example.com/articles"
+
+    @pytest.mark.asyncio
+    async def test_keeps_the_query_in_the_resource_url(self) -> None:
+        context = Context(raw_url=UnknownUrl("https://example.com/articles?edition=weekly"))
+
+        adjusted, _ = await _discover_adjust_url(context)
+
+        assert adjusted.url == "https://example.com/articles?edition=weekly"
 
 
 class TestDiscoverLoadUrl:
@@ -96,7 +113,7 @@ class TestDiscoverLoadUrl:
         assert result is None
 
     @pytest.mark.asyncio
-    async def test_prevent_second_attempt(self, respx_mock: MockRouter) -> None:
+    async def test_prevents_a_second_attempt_for_the_same_resource(self, respx_mock: MockRouter) -> None:
         mock = respx_mock.get("/test").mock(return_value=httpx.Response(200, content="unused"))
 
         with visited_cache():
@@ -104,9 +121,9 @@ class TestDiscoverLoadUrl:
 
             assert cache is not None
 
-            cache.add(FeedUrl("http://localhost/test"))
+            cache.add(str_to_resource_url("http://localhost/test#latest"))
 
-            context = make.context("http://localhost/test")
+            context = make.context("http://localhost/test#archive")
 
             new_context, result = await _discover_load_url(context)
 
@@ -139,7 +156,7 @@ class TestDiscoverExtractFeedInfo:
 
         assert result.status == Status.feeds_found
         assert len(result.feeds) == 1
-        assert result.feeds[0].url == FeedUrl("http://localhost/test")
+        assert result.feeds[0].url == str_to_resource_url("http://localhost/test")
 
 
 class TestDiscoverCreateSoup:
@@ -378,8 +395,8 @@ class TestDiscoverCheckParentUrls:
         assert result.status == Status.feeds_found
         assert len(result.feeds) == 2
         assert {feed.url for feed in result.feeds} == {
-            FeedUrl("http://localhost/feed2.rss"),
-            FeedUrl("http://localhost/feed3.atom"),
+            str_to_resource_url("http://localhost/feed2.rss"),
+            str_to_resource_url("http://localhost/feed3.atom"),
         }
 
 
@@ -514,8 +531,8 @@ class TestDiscoverCheckCandidateLinks:
         assert result.status == Status.feeds_found
         assert len(result.feeds) == 2
         assert {feed.url for feed in result.feeds} == {
-            FeedUrl("http://localhost/feed1"),
-            FeedUrl("http://localhost/feed2"),
+            str_to_resource_url("http://localhost/feed1"),
+            str_to_resource_url("http://localhost/feed2"),
         }
 
 
@@ -691,8 +708,8 @@ class TestDiscover:
         assert result.status == Status.feeds_found
         assert len(result.feeds) == 2
         assert {feed.url for feed in result.feeds} == {
-            FeedUrl("http://localhost/feed1"),
-            FeedUrl("http://localhost/feed4"),
+            str_to_resource_url("http://localhost/feed1"),
+            str_to_resource_url("http://localhost/feed4"),
         }
 
     @pytest.mark.asyncio
@@ -725,8 +742,8 @@ class TestDiscover:
         assert result.status == Status.feeds_found
         assert len(result.feeds) == 2
         assert {feed.url for feed in result.feeds} == {
-            FeedUrl("http://localhost/feed2.rss"),
-            FeedUrl("http://localhost/feed3.atom"),
+            str_to_resource_url("http://localhost/feed2.rss"),
+            str_to_resource_url("http://localhost/feed3.atom"),
         }
 
     @pytest.mark.asyncio
@@ -770,6 +787,6 @@ class TestDiscover:
         assert result.status == Status.feeds_found
         assert len(result.feeds) == 2
         assert {feed.url for feed in result.feeds} == {
-            FeedUrl("http://localhost/feed2.rss"),
-            FeedUrl("http://localhost/feed3.atom"),
+            str_to_resource_url("http://localhost/feed2.rss"),
+            str_to_resource_url("http://localhost/feed3.atom"),
         }

@@ -84,6 +84,7 @@ These principles are your primary guide doing ALL tasks.
 - SOLID (Single Responsibility, Open-Closed, Liskov Substitution, Interface Segregation, Dependency Inversion) principles.
 - HCD (Human-Centered Design) principles — place the human user at the center of the design process, ensuring that the system is usable, accessible, and meets the needs of its intended audience.
 - DCD (Developer-Centered Design) principles — place the developer at the center of the design process, ensuring that the system is maintainable, extensible, and meets the needs of its intended developers.
+- Explicit is better than implicit.
 
 ### Design
 
@@ -902,6 +903,7 @@ A top-level module MUST own the definitions and behavior that directly implement
 - `ffun.dispatcher` owns dispatching entries to tag processor queues and tracking per-processor entry processing status.
 - `ffun.domain` owns the shared code that represents and supports foundational Feeds Fun domain concepts. See `specs/backend/modules/domain.md`.
 - `ffun.entitlements` owns source-specific user entitlement state and merged effective entitlements.
+- `ffun.extractors` owns rule-based extraction of feed metadata and entries from public sources.
 - `ffun.feeds` owns feed storage and feed management.
 - `ffun.feeds_collections` owns curated feed collection configuration and behavior.
 - `ffun.feeds_discoverer` owns discovery of feeds for external sites.

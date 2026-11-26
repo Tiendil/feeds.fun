@@ -1,8 +1,12 @@
 import uuid
 from collections.abc import Sequence
+from typing import cast
 
+import httpx
 import pytest
 from pytest_mock import MockerFixture
+from respx.models import Call
+from respx.router import MockRouter
 from structlog.testing import capture_logs
 
 from ffun.core.tests.helpers import (
@@ -12,8 +16,8 @@ from ffun.core.tests.helpers import (
     assert_logs_has_record,
 )
 from ffun.dispatcher.entities import EntryToProcess
-from ffun.domain.entities import EntryId, UserId
-from ffun.domain.urls import str_to_absolute_url, str_to_feed_url, url_to_uid
+from ffun.domain.entities import AbsoluteUrl, EntryId, UserId
+from ffun.domain.urls import str_to_absolute_url, url_to_uid
 from ffun.feeds import domain as f_domain
 from ffun.feeds import entities as f_entities
 from ffun.feeds_collections.collections import collections
@@ -25,11 +29,14 @@ from ffun.loader import errors as lo_errors
 from ffun.loader.domain import (
     check_proxies_availability,
     detect_orphaned,
+    load_content_with_proxies,
     load_decoded_content,
     process_feed,
     store_entries,
     sync_feed_info,
 )
+from ffun.loader.entities import ProxyState
+from ffun.loader.operations import update_proxy_states
 from ffun.loader.settings import Proxy, settings
 from ffun.parsers import entities as p_entities
 from ffun.parsers.tests import make as p_make
@@ -84,7 +91,7 @@ class TestLoadDecodedContent:
         mocker.patch("ffun.loader.domain.load_content_with_proxies", side_effect=fake_load_content_with_proxies)
         mocker.patch("ffun.loader.domain.decode_content", side_effect=fake_decode_content)
 
-        assert await load_decoded_content(str_to_feed_url("https://example.com/feed"), headers=headers) == (
+        assert await load_decoded_content(str_to_absolute_url("https://example.com/feed"), headers=headers) == (
             "<feed>content</feed>"
         )
 
@@ -98,7 +105,7 @@ class TestLoadDecodedContent:
         mocker.patch("ffun.loader.domain.load_content_with_proxies", side_effect=fake_load_content_with_proxies)
 
         with capture_logs() as logs:  # type: ignore
-            assert await load_decoded_content(str_to_feed_url("https://example.com/feed")) is None
+            assert await load_decoded_content(str_to_absolute_url("https://example.com/feed")) is None
 
         assert_logs_has_record(
             logs,  # type: ignore
@@ -118,7 +125,7 @@ class TestLoadDecodedContent:
 
         with capture_logs() as logs:  # type: ignore
             with pytest.raises(lo_errors.LoadError):
-                await load_decoded_content(str_to_feed_url("https://example.com/feed"), none_on_error=False)
+                await load_decoded_content(str_to_absolute_url("https://example.com/feed"), none_on_error=False)
 
         assert_logs_has_record(
             logs,  # type: ignore
@@ -137,7 +144,7 @@ class TestLoadDecodedContent:
         mocker.patch("ffun.loader.domain.load_content_with_proxies", side_effect=fake_load_content_with_proxies)
 
         with capture_logs() as logs:  # type: ignore
-            assert await load_decoded_content(str_to_feed_url("https://example.com/feed")) is None
+            assert await load_decoded_content(str_to_absolute_url("https://example.com/feed")) is None
 
         assert_logs_has_record(
             logs,  # type: ignore
@@ -156,13 +163,107 @@ class TestLoadDecodedContent:
 
         with capture_logs() as logs:  # type: ignore
             with pytest.raises(RuntimeError):
-                await load_decoded_content(str_to_feed_url("https://example.com/feed"), none_on_error=False)
+                await load_decoded_content(str_to_absolute_url("https://example.com/feed"), none_on_error=False)
 
         assert_logs_has_record(
             logs,  # type: ignore
             "unexpected_error_while_loading_decoded_content",
             url="https://example.com/feed",
         )
+
+
+class TestLoadContentWithProxies:
+    @pytest.mark.asyncio
+    async def test_falls_back_to_http_after_https_fails(self, mocker: MockerFixture, respx_mock: MockRouter) -> None:
+        mocker.patch.object(settings, "proxies", [Proxy(name=uuid.uuid4().hex)])
+        https_url = "https://news.example/articles"
+        http_url = "http://news.example/articles"
+        respx_mock.get(https_url).mock(return_value=httpx.Response(503))
+        respx_mock.get(http_url).mock(return_value=httpx.Response(200, text="Story preview"))
+
+        response = await load_content_with_proxies(AbsoluteUrl(http_url))
+
+        calls = cast(list[Call], respx_mock.calls)
+        assert [str(call.request.url) for call in calls] == [https_url, http_url]
+        assert response.text == "Story preview"
+
+    @pytest.mark.asyncio
+    async def test_preserves_the_query(self, mocker: MockerFixture, respx_mock: MockRouter) -> None:
+        mocker.patch.object(settings, "proxies", [Proxy(name=uuid.uuid4().hex)])
+        url = AbsoluteUrl("https://news.example/articles?limit=3&topic=city")
+        respx_mock.get(url).mock(return_value=httpx.Response(200))
+
+        response = await load_content_with_proxies(url)
+
+        assert response.url.query == b"limit=3&topic=city"
+
+    @pytest.mark.asyncio
+    async def test_removes_the_fragment(self, mocker: MockerFixture, respx_mock: MockRouter) -> None:
+        mocker.patch.object(settings, "proxies", [Proxy(name=uuid.uuid4().hex)])
+        url = AbsoluteUrl("https://news.example/articles#latest")
+        respx_mock.get("https://news.example/articles").mock(return_value=httpx.Response(200))
+
+        response = await load_content_with_proxies(url)
+
+        assert response.url.fragment == ""
+
+    @pytest.mark.asyncio
+    async def test_keeps_the_explicit_http_default_port_when_trying_https(
+        self, mocker: MockerFixture, respx_mock: MockRouter
+    ) -> None:
+        mocker.patch.object(settings, "proxies", [Proxy(name=uuid.uuid4().hex)])
+        url = AbsoluteUrl("http://news.example:80/articles")
+        https_url = "https://news.example:80/articles"
+        respx_mock.get(https_url).mock(return_value=httpx.Response(200))
+
+        response = await load_content_with_proxies(url)
+
+        assert str(response.url) == https_url
+
+    @pytest.mark.asyncio
+    async def test_skips_a_suspended_proxy(self, mocker: MockerFixture) -> None:
+        suspended = Proxy(name=uuid.uuid4().hex)
+        working = Proxy(name=uuid.uuid4().hex)
+        mocker.patch.object(settings, "proxies", [suspended, working])
+        await update_proxy_states({suspended.name: ProxyState.suspended})
+        load_content = mocker.patch("ffun.loader.operations.load_content", return_value=httpx.Response(200))
+        url = AbsoluteUrl("https://news.example/articles")
+
+        await load_content_with_proxies(url)
+
+        load_content.assert_awaited_once_with(url, working, headers=None)
+
+    @pytest.mark.asyncio
+    async def test_tries_the_next_available_proxy_after_a_failure(self, mocker: MockerFixture) -> None:
+        failing = Proxy(name=uuid.uuid4().hex)
+        working = Proxy(name=uuid.uuid4().hex)
+        mocker.patch.object(settings, "proxies", [failing, working])
+        attempts: list[Proxy] = []
+
+        async def fake_load_content(url: AbsoluteUrl, proxy: Proxy, headers: object = None) -> httpx.Response:
+            attempts.append(proxy)
+            if proxy == failing:
+                raise lo_errors.LoadError(feed_error_code=f_entities.FeedError.network_connection_timeout)
+            return httpx.Response(200, request=httpx.Request("GET", url), text="Story preview")
+
+        mocker.patch("ffun.loader.operations.load_content", side_effect=fake_load_content)
+
+        response = await load_content_with_proxies(str_to_absolute_url("https://news.example/articles"))
+
+        assert attempts == [failing, working]
+        assert response.text == "Story preview"
+
+    @pytest.mark.asyncio
+    async def test_raises_an_error_when_all_proxies_are_suspended(self, mocker: MockerFixture) -> None:
+        proxy = Proxy(name=uuid.uuid4().hex)
+        mocker.patch.object(settings, "proxies", [proxy])
+        await update_proxy_states({proxy.name: ProxyState.suspended})
+        load_content = mocker.patch("ffun.loader.operations.load_content")
+
+        with pytest.raises(lo_errors.AllProxiesSuspended):
+            await load_content_with_proxies(str_to_absolute_url("https://news.example/articles"))
+
+        load_content.assert_not_awaited()
 
 
 async def assert_filtered_entry_equal_to_info(entry_info: p_entities.EntryInfo, entry: l_entities.Entry) -> None:

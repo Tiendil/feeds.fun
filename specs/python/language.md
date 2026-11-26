@@ -31,11 +31,15 @@ These classes provide standard string and integer behavior for enum members used
 
 ## Exhaustiveness checking
 
-Code that exhaustively branches over an enum or another statically closed union SHOULD pass the unreachable value to `typing.assert_never()` instead of raising `AssertionError` directly.
+When an unsupported value can reach a `match` statement intended to handle every supported value, the statement MUST include a fallback case that explicitly raises an exception.
 
-**Rationale:** Unlike directly raising `AssertionError`, `typing.assert_never()` requires static confirmation that no possible value remains.
+Code that exhaustively branches over an enum or another statically closed union SHOULD pass the remaining value to `typing.assert_never()` when the type checker can prove that value is unreachable.
 
 Ordinary domain or validation exceptions remain appropriate when an unsupported value can legitimately arrive through an untyped or external boundary.
+
+## Assertion errors
+
+Production code MUST NOT use `AssertionError`.
 
 ## Semantic primitive types
 

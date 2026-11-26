@@ -18,7 +18,7 @@ Python test files MUST use the `test_` prefix and the `.py` extension, as in `te
 
 ## Test classes and methods
 
-Each production module-level function MUST have a corresponding test class.
+Each module-level production definition with behavior MUST have a corresponding test class.
 
 Tests for a class MUST group method tests inside the class's test class.
 

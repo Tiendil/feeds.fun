@@ -152,6 +152,14 @@ depends_on = [
 layer = "tags_workflow"
 
 [[modules]]
+path = "ffun.extractors"
+depends_on = [
+    "ffun.loader",
+    "ffun.parsers",
+]
+layer = "feeds_workflow"
+
+[[modules]]
 path = "ffun.feeds_discoverer"
 depends_on = [
     "ffun.integrations",

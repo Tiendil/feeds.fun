@@ -5,8 +5,8 @@ import typer
 
 from ffun.application.application import with_app
 from ffun.core import logging
-from ffun.domain.entities import CollectionId, FeedUrl, UnknownUrl
-from ffun.domain.urls import normalize_classic_unknown_url, to_feed_url
+from ffun.domain.entities import CollectionId, ResourceUrl, UnknownUrl
+from ffun.domain.urls import normalize_classic_unknown_url, to_resource_url
 from ffun.feeds_collections.collections import collections
 from ffun.loader.domain import extract_feed_info
 
@@ -15,7 +15,7 @@ logger = logging.get_module_logger()
 cli_app = typer.Typer()
 
 
-async def _estimate_entries_per_day(feed_url: FeedUrl) -> float | None:
+async def _estimate_entries_per_day(feed_url: ResourceUrl) -> float | None:
     logger.info("start_feed_extraction", feed_url=feed_url)
 
     feed_info = await extract_feed_info(feed_id=None, feed_url=feed_url)
@@ -48,7 +48,7 @@ async def run_entries_per_day_for_feed(raw_feed_url: str) -> None:
 
         assert feed_url is not None
 
-        entries_per_day = await _estimate_entries_per_day(to_feed_url(feed_url))
+        entries_per_day = await _estimate_entries_per_day(to_resource_url(feed_url))
 
         logger.info("estimated_entries_for_feed_in_day", feed_url=feed_url, entries_per_day=entries_per_day)
 

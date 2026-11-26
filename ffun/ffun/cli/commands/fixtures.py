@@ -17,8 +17,8 @@ from ffun.application.application import with_app
 from ffun.auth.settings import single_user_service_id
 from ffun.core import logging, utils
 from ffun.domain.domain import new_entry_id, new_feed_id
-from ffun.domain.entities import ProcessorId, TagUid, UnknownUrl
-from ffun.domain.urls import adjust_classic_relative_url, str_to_feed_url, url_to_source_uid
+from ffun.domain.entities import FeedUrl, ProcessorId, TagUid, UnknownUrl
+from ffun.domain.urls import adjust_classic_relative_url, str_to_resource_url, url_to_source_uid
 from ffun.feeds.domain import get_feeds, get_source_ids, save_feed
 from ffun.feeds.entities import Feed, FeedState
 from ffun.feeds_links.domain import add_link
@@ -37,7 +37,7 @@ async def fake_feed() -> Feed:
 
     _id = uuid.uuid4().hex
 
-    url = str_to_feed_url(f"https://{_id}.com")
+    url = FeedUrl(str_to_resource_url(f"https://{_id}.com"))
 
     source_uid = url_to_source_uid(url)
 

@@ -8,7 +8,7 @@ from feedparser.sanitizer import _HTMLSanitizer
 
 from ffun.core import logging, utils
 from ffun.domain import urls
-from ffun.domain.entities import AbsoluteUrl, FeedUrl, SourceUid, UnknownUrl
+from ffun.domain.entities import AbsoluteUrl, FeedUrl, ResourceUrl, SourceUid, UnknownUrl
 from ffun.integrations.settings import settings as i_settings
 from ffun.library.entities import Reference, ReferenceKind
 from ffun.library.utils import merge_references_list
@@ -80,7 +80,7 @@ def _extract_external_id(entry: object) -> str:
     return entry.get("link")  # type: ignore
 
 
-def _extract_external_url(entry: Mapping[str, object], original_url: FeedUrl) -> AbsoluteUrl:
+def _extract_external_url(entry: Mapping[str, object], original_url: AbsoluteUrl) -> AbsoluteUrl:
     url = entry.get("link")
 
     if not isinstance(url, str):
@@ -169,7 +169,7 @@ def _media_type_to_kind(media_type: str | None) -> ReferenceKind:  # noqa: CCR00
 def _create_reference(  # noqa: PLR0913, CFQ002
     kind: ReferenceKind,
     url: str | None,
-    original_url: FeedUrl,
+    original_url: AbsoluteUrl,
     title: str | None = None,
     mime_type: str | None = None,
     width: str | int | None = None,
@@ -219,7 +219,7 @@ def _reference_kind_from_link(rel: str | None, media_type: str | None) -> Refere
 
 def _extract_link_reference(
     raw_link: object,
-    original_url: FeedUrl,
+    original_url: AbsoluteUrl,
 ) -> Reference | None:
     assert isinstance(raw_link, Mapping)
 
@@ -239,7 +239,7 @@ def _extract_link_reference(
 
 def _extract_media_reference(
     raw_media_entry: object,
-    original_url: FeedUrl,
+    original_url: AbsoluteUrl,
     default_kind: ReferenceKind,
 ) -> Reference | None:
     assert isinstance(raw_media_entry, Mapping)
@@ -262,7 +262,7 @@ def _extract_media_reference(
     )
 
 
-def _extract_media_content_reference(raw_media_entry: object, original_url: FeedUrl) -> Reference | None:
+def _extract_media_content_reference(raw_media_entry: object, original_url: AbsoluteUrl) -> Reference | None:
     return _extract_media_reference(
         raw_media_entry=raw_media_entry,
         original_url=original_url,
@@ -270,7 +270,7 @@ def _extract_media_content_reference(raw_media_entry: object, original_url: Feed
     )
 
 
-def _extract_media_thumbnail_reference(raw_media_entry: object, original_url: FeedUrl) -> Reference | None:
+def _extract_media_thumbnail_reference(raw_media_entry: object, original_url: AbsoluteUrl) -> Reference | None:
     return _extract_media_reference(
         raw_media_entry=raw_media_entry,
         original_url=original_url,
@@ -278,7 +278,7 @@ def _extract_media_thumbnail_reference(raw_media_entry: object, original_url: Fe
     )
 
 
-def _extract_comments_reference(raw_comments_url: object, original_url: FeedUrl) -> Reference | None:
+def _extract_comments_reference(raw_comments_url: object, original_url: AbsoluteUrl) -> Reference | None:
     return _create_reference(
         kind=ReferenceKind.comments,
         url=cast(str | None, raw_comments_url),
@@ -287,7 +287,7 @@ def _extract_comments_reference(raw_comments_url: object, original_url: FeedUrl)
     )
 
 
-def _extract_author_reference(raw_author: object, original_url: FeedUrl) -> Reference | None:
+def _extract_author_reference(raw_author: object, original_url: AbsoluteUrl) -> Reference | None:
     if not isinstance(raw_author, Mapping):
         return None
 
@@ -299,7 +299,7 @@ def _extract_author_reference(raw_author: object, original_url: FeedUrl) -> Refe
     )
 
 
-def _extract_enclosure_reference(raw_enclosure: object, original_url: FeedUrl) -> Reference | None:
+def _extract_enclosure_reference(raw_enclosure: object, original_url: AbsoluteUrl) -> Reference | None:
     assert isinstance(raw_enclosure, Mapping)
 
     return _create_reference(
@@ -323,7 +323,7 @@ def _extract_raw_reference_items(entry: Mapping[str, object], key: str) -> list[
 
 
 def _extract_references_raw(
-    entry: Mapping[str, object], original_url: FeedUrl, primary_url: AbsoluteUrl
+    entry: Mapping[str, object], original_url: AbsoluteUrl, primary_url: AbsoluteUrl
 ) -> list[Reference]:  # noqa: CCR001
     references: list[Reference | None] = []
 
@@ -350,13 +350,13 @@ def _extract_references_raw(
 
 
 def _extract_references(
-    entry: Mapping[str, object], original_url: FeedUrl, primary_url: AbsoluteUrl
+    entry: Mapping[str, object], original_url: AbsoluteUrl, primary_url: AbsoluteUrl
 ) -> list[Reference]:
     references = _extract_references_raw(entry, original_url, primary_url)
     return merge_references_list(references)
 
 
-def _parse_entry_strict(raw_entry: Mapping[str, object], original_url: FeedUrl, source: SourceUid) -> EntryInfo:
+def _parse_entry_strict(raw_entry: Mapping[str, object], original_url: AbsoluteUrl, source: SourceUid) -> EntryInfo:
     # TODO: remove all tags from title
     # TODO: extract tags from <category> tag
     published_at = _extract_published_at(raw_entry)
@@ -380,7 +380,7 @@ def _parse_entry_strict(raw_entry: Mapping[str, object], original_url: FeedUrl, 
     return integration.plugin_instance.postprocess_entry(entry)
 
 
-def parse_entry(raw_entry: Mapping[str, object], original_url: FeedUrl, source: SourceUid) -> EntryInfo | None:
+def parse_entry(raw_entry: Mapping[str, object], original_url: AbsoluteUrl, source: SourceUid) -> EntryInfo | None:
     if _should_skip(raw_entry):
         return None
 
@@ -417,7 +417,7 @@ def parse_into_feedparser(content: str) -> Channel | None:
     return channel
 
 
-def _normalize_feed_site_url(raw_url: object, original_url: FeedUrl) -> AbsoluteUrl | None:
+def _normalize_feed_site_url(raw_url: object, original_url: AbsoluteUrl) -> AbsoluteUrl | None:
     if not isinstance(raw_url, str):
         return None
 
@@ -457,7 +457,9 @@ def _is_feed_site_link(raw_link: Mapping[str, object]) -> bool:
     return media_type in {"text/html", "application/xhtml+xml"}
 
 
-def _extract_feed_site_url(feed: Mapping[str, object], original_url: FeedUrl) -> AbsoluteUrl | None:  # noqa: CCR001
+def _extract_feed_site_url(  # noqa: CCR001
+    feed: Mapping[str, object], original_url: AbsoluteUrl
+) -> AbsoluteUrl | None:
     site_url = _normalize_feed_site_url(feed.get("link"), original_url)
 
     if site_url is not None:
@@ -483,7 +485,7 @@ def _extract_feed_site_url(feed: Mapping[str, object], original_url: FeedUrl) ->
     return None
 
 
-def parse_feed(content: str, original_url: FeedUrl, source: SourceUid) -> FeedInfo | None:  # noqa: CCR001
+def parse_feed(content: str, original_url: ResourceUrl, source: SourceUid) -> FeedInfo | None:  # noqa: CCR001
     channel = parse_into_feedparser(content)
 
     if channel is None:
@@ -494,7 +496,7 @@ def parse_feed(content: str, original_url: FeedUrl, source: SourceUid) -> FeedIn
         return None
 
     feed_info = FeedInfo(
-        url=original_url,
+        url=FeedUrl(original_url),
         site_url=_extract_feed_site_url(channel.feed, original_url),
         title=cast(str, channel.feed.get("title", "")),
         description=cast(str, channel.feed.get("description", "")),

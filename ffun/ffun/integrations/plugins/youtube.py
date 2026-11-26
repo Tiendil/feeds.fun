@@ -3,7 +3,7 @@ import re
 
 import markdown  # type: ignore
 
-from ffun.domain.entities import AbsoluteUrl, FeedUrl, UnknownUrl
+from ffun.domain.entities import AbsoluteUrl, UnknownUrl
 from ffun.domain.urls import adjust_classic_relative_url, construct_f_url, normalize_classic_unknown_url
 from ffun.feeds_discoverer import entities as fd_entities
 from ffun.integrations.plugin import Plugin as BasePlugin
@@ -68,7 +68,7 @@ def _is_youtube_host(hostname: str) -> bool:
     )
 
 
-def _is_youtube_feed_url(url: AbsoluteUrl | FeedUrl | str) -> bool:
+def _is_youtube_feed_url(url: AbsoluteUrl | str) -> bool:
     f_url = construct_f_url(url)
 
     return f_url is not None and str(f_url.path) == "/feeds/videos.xml"
@@ -92,7 +92,7 @@ def _is_youtube_channel_page(path_segments: list[str]) -> bool:
     )
 
 
-def _detect_youtube_page_kind(url: AbsoluteUrl | FeedUrl | str) -> YouTubePageKind:
+def _detect_youtube_page_kind(url: AbsoluteUrl | str) -> YouTubePageKind:
     f_url = construct_f_url(url)
 
     if f_url is None or f_url.host is None or not _is_youtube_host(f_url.host.lower()):

@@ -33,12 +33,11 @@ View-level integration tests SHOULD live under the `views` module or the feature
 
 ## Component and view tests
 
-Component tests MUST NOT be added unless the developer explicitly requests component-level testing.
+Component tests MAY be added only when needed to verify behavior owned by the component or when explicitly requested by the developer.
 Component behavior SHOULD be extracted into frontend logic and covered by logic tests when practical.
 Architecture tests that inspect component source or registration without mounting or rendering components are not component tests under this restriction.
 
-**Rationale:** Requiring explicit approval keeps the component-test surface intentional.
-Extracting render-independent behavior produces smaller, faster tests that are less coupled to Vue mounting details.
+**Rationale:** Extracting render-independent behavior produces smaller, faster tests that are less coupled to Vue mounting details.
 
 Logic tests MAY verify DOM transformations performed directly by the code under test.
 

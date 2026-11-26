@@ -1,8 +1,8 @@
 import xml.etree.ElementTree as ET  # noqa
 from typing import Generator
 
-from ffun.domain.entities import UnknownUrl
-from ffun.domain.urls import normalize_classic_unknown_url, to_feed_url, url_to_uid
+from ffun.domain.entities import FeedUrl, UnknownUrl
+from ffun.domain.urls import normalize_classic_unknown_url, to_resource_url, url_to_uid
 from ffun.feeds.entities import Feed
 from ffun.parsers import errors
 from ffun.parsers.entities import FeedInfo
@@ -50,7 +50,7 @@ def _extract_rss_feed(outline: ET.Element) -> FeedInfo | None:
     if url is None:
         return None
 
-    feed_url = to_feed_url(url)
+    feed_url = FeedUrl(to_resource_url(url))
     site_url = None
 
     if "htmlUrl" in outline.attrib:

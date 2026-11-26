@@ -11,7 +11,7 @@ from orderedmultidict import omdict
 
 from ffun.core import logging
 from ffun.domain import errors
-from ffun.domain.entities import AbsoluteUrl, FeedUrl, SourceUid, UnknownUrl, UrlUid
+from ffun.domain.entities import AbsoluteUrl, ResourceUrl, SourceUid, UnknownUrl, UrlUid
 
 logger = logging.get_module_logger()
 
@@ -93,6 +93,21 @@ def check_furl_error() -> Iterator[None]:  # noqa: CCR001
             raise errors.ExpectedFUrlError(message=message) from e
 
         if "Invalid host" in message:
+            raise errors.ExpectedFUrlError(message=message) from e
+
+        if message == "Invalid IPv6 URL":
+            raise errors.ExpectedFUrlError(message=message) from e
+
+        if message == "An IPv4 address cannot be in brackets":
+            raise errors.ExpectedFUrlError(message=message) from e
+
+        if message == "IPvFuture address is invalid":
+            raise errors.ExpectedFUrlError(message=message) from e
+
+        if message.endswith(" does not appear to be an IPv4 or IPv6 address"):
+            raise errors.ExpectedFUrlError(message=message) from e
+
+        if message.endswith(" contains invalid characters under NFKC normalization"):
             raise errors.ExpectedFUrlError(message=message) from e
 
         raise
@@ -199,8 +214,8 @@ def str_to_absolute_url(url: str) -> AbsoluteUrl:
 
 
 # it is a shortcut method for tests
-def str_to_feed_url(url: str) -> FeedUrl:
-    return to_feed_url(str_to_absolute_url(url))
+def str_to_resource_url(url: str) -> ResourceUrl:
+    return to_resource_url(str_to_absolute_url(url))
 
 
 # ATTENTION: see note at the top of the file
@@ -209,8 +224,29 @@ def is_absolute_url(url: str) -> bool:
     return normalize_classic_unknown_url(UnknownUrl(url)) == url
 
 
+def _join_url_reference(reference: str, base_url: AbsoluteUrl) -> AbsoluteUrl | None:
+    resolved = construct_f_url(base_url)
+    if resolved is None:
+        return None
+
+    resolved.remove(fragment=True)
+
+    # furl keeps the base query for a blank reference or an explicit empty query.
+    if not reference or reference[0] == "?":
+        resolved.remove(query_params=True)
+
+    try:
+        with check_furl_error():
+            resolved.join(reference)
+            joined_url = str(resolved)
+    except errors.ExpectedFUrlError:
+        return None
+
+    return AbsoluteUrl(joined_url)
+
+
 # ATTENTION: see note at the top of the file
-def adjust_classic_full_url(url: UnknownUrl, original_url: AbsoluteUrl | FeedUrl) -> AbsoluteUrl | None:
+def adjust_classic_full_url(url: UnknownUrl, original_url: AbsoluteUrl) -> AbsoluteUrl | None:
     fixed_url = normalize_classic_unknown_url(url)
     assert fixed_url is not None
 
@@ -229,42 +265,26 @@ def adjust_classic_full_url(url: UnknownUrl, original_url: AbsoluteUrl | FeedUrl
 
 
 # ATTENTION: see note at the top of the file
-def adjust_classic_relative_url(url: UnknownUrl, original_url: AbsoluteUrl | FeedUrl) -> AbsoluteUrl | None:
-    f_url = construct_f_url(original_url)
-
-    if f_url is None:
+def adjust_classic_relative_url(url: UnknownUrl, original_url: AbsoluteUrl) -> AbsoluteUrl | None:
+    reference = url.strip()
+    relative_url = construct_f_url(reference)
+    if relative_url is None:
         return None
 
-    joined_url = construct_f_url(url)
-
-    if joined_url is None:
-        return None
-
-    # TODO: we may want to move this check out of this function
-    # TODO: we may want to make url: RelativeUrl type
     if (
-        joined_url.scheme is not None
-        or joined_url.host is not None
-        or joined_url.port is not None
-        or joined_url.username is not None
-        or joined_url.password is not None
+        relative_url.scheme is not None
+        or relative_url.host is not None
+        or relative_url.port is not None
+        or relative_url.username is not None
+        or relative_url.password is not None
     ):
-        # the passed "relative" url is not so relative
         return None
 
-    f_url.remove(query_params=True, fragment=True)
-
-    try:
-        with check_furl_error():
-            f_url.join(url)
-    except errors.ExpectedFUrlError:
-        return None
-
-    return AbsoluteUrl(str(f_url))
+    return _join_url_reference(reference, original_url)
 
 
 # ATTENTION: see note at the top of the file
-def _adjust_classic_url(url: UnknownUrl, original_url: AbsoluteUrl | FeedUrl) -> AbsoluteUrl | None:
+def _adjust_classic_url(url: UnknownUrl, original_url: AbsoluteUrl) -> AbsoluteUrl | None:
     if is_full_url(url):
         return adjust_classic_full_url(url, original_url)
 
@@ -280,7 +300,7 @@ def adjust_magnetic_url(url: UnknownUrl) -> AbsoluteUrl:
 
 
 # ATTENTION: see note at the top of the file
-def adjust_external_url(url: UnknownUrl, original_url: AbsoluteUrl | FeedUrl) -> AbsoluteUrl | None:
+def adjust_external_url(url: UnknownUrl, original_url: AbsoluteUrl) -> AbsoluteUrl | None:
     if is_magnetic_url(url):
         return adjust_magnetic_url(url)
 
@@ -288,7 +308,7 @@ def adjust_external_url(url: UnknownUrl, original_url: AbsoluteUrl | FeedUrl) ->
 
 
 # ATTENTION: see note at the top of the file
-def url_to_uid(url: AbsoluteUrl | FeedUrl) -> UrlUid:
+def url_to_uid(url: AbsoluteUrl) -> UrlUid:
     # The goal of this function is to detect URLs that most likely (99.(9)%) point to the same resource
     # It normalizes and simplifies a URL according to heuristics
     # I.e. there is a small possibility that two different URLs will be normalized to the same uid
@@ -349,7 +369,7 @@ def url_to_uid(url: AbsoluteUrl | FeedUrl) -> UrlUid:
 
 
 # ATTENTION: see note at the top of the file
-def url_to_source_uid(url: AbsoluteUrl | FeedUrl) -> SourceUid:
+def url_to_source_uid(url: AbsoluteUrl) -> SourceUid:
     # Because some portals (Reddit, ArXiv) provide customizable feed URLs,
     # we could see the same news entry in different feeds
     # => we should track the entry's source not by feed but by the portal
@@ -379,11 +399,11 @@ def url_to_source_uid(url: AbsoluteUrl | FeedUrl) -> SourceUid:
     return SourceUid(domain)
 
 
-def url_to_host(url: AbsoluteUrl | FeedUrl) -> str:
+def url_to_host(url: AbsoluteUrl) -> str:
     f_url = construct_f_url(url)
 
     if f_url is None or f_url.host in (None, ""):
-        raise NotImplementedError("AbsoluteUrl & FeedUrl must always have a host")
+        raise NotImplementedError("AbsoluteUrl must always have a host")
 
     host = f_url.host
 
@@ -404,7 +424,7 @@ def host_to_registered_domain(host: str) -> str:
 def url_has_extension(url: AbsoluteUrl, expected_extensions: list[str]) -> bool:
     f_url = construct_f_url(url)
 
-    assert f_url is not None, "AbsoluteUrl & FeedUrl must always be parsable by furl"
+    assert f_url is not None, "AbsoluteUrl must always be parsable by furl"
 
     if not f_url.path.segments:
         return "" in expected_extensions
@@ -436,10 +456,10 @@ def filter_out_duplicated_urls(urls: Iterable[AbsoluteUrl]) -> list[AbsoluteUrl]
     return result
 
 
-def get_parent_url(url: AbsoluteUrl | FeedUrl) -> AbsoluteUrl | None:
+def get_parent_url(url: AbsoluteUrl) -> AbsoluteUrl | None:
     f_url = construct_f_url(url)
 
-    assert f_url is not None, "AbsoluteUrl & FeedUrl must always be parsable by furl"
+    assert f_url is not None, "AbsoluteUrl must always be parsable by furl"
 
     if not f_url.path.segments or f_url.path == "/":
         return None
@@ -454,14 +474,20 @@ def get_parent_url(url: AbsoluteUrl | FeedUrl) -> AbsoluteUrl | None:
     return normalize_classic_unknown_url(UnknownUrl(str(f_url)))
 
 
-def to_feed_url(url: AbsoluteUrl) -> FeedUrl:
+def construct_resource_f_url(url: AbsoluteUrl) -> FUrl:
+    """Build the parsed URL of the whole resource."""
     f_url = construct_f_url(url)
-
-    assert f_url is not None, "AbsoluteUrl must always be parsable by furl"
+    if f_url is None:
+        raise errors.UrlIsNotAbsolute(url=url)
 
     f_url.fragment = None
+    return f_url
 
-    return FeedUrl(str(f_url))
+
+def to_resource_url(url: AbsoluteUrl) -> ResourceUrl:
+    """Return the URL of the whole resource."""
+    f_url = construct_resource_f_url(url)
+    return ResourceUrl(AbsoluteUrl(str(f_url)))
 
 
 #################

@@ -6,14 +6,14 @@ from typing import Iterator, cast
 from bs4 import BeautifulSoup, ResultSet, Tag
 
 from ffun.core import logging
-from ffun.domain.entities import AbsoluteUrl, FeedUrl, UnknownUrl
+from ffun.domain.entities import AbsoluteUrl, ResourceUrl, UnknownUrl
 from ffun.domain.urls import (
     adjust_external_url,
     filter_out_duplicated_urls,
     get_parent_url,
     host_to_registered_domain,
     normalize_classic_unknown_url,
-    to_feed_url,
+    to_resource_url,
     url_has_extension,
     url_to_host,
     url_to_source_uid,
@@ -26,7 +26,7 @@ from ffun.parsers import entities as p_entities
 
 logger = logging.get_module_logger()
 
-_VISITED_URLS: contextvars.ContextVar[set[FeedUrl] | None] = contextvars.ContextVar(
+_VISITED_URLS: contextvars.ContextVar[set[ResourceUrl] | None] = contextvars.ContextVar(
     "feeds_discoverer_visited_urls",
     default=None,
 )
@@ -47,7 +47,7 @@ ALLOWED_EXTENSIONS_FOR_ANCHORS = [".xml", ".rss", ".atom", ".feed"]
 
 
 async def _discover_adjust_url(context: Context) -> DiscoverResult:
-    """Normalize the raw URL and convert it to a canonical feed URL."""
+    """Normalize the raw URL and use the whole-resource address for discovery."""
     logger.info("discovering_adjusting_url", raw_url=context.raw_url)
 
     absolute_url = normalize_classic_unknown_url(context.raw_url)
@@ -58,7 +58,7 @@ async def _discover_adjust_url(context: Context) -> DiscoverResult:
         logger.info("discovering_incorrect_url")
         return context, Result(feeds=[], status=Status.incorrect_url)
 
-    url = to_feed_url(absolute_url)
+    url = to_resource_url(absolute_url)
 
     logger.info("discovering_normalized_url", raw_url=context.raw_url, adjusted_url=url)
 
@@ -232,7 +232,7 @@ async def _discover_check_parent_urls(context: Context) -> DiscoverResult:
 
     logger.info("discovering_checking_parent_urls", url=context.url)
 
-    parent_url: AbsoluteUrl | FeedUrl | None = get_parent_url(context.url)
+    parent_url: AbsoluteUrl | None = get_parent_url(context.url)
 
     # TODO: currently, the logic should be protected from the exponential explosion
     #       because of the recursion (each parent URL can be processed by `_discover_check_parent_urls`
@@ -358,7 +358,7 @@ _discoverers: list[Discoverer] = [
 @contextlib.contextmanager
 def visited_cache() -> Iterator[None]:
 
-    reset_token: contextvars.Token[set[FeedUrl] | None] | None = None
+    reset_token: contextvars.Token[set[ResourceUrl] | None] | None = None
 
     if _VISITED_URLS.get() is None:
         reset_token = _VISITED_URLS.set(set())

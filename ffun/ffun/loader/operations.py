@@ -11,7 +11,7 @@ from pypika import functions as pypika_fn
 from ffun.core import logging
 from ffun.core.postgresql import execute
 from ffun.domain import http
-from ffun.domain.entities import AbsoluteUrl, FeedUrl, SourceUid
+from ffun.domain.entities import AbsoluteUrl, ResourceUrl, SourceUid
 from ffun.feeds.entities import FeedError
 from ffun.loader import errors
 from ffun.loader.entities import ProxyState
@@ -329,7 +329,7 @@ async def decode_content(response: httpx.Response) -> str:
 
 
 # TODO: tests
-async def parse_content(content: str, original_url: FeedUrl, source: SourceUid) -> p_entities.FeedInfo:
+async def parse_content(content: str, original_url: ResourceUrl, source: SourceUid) -> p_entities.FeedInfo:
     try:
         feed_info = parse_feed(content, original_url=original_url, source=source)
     except Exception as e:

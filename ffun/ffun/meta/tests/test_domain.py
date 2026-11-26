@@ -12,8 +12,8 @@ from ffun.core.tests.helpers import assert_logs
 from ffun.dispatcher import domain as d_domain
 from ffun.dispatcher.entities import EntryProcessingStatus, EntryProcessingStatusUpdate
 from ffun.domain.domain import new_entry_id
-from ffun.domain.entities import ProcessorId, TagId, TagUid, UserId
-from ffun.domain.urls import str_to_absolute_url, str_to_feed_url, url_to_source_uid, url_to_uid
+from ffun.domain.entities import FeedUrl, ProcessorId, TagId, TagUid, UserId
+from ffun.domain.urls import str_to_absolute_url, str_to_resource_url, url_to_source_uid, url_to_uid
 from ffun.feeds import domain as f_domain
 from ffun.feeds.entities import Feed
 from ffun.feeds.tests import make as f_make
@@ -172,7 +172,7 @@ class TestAddFeeds:
     @pytest.mark.asyncio
     async def test_add(self, internal_user_id: UserId, another_internal_user_id: UserId) -> None:
 
-        urls = [str_to_feed_url(f"{uuid.uuid4().hex}.com") for _ in range(3)]
+        urls = [FeedUrl(str_to_resource_url(f"{uuid.uuid4().hex}.com")) for _ in range(3)]
 
         feeds = [
             p_entities.FeedInfo(

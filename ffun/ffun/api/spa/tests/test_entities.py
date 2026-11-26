@@ -28,7 +28,8 @@ from ffun.api.spa.entities import (
 from ffun.benefits.tests.make import make_benefit_package_template
 from ffun.core import utils
 from ffun.domain.domain import new_entry_id, new_user_id
-from ffun.domain.urls import str_to_absolute_url, str_to_feed_url, url_to_uid
+from ffun.domain.entities import FeedUrl
+from ffun.domain.urls import str_to_absolute_url, str_to_resource_url, url_to_uid
 from ffun.entitlements.entities import EntitlementKindId
 from ffun.entitlements.tests.make import make_effective_entitlement_interval, make_source_entitlement
 from ffun.feeds.entities import Feed as InternalFeed
@@ -128,7 +129,7 @@ class TestEntry:
 
 class TestFeedInfo:
     def test_from_internal__keeps_site_url(self) -> None:
-        feed_url = str_to_feed_url("https://example.com/feed")
+        feed_url = FeedUrl(str_to_resource_url("https://example.com/feed"))
         site_url = str_to_absolute_url("https://example.com")
 
         external_feed = FeedInfo.from_internal(
@@ -147,7 +148,7 @@ class TestFeedInfo:
         assert external_feed.isLinked
 
     def test_from_internal__keeps_missing_site_url(self) -> None:
-        feed_url = str_to_feed_url("https://example.com/feed")
+        feed_url = FeedUrl(str_to_resource_url("https://example.com/feed"))
 
         external_feed = FeedInfo.from_internal(
             p_entities.FeedInfo(

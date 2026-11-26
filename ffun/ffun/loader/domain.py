@@ -5,8 +5,8 @@ import httpx
 from ffun.core import logging
 from ffun.dispatcher.entities import EntryToProcess
 from ffun.domain.domain import new_entry_id
-from ffun.domain.entities import AbsoluteUrl, FeedUrl
-from ffun.domain.urls import construct_f_url, url_to_source_uid
+from ffun.domain.entities import AbsoluteUrl, ResourceUrl
+from ffun.domain.urls import construct_resource_f_url, url_to_source_uid
 from ffun.feeds import domain as f_domain
 from ffun.feeds.entities import Feed, FeedId, FeedState
 from ffun.feeds_collections.collections import collections
@@ -27,22 +27,23 @@ parse_content = operations.parse_content
 
 
 async def load_decoded_content(
-    feed_url: FeedUrl,
+    url: AbsoluteUrl,
     headers: dict[str, str] | None = None,
     none_on_error: bool = True,
 ) -> str | None:
+    """Load a URL and decode the response body."""
     try:
-        response = await load_content_with_proxies(feed_url, headers=headers)
+        response = await load_content_with_proxies(url, headers=headers)
         return await decode_content(response)
     except errors.LoadError as e:
-        logger.info("load_decoded_content_error", url=feed_url, error_code=e.feed_error_code)
+        logger.info("load_decoded_content_error", url=url, error_code=e.feed_error_code)
 
         if none_on_error:
             return None
 
         raise
     except Exception:
-        logger.exception("unexpected_error_while_loading_decoded_content", url=feed_url)
+        logger.exception("unexpected_error_while_loading_decoded_content", url=url)
 
         if none_on_error:
             return None
@@ -50,15 +51,12 @@ async def load_decoded_content(
         raise
 
 
-# TODO: tests
 async def load_content_with_proxies(  # noqa: CCR001
-    url: FeedUrl,
+    url: AbsoluteUrl,
     headers: Mapping[str, object] | None = None,
 ) -> httpx.Response:
-    url_object = construct_f_url(url)
-
-    assert url_object is not None
-
+    """Load a URL through the configured proxies, omitting its fragment."""
+    url_object = construct_resource_f_url(url)
     first_exception = None
 
     # TODO: cache states for some time
@@ -125,7 +123,7 @@ async def detect_orphaned(feed_id: FeedId) -> bool:
 
 
 # TODO: tests
-async def extract_feed_info(feed_id: FeedId | None, feed_url: FeedUrl) -> p_entities.FeedInfo | None:
+async def extract_feed_info(feed_id: FeedId | None, feed_url: ResourceUrl) -> p_entities.FeedInfo | None:
     try:
         content = await load_decoded_content(feed_url, none_on_error=False)
         assert content is not None

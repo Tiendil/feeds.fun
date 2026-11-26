@@ -95,6 +95,8 @@ lemminflect = "0.2.*"
 python-frontmatter = "1.1.*"
 toml = "0.10.*"
 orjson = "3.10.*"
+lxml = "6.1.*"
+elementpath = "5.1.*"
 
 [tool.poetry.group.dev.dependencies]
 

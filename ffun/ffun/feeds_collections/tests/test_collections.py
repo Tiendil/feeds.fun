@@ -5,8 +5,8 @@ import pytest
 import pytest_asyncio
 
 from ffun.domain.domain import new_collection_id, new_feed_id
-from ffun.domain.entities import CollectionSlug
-from ffun.domain.urls import str_to_absolute_url, to_feed_url, url_to_source_uid
+from ffun.domain.entities import CollectionSlug, FeedUrl
+from ffun.domain.urls import str_to_resource_url, url_to_source_uid
 from ffun.feeds import domain as f_domain
 from ffun.feeds_collections import errors
 from ffun.feeds_collections.collections import Collections
@@ -127,7 +127,7 @@ class TestCollections:
         collections = Collections()
 
         feed_1 = FeedInfo(
-            url=to_feed_url(str_to_absolute_url("http://example.com/feed1")), title="Feed 1", description="Feed 1"
+            url=FeedUrl(str_to_resource_url("http://example.com/feed1")), title="Feed 1", description="Feed 1"
         )
 
         collection_1 = Collection(
@@ -160,7 +160,7 @@ class TestCollections:
         collections = Collections()
 
         feed_1 = FeedInfo(
-            url=to_feed_url(str_to_absolute_url("http://example.com/feed1")), title="Feed 1", description="Feed 1"
+            url=FeedUrl(str_to_resource_url("http://example.com/feed1")), title="Feed 1", description="Feed 1"
         )
 
         collection_1 = Collection(
@@ -193,7 +193,7 @@ class TestCollections:
         collections = Collections()
 
         feed_1 = FeedInfo(
-            url=to_feed_url(str_to_absolute_url("http://example.com/feed1")), title="Feed 1", description="Feed 1"
+            url=FeedUrl(str_to_resource_url("http://example.com/feed1")), title="Feed 1", description="Feed 1"
         )
 
         collection_1 = Collection(
@@ -226,7 +226,7 @@ class TestCollections:
         collections = Collections()
 
         feed_1 = FeedInfo(
-            url=to_feed_url(str_to_absolute_url("http://example.com/feed1")), title="Feed 1", description="Feed 1"
+            url=FeedUrl(str_to_resource_url("http://example.com/feed1")), title="Feed 1", description="Feed 1"
         )
 
         collection_1 = Collection(
